@@ -22,34 +22,41 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 
 def gym_sync_step() -> None:
-  num_envs = 4
-  env = envpool.make_gym("Pong-v5", num_envs=num_envs)
-  action_num = env.action_space.n
+  num_envs = 1
+  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
+  print(f"env.action_space.shape[0] {env.action_space.shape[0]}")
+  action_num = env.action_space.shape[0]
+  print(f"action_num {action_num}")
   if is_legacy_gym:
     obs = env.reset()  # reset all envs
   else:
     obs, _ = env.reset()  # reset all envs
-  assert obs.shape == (num_envs, 4, 84, 84)
+  print(f"obs shape {obs.shape}")
+  # assert obs.shape == (num_envs, 4, 84, 84)
   for _ in range(1000):
     # autoreset is automatically enabled in envpool
-    action = np.random.randint(action_num, size=num_envs)
+    action = np.random.randint(action_num, size=(num_envs, action_num))
+    # print(f"action.shape { action.shape}")
     result = env.step(action)
     if is_legacy_gym:
       obs, rew, done, info = env.step(action)
+      print(f"obs, rew, done, info {obs, rew, done, info}")
     else:
       obs, rew, term, trunc, info = env.step(action)
+      # print(f"obs, rew, term, trunc, info {obs.shape, rew, term, trunc, info}")
+   
   # Of course, you can specify env_id to step corresponding envs
   if is_legacy_gym:
     obs = env.reset(np.array([1, 3]))  # reset env #1 and #3
   else:
     obs, _ = env.reset(np.array([1, 3]))  # reset env #1 and #3
-  assert obs.shape == (2, 4, 84, 84)
+  # assert obs.shape == (2, 4, 84, 84)
   partial_action = np.array([0, 0, 2])
   env_id = np.array([3, 2, 0])
   result = env.step(partial_action, env_id)
   obs, info = result[0], result[-1]
   np.testing.assert_allclose(info["env_id"], env_id)
-  assert obs.shape == (3, 4, 84, 84)
+  # assert obs.shape == (3, 4, 84, 84)
 
 
 def dm_sync_step() -> None:

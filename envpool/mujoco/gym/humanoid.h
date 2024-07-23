@@ -21,10 +21,10 @@
 #include <limits>
 #include <memory>
 #include <string>
-
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
 #include "envpool/mujoco/gym/mujoco_env.h"
+#include "envpool/mujoco/gym/RobotRunner.h"
 
 namespace mujoco_gym {
 
@@ -95,7 +95,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {}
-
+  
   void MujocoResetModel() override {
     for (int i = 0; i < model_->nq; ++i) {
       data_->qpos[i] = init_qpos_[i] + dist_(gen_);
@@ -120,7 +120,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   void Step(const Action& action) override {
     // step
+    myActuator myactuator;
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
+    mjtNum act_final[17];
+    myactuator.run(act, act_final, 17);
+    
     const auto& before = GetMassCenter();
     MujocoStep(act);
     const auto& after = GetMassCenter();

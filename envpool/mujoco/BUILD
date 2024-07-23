@@ -53,6 +53,7 @@ cc_library(
         "gym/reacher.h",
         "gym/swimmer.h",
         "gym/walker2d.h",
+        "gym/RobotRunner.h",
     ],
     data = [
         ":gen_mujoco_gym_xml",
