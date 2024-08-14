@@ -24,8 +24,15 @@
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
 #include "envpool/mujoco/gym/mujoco_env.h"
-#include "envpool/mujoco/gym/RobotRunner.h"
-
+// #include <RobotRunner.h>
+#include <Utilities/Utilities_print.h>
+#include <Math/orientation_tools.h>
+#include <eigen3/Eigen/Dense>
+#include <RobotController.h>
+#include <EmbeddedController.hpp>
+#include "Utilities/PeriodicTask.h"
+#include <Utilities/RobotCommands.h>
+#include <RobotRunner.h>
 namespace mujoco_gym {
 
 class HumanoidEnvFns {
@@ -95,7 +102,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {}
-  
+
   void MujocoResetModel() override {
     for (int i = 0; i < model_->nq; ++i) {
       data_->qpos[i] = init_qpos_[i] + dist_(gen_);
@@ -120,10 +127,28 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   void Step(const Action& action) override {
     // step
-    myActuator myactuator;
+    // myActuator myactuator;
+    // PeriodicTaskManager taskManager;
+    SpiCommand _Command;
+    SpiData _Feedback;
+    VectorNavData _ImuData;
+    EmbeddedController* ctrl;
+  //   RobotRunner _robotRunner(ctrl,  0.002, "robot-control");
+  // // _robotRunner->driverCommand = &_GamepadCommand;
+  // _robotRunner._ImuData= &_ImuData;
+  // _robotRunner._Feedback = &_Feedback;
+  // _robotRunner._Command = &_Command;
+  // _robotRunner->controlParameters = &_robotParams;
+  // _robotRunner->initializeParameters();
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
-    mjtNum act_final[17];
-    myactuator.run(act, act_final, 17);
+    Eigen::Vector3f rpy;
+    rpy.setZero();
+    rpy[0]=1.57;
+    Eigen::Matrix3f rotmat =ori::rpyToRotMat(rpy);
+    // pretty_print(rotmat, std::cout, "rotmat");
+    // rotmat[0]
+    // mjtNum act_final[17];
+    // myactuator.run(17);
     
     const auto& before = GetMassCenter();
     MujocoStep(act);
@@ -219,6 +244,30 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:qvel0"_].Assign(qvel0_, model_->nv);
 #endif
   }
+
+
+
+// void runMBC(){
+//     _ctrl = new EmbeddedController();
+//    _robotRunner = new RobotRunner(_ctrl, &taskManager, 0.002, "robot-control");
+//   _robotRunner->driverCommand = &_GamepadCommand;
+//   _robotRunner-> _ImuData= &_ImuData;
+//   _robotRunner->_Feedback = &_Feedback;
+//   _robotRunner->_Command = &_Command;
+//   _robotRunner->controlParameters = &_robotParams;
+//   _robotRunner->initializeParameters();
+
+ 
+// }
+// PeriodicTaskManager taskManager;
+// SpiCommand _Command;
+// SpiData _Feedback;
+// VectorNavData _ImuData;
+// RobotControlParameters _robotParams;
+// RobotController* _ctrl ;
+// RobotRunner* _robotRunner ;
+// GamepadCommand _GamepadCommand;
+
 };
 
 using HumanoidEnvPool = AsyncEnvPool<HumanoidEnv>;

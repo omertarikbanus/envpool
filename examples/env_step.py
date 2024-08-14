@@ -22,7 +22,8 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 
 def gym_sync_step() -> None:
-  num_envs = 1
+  num_envs = 1024
+  print(envpool.list_all_envs())
   env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
   print(f"env.action_space.shape[0] {env.action_space.shape[0]}")
   action_num = env.action_space.shape[0]
@@ -36,26 +37,31 @@ def gym_sync_step() -> None:
   for _ in range(1000):
     # autoreset is automatically enabled in envpool
     action = np.random.randint(action_num, size=(num_envs, action_num))
-    # print(f"action.shape { action.shape}")
+    print(f"action.shape { action.shape}")
+
     result = env.step(action)
+    print(f"obs shape {obs.shape}")
     if is_legacy_gym:
       obs, rew, done, info = env.step(action)
       print(f"obs, rew, done, info {obs, rew, done, info}")
     else:
       obs, rew, term, trunc, info = env.step(action)
       # print(f"obs, rew, term, trunc, info {obs.shape, rew, term, trunc, info}")
-   
+  print(f"exit {obs.shape}")
+  print(f"obs shape {obs.shape}")
+
   # Of course, you can specify env_id to step corresponding envs
-  if is_legacy_gym:
-    obs = env.reset(np.array([1, 3]))  # reset env #1 and #3
-  else:
-    obs, _ = env.reset(np.array([1, 3]))  # reset env #1 and #3
+  # if is_legacy_gym:
+  #   obs = env.reset(np.array([1, 3]))  # reset env #1 and #3
+  # else:
+  #   obs, _ = env.reset(np.array([1, 3]))  # reset env #1 and #3
+  print(f"obs shape {obs.shape}")
   # assert obs.shape == (2, 4, 84, 84)
   partial_action = np.array([0, 0, 2])
   env_id = np.array([3, 2, 0])
-  result = env.step(partial_action, env_id)
+  # result = env.step(partial_action, env_id)
   obs, info = result[0], result[-1]
-  np.testing.assert_allclose(info["env_id"], env_id)
+  # np.testing.assert_allclose(info["env_id"], env_id)
   # assert obs.shape == (3, 4, 84, 84)
 
 
@@ -132,5 +138,5 @@ def async_step() -> None:
 
 if __name__ == "__main__":
   gym_sync_step()
-  dm_sync_step()
-  async_step()
+  # dm_sync_step()
+  # async_step()

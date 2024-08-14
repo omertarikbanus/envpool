@@ -18,6 +18,12 @@ new_local_repository(
     path = local_qt_path(),
 )
 
+local_repository(
+    name = "eigen",
+    path = "/usr/local/include/eigen3",
+)
+
+
 load("@com_justbuchanan_rules_qt//tools:qt_toolchain.bzl", "register_qt_toolchains")
 
 register_qt_toolchains()

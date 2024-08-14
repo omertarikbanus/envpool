@@ -38,9 +38,14 @@ genrule(
     cmd = "cp $< $@",
 )
 
+
 cc_library(
     name = "mujoco_gym_env",
-    hdrs = [
+    hdrs = glob([
+        "legged-sim/**/*.h",
+        "legged-sim/**/*.hpp",
+        "legged-sim/**/*.cpp",
+        
         "gym/ant.h",
         "gym/half_cheetah.h",
         "gym/hopper.h",
@@ -53,7 +58,20 @@ cc_library(
         "gym/reacher.h",
         "gym/swimmer.h",
         "gym/walker2d.h",
-        "gym/RobotRunner.h",
+        ]),
+    
+    includes = [
+        "legged-sim/include",
+        "legged-sim/include/Controllers",
+        "legged-sim/third-party",
+        "legged-sim/third-party/osqp/include",
+        "legged-sim/third-party/qpOASES/include",
+        "legged-sim/third-party/GoldFarb_Optimizer",
+        "legged-sim/third-party/ParamHandler",
+        "legged-sim/third-party/JCQP",
+        "legged-sim/third-party/JCQP/amd/include",
+        "legged-sim/lcm_types/cpp",
+        "legged-sim/third-party/lcm/",
     ],
     data = [
         ":gen_mujoco_gym_xml",
@@ -61,6 +79,7 @@ cc_library(
     deps = [
         "//envpool/core:async_envpool",
         "@mujoco//:mujoco_lib",
+    
     ],
 )
 
