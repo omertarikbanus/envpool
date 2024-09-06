@@ -43,9 +43,10 @@ cc_library(
     name = "mujoco_gym_env",
     hdrs = glob([
         "legged-sim/**/*.h",
+        "legged-sim/**/*.hh",
         "legged-sim/**/*.hpp",
         "legged-sim/**/*.cpp",
-        
+        "legged-sim/**/*.ipp",
         "gym/ant.h",
         "gym/half_cheetah.h",
         "gym/hopper.h",
@@ -59,7 +60,23 @@ cc_library(
         "gym/swimmer.h",
         "gym/walker2d.h",
         ]),
-    
+    srcs = glob([  
+    "src/*.cpp" ,
+    "src/FSM/*.cpp" ,
+
+    "user/Embedded_Controller/*.cpp",
+    "third-party/ParamHandler/*.cpp",
+    "third-party/qpOASES/*.cpp",
+    "third-party/Goldfarb_Optimizer/*.cpp",
+    "third-party/Goldfarb_Optimizer/*.cc",
+
+    # "third-party/osqp/*.cpp"
+    # "third-party/osqp/*.c"
+
+    "third-party/JCQP/*.cpp",
+    "third-party/JCQP/*.c",
+            
+        ]),
     includes = [
         "legged-sim/include",
         "legged-sim/include/Controllers",
@@ -72,6 +89,7 @@ cc_library(
         "legged-sim/third-party/JCQP/amd/include",
         "legged-sim/lcm_types/cpp",
         "legged-sim/third-party/lcm/",
+        
     ],
     data = [
         ":gen_mujoco_gym_xml",

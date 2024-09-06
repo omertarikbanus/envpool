@@ -25,14 +25,15 @@
 #include "envpool/core/env.h"
 #include "envpool/mujoco/gym/mujoco_env.h"
 // #include <RobotRunner.h>
-#include <Utilities/Utilities_print.h>
-#include <Math/orientation_tools.h>
-#include <eigen3/Eigen/Dense>
-#include <RobotController.h>
-#include <EmbeddedController.hpp>
-#include "Utilities/PeriodicTask.h"
-#include <Utilities/RobotCommands.h>
-#include <RobotRunner.h>
+// #include <Utilities/Utilities_print.h>
+// #include <Math/orientation_tools.h>
+// #include <eigen3/Eigen/Dense>
+// #include <RobotController.h>
+// #include <legged-sim/include/Controllers/EmbeddedController.hpp>
+#include <Controllers/EmbeddedController.hpp>
+// #include "Utilities/PeriodicTask.h"
+// #include <Utilities/RobotCommands.h>
+// #include <RobotRunner.h>
 namespace mujoco_gym {
 
 class HumanoidEnvFns {
@@ -129,22 +130,27 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // step
     // myActuator myactuator;
     // PeriodicTaskManager taskManager;
-    SpiCommand _Command;
-    SpiData _Feedback;
-    VectorNavData _ImuData;
-    EmbeddedController* ctrl;
-  //   RobotRunner _robotRunner(ctrl,  0.002, "robot-control");
-  // // _robotRunner->driverCommand = &_GamepadCommand;
+    // SpiCommand _Command;
+    // SpiData _Feedback;
+    // VectorNavData _ImuData;
+    // RobotController* ctrl;
+    EmbeddedController asdasdasd;
+    // ctrl=&ectrl;
+
+    // RobotRunner _robotRunner(&ctrl,  x, name);
+
+
+  // _robotRunner->driverCommand = &_GamepadCommand;
   // _robotRunner._ImuData= &_ImuData;
   // _robotRunner._Feedback = &_Feedback;
   // _robotRunner._Command = &_Command;
   // _robotRunner->controlParameters = &_robotParams;
   // _robotRunner->initializeParameters();
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
-    Eigen::Vector3f rpy;
-    rpy.setZero();
-    rpy[0]=1.57;
-    Eigen::Matrix3f rotmat =ori::rpyToRotMat(rpy);
+    // Eigen::Vector3f rpy;
+    // rpy.setZero();
+    // rpy[0]=1.57;
+    // Eigen::Matrix3f rotmat =ori::rpyToRotMat(rpy);
     // pretty_print(rotmat, std::cout, "rotmat");
     // rotmat[0]
     // mjtNum act_final[17];

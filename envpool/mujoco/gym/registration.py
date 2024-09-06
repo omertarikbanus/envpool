@@ -42,6 +42,7 @@ gym_mujoco_envs = [
 
 for task, version, post_constraint, max_episode_steps in gym_mujoco_envs:
   extra_args = {}
+  print("task", task, version)
   if task in ["Ant", "Humanoid"] and version == "v3":
     extra_args["use_contact_force"] = True
   register(

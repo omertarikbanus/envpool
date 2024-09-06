@@ -25,3 +25,6 @@ tarik@aselsan:~/thesis_project/envpool$ ^C
 # lorem_ipsum: str = (
 #     files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')
 # )
+
+
+bazel run --config=debug //:setup -- bdist_wheel  > log.txt  | pip3 install bazel-bin/setup.runfiles/envpool/dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl --force-reinstall
