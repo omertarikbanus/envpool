@@ -61,23 +61,29 @@ cc_library(
         "gym/walker2d.h",
         ]),
     srcs = glob([  
-    "src/*.cpp" ,
-    "src/FSM/*.cpp" ,
-
-    "user/Embedded_Controller/*.cpp",
-    "third-party/ParamHandler/*.cpp",
-    "third-party/qpOASES/*.cpp",
-    "third-party/Goldfarb_Optimizer/*.cpp",
-    "third-party/Goldfarb_Optimizer/*.cc",
+    "legged-sim/src/**/*.cpp" ,
+    "legged-sim/src/FSM/*.cpp" ,
+    "legged-sim/src/*.cpp" ,
+    "legged-sim/user/Embedded_Controller/**/*.cpp",
+    "legged-sim/third-party/ParamHandler/**/*.cpp",
+    "legged-sim/third-party/qpOASES/**/*.cpp",
+    "legged-sim/third-party/Goldfarb_Optimizer/**/*.cpp",
+    "legged-sim/third-party/Goldfarb_Optimizer/**/*.cc",
+     "legged-sim/user/Embedded_Controller/*.cpp",
+    "legged-sim/third-party/ParamHandler/*.cpp",
+    "legged-sim/third-party/qpOASES/*.cpp",
+    "legged-sim/third-party/Goldfarb_Optimizer/*.cpp",
+    "legged-sim/third-party/Goldfarb_Optimizer/*.cc",
 
     # "third-party/osqp/*.cpp"
     # "third-party/osqp/*.c"
 
-    "third-party/JCQP/*.cpp",
-    "third-party/JCQP/*.c",
+    "legged-sim/third-party/JCQP/*.cpp",
+    "legged-sim/third-party/JCQP/*.c",
             
         ]),
     includes = [
+        "leggged-sim",
         "legged-sim/include",
         "legged-sim/include/Controllers",
         "legged-sim/third-party",
@@ -99,6 +105,7 @@ cc_library(
         "@mujoco//:mujoco_lib",
     
     ],
+    linkopts = ["-ltinyxml2"], 
 )
 
 pybind_extension(

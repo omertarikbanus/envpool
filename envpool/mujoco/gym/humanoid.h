@@ -20,20 +20,22 @@
 #include <algorithm>
 #include <limits>
 #include <memory>
+#include <iostream>
 #include <string>
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
 #include "envpool/mujoco/gym/mujoco_env.h"
-// #include <RobotRunner.h>
+#include <RobotRunner.h>
 // #include <Utilities/Utilities_print.h>
 // #include <Math/orientation_tools.h>
 // #include <eigen3/Eigen/Dense>
-// #include <RobotController.h>
+#include <RobotController.h>
 // #include <legged-sim/include/Controllers/EmbeddedController.hpp>
 #include <Controllers/EmbeddedController.hpp>
 // #include "Utilities/PeriodicTask.h"
-// #include <Utilities/RobotCommands.h>
-// #include <RobotRunner.h>
+#include <Utilities/RobotCommands.h>
+#include  <eigen3/Eigen/Dense>
+
 namespace mujoco_gym {
 
 class HumanoidEnvFns {
@@ -130,22 +132,27 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // step
     // myActuator myactuator;
     // PeriodicTaskManager taskManager;
-    // SpiCommand _Command;
-    // SpiData _Feedback;
-    // VectorNavData _ImuData;
-    // RobotController* ctrl;
-    EmbeddedController asdasdasd;
-    // ctrl=&ectrl;
+    SpiCommand _Command;
+    SpiData _Feedback;
+    VectorNavData _ImuData;
+    GamepadCommand _GamepadCommand;
+    RobotController* ctrl;
+    EmbeddedController robot_ctrl;
+    ctrl = & robot_ctrl;
+    Eigen::Vector2f x;
+    x(0)=1;
+    ctrl=&robot_ctrl;
+    std::string name("name");
+  
+    RobotRunner _robotRunner(ctrl,float(0.002), name);
 
-    // RobotRunner _robotRunner(&ctrl,  x, name);
 
-
-  // _robotRunner->driverCommand = &_GamepadCommand;
+  // _robotRunner.driverCommand = &_GamepadCommand;
   // _robotRunner._ImuData= &_ImuData;
   // _robotRunner._Feedback = &_Feedback;
   // _robotRunner._Command = &_Command;
   // _robotRunner->controlParameters = &_robotParams;
-  // _robotRunner->initializeParameters();
+  // _robotRunner.initializeParameters();
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
     // Eigen::Vector3f rpy;
     // rpy.setZero();
