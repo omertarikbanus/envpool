@@ -137,23 +137,32 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     VectorNavData _ImuData;
     GamepadCommand _GamepadCommand;
     RobotController* ctrl;
+    RobotControlParameters _robotParams;
     EmbeddedController robot_ctrl;
     ctrl = & robot_ctrl;
     Eigen::Vector2f x;
     x(0)=1;
     ctrl=&robot_ctrl;
     std::string name("name");
+    std::vector<double> vv;
   
     RobotRunner _robotRunner(ctrl,float(0.002), name);
 
 
-  // _robotRunner.driverCommand = &_GamepadCommand;
-  // _robotRunner._ImuData= &_ImuData;
-  // _robotRunner._Feedback = &_Feedback;
-  // _robotRunner._Command = &_Command;
-  // _robotRunner->controlParameters = &_robotParams;
-  // _robotRunner.initializeParameters();
-    mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
+  _robotRunner.driverCommand = &_GamepadCommand;
+  _robotRunner._ImuData= &_ImuData;
+  _robotRunner._Feedback = &_Feedback;
+  _robotRunner._Command = &_Command;
+  _robotRunner.controlParameters = &_robotParams;
+  _robotRunner.initializeParameters();
+  printf("end\n");
+  _robotRunner.init();
+  _robotRunner.run();
+  // mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
+  // mjtNum* act;
+  mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
+
+  printf("got act");
     // Eigen::Vector3f rpy;
     // rpy.setZero();
     // rpy[0]=1.57;

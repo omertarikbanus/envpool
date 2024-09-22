@@ -15,14 +15,14 @@
 import gym
 import numpy as np
 from packaging import version
-
+import time
 import envpool
 
 is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 
 def gym_sync_step() -> None:
-  num_envs = 1024
+  num_envs = 2
   print(envpool.list_all_envs())
   env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
   print(f"env.action_space.shape[0] {env.action_space.shape[0]}")
@@ -40,6 +40,7 @@ def gym_sync_step() -> None:
     print(f"action.shape { action.shape}")
 
     result = env.step(action)
+    # time.sleep(0.01)
     print(f"obs shape {obs.shape}")
     if is_legacy_gym:
       obs, rew, done, info = env.step(action)
@@ -137,6 +138,11 @@ def async_step() -> None:
 
 
 if __name__ == "__main__":
+  start_time = time.time()
   gym_sync_step()
+  end_time = time.time()
+  elapsed_time = end_time - start_time
+  print(f"Function {gym_sync_step.__name__} took {elapsed_time:.2f} seconds to run.")
+
   # dm_sync_step()
   # async_step()

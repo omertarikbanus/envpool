@@ -69,7 +69,7 @@ cc_library(
     "legged-sim/third-party/qpOASES/**/*.cpp",
     "legged-sim/third-party/Goldfarb_Optimizer/**/*.cpp",
     "legged-sim/third-party/Goldfarb_Optimizer/**/*.cc",
-     "legged-sim/user/Embedded_Controller/*.cpp",
+    "legged-sim/user/Embedded_Controller/*.cpp",
     "legged-sim/third-party/ParamHandler/*.cpp",
     "legged-sim/third-party/qpOASES/*.cpp",
     "legged-sim/third-party/Goldfarb_Optimizer/*.cpp",
