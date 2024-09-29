@@ -34,7 +34,7 @@ def gym_sync_step() -> None:
     obs, _ = env.reset()  # reset all envs
   print(f"obs shape {obs.shape}")
   # assert obs.shape == (num_envs, 4, 84, 84)
-  for _ in range(1):
+  for _ in range(200):
    
 
 

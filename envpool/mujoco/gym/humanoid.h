@@ -96,6 +96,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 	RobotControlParameters _robotParams;
 	EmbeddedController robot_ctrl;
 	std::ofstream outputFile;
+  PeriodicTaskManager taskManager;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -122,7 +123,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     
     ctrl = &robot_ctrl;
 
-    _robotRunner = new RobotRunner(ctrl, float(0.002), "RR");
+    _robotRunner = new RobotRunner(ctrl, &taskManager, 0.002, "robot-control");
     _robotRunner->driverCommand = &_GamepadCommand;
     _robotRunner->_ImuData = &_ImuData;
     _robotRunner->_Feedback = &_Feedback;
