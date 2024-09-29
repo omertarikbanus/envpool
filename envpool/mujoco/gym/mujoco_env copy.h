@@ -31,6 +31,10 @@ class MujocoEnv {
  protected:
   mjModel* model_;
   mjData* data_;
+  mjvOption opt_;
+  mjvCamera cam_;  
+  mjvScene scn_;
+  mjrRect viewport = {0, 0, 0, 0};
   mjtNum *init_qpos_, *init_qvel_;
 #ifdef ENVPOOL_TEST
   mjtNum *qpos0_, *qvel0_;  // for align check
@@ -56,17 +60,9 @@ class MujocoEnv {
         max_episode_steps_(max_episode_steps),
         elapsed_step_(max_episode_steps + 1) 
         {
-    printf("constructing mujocoenv object\n");
-      std::cout<<error_.begin()<<std::endl;
-      printf("printed error\n");
-    int kSideSign_[4]={-1,1,-1,1};
-     model_->opt.timestep=0.002;
-    for(int leg=0; leg<4; leg++){
-       data_->qpos[(leg)*3+  0  +7]=1*(M_PI/180)*kSideSign_[leg];     // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
-       data_->qpos[(leg)*3+  1   +7]=-90*(M_PI/180);//*kDirSign_[leg];
-       data_->qpos[(leg)*3+  2  +7]=173*(M_PI/180);//*kDirSign_[leg];
-    }
-
+          printf("MujocoEnv Contructor\n");
+          std::cout<<error_.begin()<<std::endl;
+          printf("endconstructor");
     std::memcpy(init_qpos_, data_->qpos, sizeof(mjtNum) * model_->nq);
     std::memcpy(init_qvel_, data_->qvel, sizeof(mjtNum) * model_->nv);
   }
@@ -95,7 +91,6 @@ class MujocoEnv {
   void MujocoStep(const mjtNum* action) {
     for (int i = 0; i < model_->nu; ++i) {
       data_->ctrl[i] = action[i];
-      // std::cout<< action[i]<<std::endl;
     }
     for (int i = 0; i < frame_skip_; ++i) {
       mj_step(model_, data_);
@@ -103,7 +98,16 @@ class MujocoEnv {
     if (post_constraint_) {
       mj_rnePostConstraint(model_, data_);
     }
-    mj_step(model_, data_);
+  }
+void MujocoSetScene()
+
+{
+  
+}
+  void MujocoUpdateScene(){
+
+      mjv_updateScene(model_, data_, &opt_, NULL, &cam_, mjCAT_ALL, &scn_);
+
   }
 };
 

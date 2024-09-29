@@ -23,7 +23,7 @@ gym_mujoco_envs = [
   ("Hopper", "v3", False, 1000),
   ("Hopper", "v4", True, 1000),
   ("Humanoid", "v3", False, 1000),
-  ("Humanoid", "v4", True, 1000),
+  ("Humanoid", "v4", True, 10000),
   ("HumanoidStandup", "v2", False, 1000),
   ("HumanoidStandup", "v4", True, 1000),
   ("InvertedDoublePendulum", "v2", False, 1000),
@@ -42,7 +42,6 @@ gym_mujoco_envs = [
 
 for task, version, post_constraint, max_episode_steps in gym_mujoco_envs:
   extra_args = {}
-  print("task", task, version)
   if task in ["Ant", "Humanoid"] and version == "v3":
     extra_args["use_contact_force"] = True
   register(

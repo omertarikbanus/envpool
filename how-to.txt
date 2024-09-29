@@ -30,3 +30,27 @@ tarik@aselsan:~/thesis_project/envpool$ ^C
 bazel run --config=debug //:setup -- bdist_wheel  > log.txt  
 
 pip3 install bazel-bin/setup.runfiles/envpool/dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl --force-reinstall
+
+cc_library(
+  name = "osqp",
+  hdrs = glob([
+    "legged-sim/third-party/osqp/**/*.h",  # Header file
+  ]),
+  srcs = glob([
+    "legged-sim/third-party/osqp/src/**/*.c",  # Adjust according to source files
+    "legged-sim/third-party/osqp/src/**/*.cpp",
+  ]),
+  includes = [
+    #         "legged-sim/third-party/osqp/include",
+    "legged-sim/third-party/osqp/tests",
+    "legged-sim/third-party/osqp/lin_sys",
+    "legged-sim/third-party/osqp/lin_sys/direct/qdldl",
+    "legged-sim/third-party/osqp/lin_sys/direct/pardiso",
+    "legged-sim/third-party/osqp/lin_sys/direct/qdldl/qdldl_sources/include",
+    "legged-sim/third-party/osqp/include",
+  ],
+#   copts = [
+#     "-Ilegged-sim/third-party/osqp/include",  # Add this to ensure osqp.h is found
+#   ],
+#   linkopts = ["legged-sim/build/third-party/osqp/out/libosqp.so"],
+)

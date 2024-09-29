@@ -37,8 +37,81 @@ genrule(
     outs = ["libmujoco.so.2.2.1"],
     cmd = "cp $< $@",
 )
+# cc_import(
+#   name = "qpOASES",
+#   hdrs = glob(["legged-sim/third-party/qpOASES/include/qpOASES.hpp"]),
+#   shared_library = "legged-sim/build/third-party/qpOASES/libs/libqpOASES.so",
+# )
+# cc_import(
+#   name = "ParamHandler",
+#   hdrs = glob([
+#     "envpool/mujoco/legged-sim/third-party/ParamHandler/**/*.hpp",
+#     "envpool/mujoco/legged-sim/third-party/ParamHandler/**/*.h",
+#   ]),
+#   shared_library = "legged-sim/build/third-party/ParamHandler/libdynacore_param_handler.so",
+# )
 
+# cc_import(
+#   name = "JCQP",
+#   hdrs = glob([
+#     "envpool/mujoco/legged-sim/third-party/JCQP/**/*.hpp",
+#     "envpool/mujoco/legged-sim/third-party/JCQP/**/*.h",
+#   ]),
+#   shared_library = "legged-sim/build/third-party/JCQP/libJCQP.so",
+# )
 
+# # cc_import(
+# #   name = "osqp",
+# #   hdrs = glob([
+# #     "legged-sim/third-party/osqp/**/*.hpp",
+# #     "legged-sim/third-party/osqp/include/osqp.h",
+# #   ]),
+# #   includes = [
+# #         "legged-sim/third-party/osqp/include",
+# #         "legged-sim/third-party/osqp/tests",
+# #         "legged-sim/third-party/osqp/lin_sys",
+# #         "legged-sim/third-party/osqp/lin_sys/direct/qdldl/qdldl_sources/include",
+# #         ],
+# #   shared_library = "legged-sim/build/third-party/osqp/out/libosqp.so",
+# # )
+# cc_import(
+#   name = "osqp",
+#   hdrs = glob([
+#     "legged-sim/third-party/osqp/include/osqp.h",  # Specific header file
+#     "legged-sim/third-party/osqp/**/*.h",
+#   ]),
+#   includes = [
+#     "legged-sim/third-party/osqp/tests",
+#     "legged-sim/third-party/osqp/lin_sys",
+#     "legged-sim/third-party/osqp/lin_sys/direct/qdldl",
+#     "legged-sim/third-party/osqp/lin_sys/direct/pardiso",
+#     "legged-sim/third-party/osqp/lin_sys/direct/qdldl/qdldl_sources/include",
+#     "legged-sim/third-party/osqp/include",
+#   ],
+#   shared_library = "legged-sim/build/third-party/osqp/out/libosqp.so",
+# )
+# cc_import(
+#   name = "JCQP",
+#   hdrs = glob([
+#         "legged-sim/third-party/JCQP",
+#         "legged-sim/third-party/JCQP/amd/include",
+#   ]),
+#   includes = [
+#         "legged-sim/third-party/JCQP",
+#         "legged-sim/third-party/JCQP/amd/include",
+#   ],
+#   shared_library = "legged-sim/build/third-party/JCQP/libJCQP.so",
+# )
+# cc_import(
+#   name = "qpOASES",
+#   hdrs = glob([
+#         "legged-sim/third-party/qpOASES/include",
+#   ]),
+#   includes = [
+#         "legged-sim/third-party/qpOASES/include",
+#   ],
+#   shared_library = "envpool/mujoco/legged-sim/build/third-party/qpOASES/libs/libqpOASES.so",
+# )
 cc_library(
     name = "mujoco_gym_env",
     hdrs = glob([
@@ -61,10 +134,14 @@ cc_library(
         "gym/walker2d.h",
         ]),
     srcs = glob([  
-    "legged-sim/src/**/*.cpp" ,
-    "legged-sim/src/FSM/*.cpp" ,
-    "legged-sim/src/*.cpp" ,
-    "legged-sim/user/Embedded_Controller/**/*.cpp",
+    "legged-sim/src/**/*.cpp",
+    "legged-sim/src/FSM/*.cpp",
+    "legged-sim/src/*.cpp",
+    "legged-sim/src/Utilities/*.cpp",
+    "legged-sim/third-party/ParamHandler/**/*.cpp",
+    "legged-sim/third-party/qpOASES/**/*.cpp",
+    "legged-sim/third-party/Goldfarb_Optimizer/**/*.cpp",
+    "legged-sim/third-party/Goldfarb_Optimizer/**/*.cc",
     "legged-sim/third-party/ParamHandler/**/*.cpp",
     "legged-sim/third-party/qpOASES/**/*.cpp",
     "legged-sim/third-party/Goldfarb_Optimizer/**/*.cpp",
@@ -83,7 +160,7 @@ cc_library(
             
         ]),
     includes = [
-        "leggged-sim",
+        "legged-sim",
         "legged-sim/include",
         "legged-sim/include/Controllers",
         "legged-sim/third-party",
@@ -103,7 +180,7 @@ cc_library(
     deps = [
         "//envpool/core:async_envpool",
         "@mujoco//:mujoco_lib",
-    
+
     ],
     linkopts = ["-ltinyxml2"], 
 )
