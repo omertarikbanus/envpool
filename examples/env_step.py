@@ -34,7 +34,7 @@ def gym_sync_step() -> None:
     obs, _ = env.reset()  # reset all envs
   print(f"obs shape {obs.shape}")
   # assert obs.shape == (num_envs, 4, 84, 84)
-  for _ in range(200):
+  for _ in range(12000):
    
 
 
@@ -69,7 +69,7 @@ def gym_sync_step() -> None:
 
 
 def dm_sync_step() -> None:
-  num_envs = 4
+  num_envs = 128
   env = envpool.make_dm("Pong-v5", num_envs=num_envs)
   action_num = env.action_spec().num_values
   ts = env.reset()

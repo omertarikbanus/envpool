@@ -139,7 +139,8 @@ cc_library(
     "legged-sim/src/*.cpp",
     "legged-sim/src/Utilities/*.cpp",
     "legged-sim/third-party/ParamHandler/**/*.cpp",
-    "legged-sim/third-party/qpOASES/**/*.cpp",
+    "legged-sim/third-party/qpOASES/**/*.hpp",
+    "legged-sim/third-party/qpOASES/**/*.ipp",
     "legged-sim/third-party/Goldfarb_Optimizer/**/*.cpp",
     "legged-sim/third-party/Goldfarb_Optimizer/**/*.cc",
     "legged-sim/third-party/ParamHandler/**/*.cpp",
@@ -151,21 +152,31 @@ cc_library(
     "legged-sim/third-party/qpOASES/*.cpp",
     "legged-sim/third-party/Goldfarb_Optimizer/*.cpp",
     "legged-sim/third-party/Goldfarb_Optimizer/*.cc",
-
-    # "third-party/osqp/*.cpp"
-    # "third-party/osqp/*.c"
-
-    "legged-sim/third-party/JCQP/*.cpp",
-    "legged-sim/third-party/JCQP/*.c",
+    # "legged-sim/third-party/osqp/**/*.cpp",
+    # "legged-sim/third-party/osqp/**/*.c",
+    # "legged-sim/third-party/osqp/**/*.h",
+    "legged-sim/third-party/JCQP/**/*.cpp",
+    "legged-sim/third-party/JCQP/**/*.c",
             
         ]),
     includes = [
         "legged-sim",
         "legged-sim/include",
         "legged-sim/include/Controllers",
+        "legged-sim/include/convexMPC",
         "legged-sim/third-party",
-        "legged-sim/third-party/osqp/include",
+        # "legged-sim/third-party/osqp",
+        # "legged-sim/third-party/osqp/include",
+        # "legged-sim/third-party/osqp/lin_sys",
+        # "legged-sim/third-party/osqp/lin_sys/direct",
+        # "legged-sim/third-party/osqp/lin_sys/direct/qdldl",
+        # "legged-sim/third-party/osqp/tests",
+        # "legged-sim/third-party/osqp/lin_sys/direct/qdldl/amd/include",
+        # "legged-sim/third-party/osqp/lin_sys/direct/qdldl/qdldl_sources/include",
+        # "legged-sim/third-party/osqp/lin_sys/direct/pardiso",
+        "legged-sim/third-party/qpOASES/include/qpOASES",
         "legged-sim/third-party/qpOASES/include",
+        "legged-sim/third-party/qpOASES",
         "legged-sim/third-party/GoldFarb_Optimizer",
         "legged-sim/third-party/ParamHandler",
         "legged-sim/third-party/JCQP",
@@ -182,9 +193,10 @@ cc_library(
         "@mujoco//:mujoco_lib",
 
     ],
-    linkopts = ["-ltinyxml2"], 
+    linkopts = ["-ltinyxml2 -lpthread  -usr/local/lib/libosqp.so -usr/local/lib/libqdldl.so -usr/local/lib/libqpOASES.so "], 
+    copts = ["-O3 -ggdb -w  -D__NO_COPYRIGHT__ -Wno-error  -Wall -pedantic -Wfloat-equal -Wshadow -DLINUX -finline-functions"],
 )
-
+# -no-pie 
 pybind_extension(
     name = "mujoco_gym_envpool",
     srcs = [

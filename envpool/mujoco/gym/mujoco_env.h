@@ -51,7 +51,7 @@ class MujocoEnv {
         qpos0_(new mjtNum[model_->nq]),
         qvel0_(new mjtNum[model_->nv]),
 #endif
-        frame_skip_(frame_skip),
+        frame_skip_(1),
         post_constraint_(post_constraint),
         max_episode_steps_(max_episode_steps),
         elapsed_step_(max_episode_steps + 1) 

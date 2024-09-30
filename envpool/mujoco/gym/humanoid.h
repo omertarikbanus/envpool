@@ -45,10 +45,10 @@ class HumanoidEnvFns {
     return MakeDict(
         "frame_skip"_.Bind(5), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1.25),
-        "terminate_when_unhealthy"_.Bind(false),
+        "terminate_when_unhealthy"_.Bind(true),
         "exclude_current_positions_from_observation"_.Bind(true),
-        "ctrl_cost_weight"_.Bind(0.1), "healthy_reward"_.Bind(5.0),
-        "healthy_z_min"_.Bind(1.0), "healthy_z_max"_.Bind(2.0),
+        "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
+        "healthy_z_min"_.Bind(0.10), "healthy_z_max"_.Bind(0.45),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "reset_noise_scale"_.Bind(0));
   }
@@ -74,7 +74,7 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 12}, {-0.4, 0.4})));
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 12}, {-40, 40})));
   }
 };
 
