@@ -56,16 +56,11 @@ class MujocoEnv {
         max_episode_steps_(max_episode_steps),
         elapsed_step_(max_episode_steps + 1) 
         {
-    printf("constructing mujocoenv object\n");
-      std::cout<<error_.begin()<<std::endl;
-      printf("printed error\n");
-    int kSideSign_[4]={-1,1,-1,1};
-     model_->opt.timestep=0.002;
-    for(int leg=0; leg<4; leg++){
-       data_->qpos[(leg)*3+  0  +7]=1*(M_PI/180)*kSideSign_[leg];     // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
-       data_->qpos[(leg)*3+  1   +7]=-90*(M_PI/180);//*kDirSign_[leg];
-       data_->qpos[(leg)*3+  2  +7]=173*(M_PI/180);//*kDirSign_[leg];
-    }
+      // printf("constructing mujocoenv object\n");
+      // std::cout<<error_.begin()<<std::endl;
+      // printf("printed error\n");
+
+
 
     std::memcpy(init_qpos_, data_->qpos, sizeof(mjtNum) * model_->nq);
     std::memcpy(init_qvel_, data_->qvel, sizeof(mjtNum) * model_->nv);

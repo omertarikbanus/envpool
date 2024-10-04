@@ -48,7 +48,7 @@ class HumanoidEnvFns {
         "terminate_when_unhealthy"_.Bind(true),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
-        "healthy_z_min"_.Bind(0.10), "healthy_z_max"_.Bind(0.45),
+        "healthy_z_min"_.Bind(0.05), "healthy_z_max"_.Bind(0.95),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "reset_noise_scale"_.Bind(0));
   }
@@ -57,7 +57,7 @@ class HumanoidEnvFns {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
     return MakeDict(
-        "obs"_.Bind(Spec<mjtNum>({383}, {-inf, inf})),
+        "obs"_.Bind(Spec<mjtNum>({361}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
         "info:qpos0"_.Bind(Spec<mjtNum>({24})),
         "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -88,22 +88,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 	mjtNum contact_cost_weight_, contact_cost_max_;
 	std::uniform_real_distribution<> dist_;
 	RobotRunner* _robotRunner;
-	SpiCommand _Command;
-	SpiData _Feedback;
-	VectorNavData _ImuData;
-	GamepadCommand _GamepadCommand;
+	SpiCommand* _Command;
+	SpiData* _Feedback;
+	VectorNavData* _ImuData;
+	GamepadCommand* _GamepadCommand;
 	RobotController* ctrl;
-	RobotControlParameters _robotParams;
-	EmbeddedController robot_ctrl;
+	RobotControlParameters* _robotParams;
+	// EmbeddedController robot_ctrl;
 	std::ofstream outputFile;
-  PeriodicTaskManager taskManager;
+  PeriodicTaskManager* taskManager;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
       : Env<HumanoidEnvSpec>(spec, env_id),
         // MujocoEnv(spec.config["base_path"_] +
         // "/mujoco/assets_gym/humanoid.xml",
-        MujocoEnv(std::string("/home/banus/thesis-project/legged-sim/resource/"
+        MujocoEnv(std::string("/home/tarik/thesis-project/legged-sim/resource/"
                               "opy_v05/opy_v05.xml"),
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
                   spec.config["max_episode_steps"_]),
@@ -119,33 +119,47 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
-    printf("Constructor Begin\n");
-    
+    EmbeddedController robot_ctrl; 
+    _Command = new SpiCommand();
+    _Feedback = new SpiData();
+    _ImuData = new VectorNavData();
+    _GamepadCommand = new GamepadCommand();
+    _robotParams = new RobotControlParameters();
+    taskManager = new PeriodicTaskManager();
+
     ctrl = &robot_ctrl;
 
-    _robotRunner = new RobotRunner(ctrl, &taskManager, 0.002, "robot-control");
-    _robotRunner->driverCommand = &_GamepadCommand;
-    _robotRunner->_ImuData = &_ImuData;
-    _robotRunner->_Feedback = &_Feedback;
-    _robotRunner->_Command = &_Command;
-    _robotRunner->controlParameters = &_robotParams;
+    _robotRunner = new RobotRunner(ctrl, taskManager, 0.002, "robot-control");
+    _robotRunner->driverCommand = _GamepadCommand;
+    _robotRunner->_ImuData = _ImuData;
+    _robotRunner->_Feedback = _Feedback;
+    _robotRunner->_Command = _Command;
+    _robotRunner->controlParameters = _robotParams;
     _robotRunner->initializeParameters();
     _robotRunner->init();
     std::string fname;
-    fname = "logs/" + std::to_string(env_id) + "_log.csv";
+    fname = "logs/" + std::to_string(env_id_) + "_log.csv";
     outputFile.open(fname.c_str());
-    //   outputFile << "q" << std::endl;
 
-    printf("Constructor END\n");
+
   }
 
   void MujocoResetModel() override {
+    printf("mjResetModel\n");
     for (int i = 0; i < model_->nq; ++i) {
       data_->qpos[i] = init_qpos_[i] + dist_(gen_);
     }
     for (int i = 0; i < model_->nv; ++i) {
       data_->qvel[i] = init_qvel_[i] + dist_(gen_);
     }
+    int kSideSign_[4]={-1,1,-1,1};
+    model_->opt.timestep=0.002;
+    for(int leg=0; leg<4; leg++){
+       data_->qpos[(leg)*3+  0  +7]=1*(M_PI/180)*kSideSign_[leg];     // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
+       data_->qpos[(leg)*3+  1   +7]=-90*(M_PI/180);//*kDirSign_[leg];
+       data_->qpos[(leg)*3+  2  +7]=173*(M_PI/180);//*kDirSign_[leg];
+    }
+
 #ifdef ENVPOOL_TEST
     std::memcpy(qpos0_, data_->qpos, sizeof(mjtNum) * model_->nq);
     std::memcpy(qvel0_, data_->qvel, sizeof(mjtNum) * model_->nv);
@@ -155,63 +169,61 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   bool IsDone() override { return done_; }
 
   void Reset() override {
-    std::cout<<"RESET"<<std::endl;
+for(int i=0;i<3; i++)
+    printf("Reset\n");
+    MujocoReset();
+
+    _Command = new SpiCommand();
+    _Feedback = new SpiData();
+    _ImuData = new VectorNavData();
+    _GamepadCommand = new GamepadCommand();
+        _robotParams = new RobotControlParameters();
+      taskManager = new PeriodicTaskManager();
+
+
+
+    ctrl = new EmbeddedController();
+
+    _robotRunner = new RobotRunner(ctrl, taskManager, 0.002, "robot-control");
+    _robotRunner->driverCommand = _GamepadCommand;
+    _robotRunner->_ImuData = _ImuData;
+    _robotRunner->_Feedback = _Feedback;
+    _robotRunner->_Command = _Command;
+    _robotRunner->controlParameters = _robotParams;
+    _robotRunner->initializeParameters();
+    _robotRunner->init();
     done_ = false;
     elapsed_step_ = 0;
-    MujocoReset();
-    WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+   
   }
 
   void Step(const Action& action) override {
     // step
-    // myActuator myactuator;
-    // PeriodicTaskManager taskManager;
-	printf("beginning of step\n\n");
+
+
     
 	_robotRunner->run();
-	printf("rr ends here\n");
 
 
-  // mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
-  // mjtNum* act;
   mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
   mjtNum motor_commands[12];
    for(int leg=0; leg<4; leg++){
 
-        motor_commands[leg*3+  0    + 0 ] =_Command.tau_abad_ff[leg]+_Command.kp_abad[leg]*(_Command.q_des_abad[leg] - _Feedback.q_abad[leg]) +
-        _Command.kd_abad[leg]* (_Command.qd_des_abad[leg] - _Feedback.qd_abad[leg]);    //Torque
+        motor_commands[leg*3+  0    + 0 ] =_Command->tau_abad_ff[leg]+_Command->kp_abad[leg]*(_Command->q_des_abad[leg] - _Feedback->q_abad[leg]) +
+        _Command->kd_abad[leg]* (_Command->qd_des_abad[leg] - _Feedback->qd_abad[leg]);    //Torque
 
-        motor_commands[leg*3+  1    + 0 ] =_Command.tau_hip_ff[leg]+_Command.kp_hip[leg]* (_Command.q_des_hip[leg] - _Feedback.q_hip[leg]) +
-        _Command.kd_hip[leg]* (_Command.qd_des_hip[leg] - _Feedback.qd_hip[leg]) ;   //Torque
+        motor_commands[leg*3+  1    + 0 ] =_Command->tau_hip_ff[leg]+_Command->kp_hip[leg]* (_Command->q_des_hip[leg] - _Feedback->q_hip[leg]) +
+        _Command->kd_hip[leg]* (_Command->qd_des_hip[leg] - _Feedback->qd_hip[leg]) ;   //Torque
 
-        motor_commands[leg*3+  2    + 0 ] =_Command.tau_knee_ff[leg]+_Command.kp_knee[leg]* (_Command.q_des_knee[leg] - _Feedback.q_knee[leg]) +
-        _Command.kd_knee[leg]* (_Command.qd_des_knee[leg] - _Feedback.qd_knee[leg]) ;    //Torque
+        motor_commands[leg*3+  2    + 0 ] =_Command->tau_knee_ff[leg]+_Command->kp_knee[leg]* (_Command->q_des_knee[leg] - _Feedback->q_knee[leg]) +
+        _Command->kd_knee[leg]* (_Command->qd_des_knee[leg] - _Feedback->qd_knee[leg]) ;    //Torque
     }
-    // act=motor_commands;
-    // for(int leg=0; leg<4; leg++){
-        
-    //     motor_commands[leg*3+0]=0;
-    //     motor_commands[leg*3+1]=0;
-    //     motor_commands[leg*3+2]=0;
-    //     }
-    printf("set motors comds\n");
-    // act=motor_commands;
-    // Eigen::Vector3f rpy;
-    // rpy.setZero();
-    // rpy[0]=1.57;
-    // Eigen::Matrix3f rotmat =ori::rpyToRotMat(rpy);
-    // pretty_print(rotmat, std::cout, "rotmat");
-    // rotmat[0]
-    // mjtNum act_final[17];
-    // myactuator.run(17);
+ 
     
     const auto& before = GetMassCenter();
     
     MujocoStep(motor_commands);
-    printf("mujoco step end\n");
-
     const auto& after = GetMassCenter();
-    printf("befor %f\n", before);
 
     // ctrl_cost
     mjtNum ctrl_cost = 0.0;
@@ -268,33 +280,27 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                   mjtNum healthy_reward) {
     State state = Allocate();
     state["reward"_] = reward;
-    int obs_count=0;
     mjtNum* obs = static_cast<mjtNum*>(state["obs"_].Data());
     for (int i = no_pos_ ? 2 : 0; i < model_->nq; ++i) {
       *(obs++) = data_->qpos[i];
-      obs_count++;
     }
     for (int i = 0; i < model_->nv; ++i) {
       *(obs++) = data_->qvel[i];
-      obs_count++;
     }
     for (int i = 0; i < 10 * model_->nbody; ++i) {
       *(obs++) = data_->cinert[i];
-      obs_count++;
     }
     for (int i = 0; i < 6 * model_->nbody; ++i) {
       *(obs++) = data_->cvel[i];
-      obs_count++;
     }
     for (int i = 0; i < model_->nv; ++i) {
       *(obs++) = data_->qfrc_actuator[i];
-      obs_count++;
     }
     for (int i = 0; i < 6 * model_->nbody; ++i) {
       *(obs++) = data_->cfrc_ext[i];
-      obs_count++;
     }
-    printf("obs count %d\n", obs_count);
+    //quadruped obs count 361
+
     // info
     state["info:reward_linvel"_] = xv * forward_reward_weight_;
     state["info:reward_quadctrl"_] = -ctrl_cost;
@@ -306,49 +312,51 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         std::sqrt(x_after * x_after + y_after * y_after);
     state["info:x_velocity"_] = xv;
     state["info:y_velocity"_] = yv;
+
     for(int leg=0; leg<4; leg++){
-      _Feedback.q_abad [leg]  =  data_->qpos[(leg)*3+    0	+7];  // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
-      _Feedback.q_hip  [leg]  =  data_->qpos[(leg)*3+    1	+7];
-      _Feedback.q_knee [leg]  =  data_->qpos[(leg)*3+    2	+7];
-      _Feedback.qd_abad[leg]  =  data_->qvel[(leg)*3+    0	+6];
-      _Feedback.qd_hip [leg]  =  data_->qvel[(leg)*3+    1	+6];
-      _Feedback.qd_knee[leg]  =  data_->qvel[(leg)*3+    2	+6];
+      _Feedback->q_abad [leg]  =  data_->qpos[(leg)*3+    0	+7];  // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
+      _Feedback->q_hip  [leg]  =  data_->qpos[(leg)*3+    1	+7];
+      _Feedback->q_knee [leg]  =  data_->qpos[(leg)*3+    2	+7];
+      _Feedback->qd_abad[leg]  =  data_->qvel[(leg)*3+    0	+6];
+      _Feedback->qd_hip [leg]  =  data_->qvel[(leg)*3+    1	+6];
+      _Feedback->qd_knee[leg]  =  data_->qvel[(leg)*3+    2	+6];
     }
-    _ImuData.acc_x = data_->sensordata[0];
-    _ImuData.acc_y = data_->sensordata[1];
-    _ImuData.acc_z = data_->sensordata[2];
+    _ImuData->acc_x = data_->sensordata[0];
+    _ImuData->acc_y = data_->sensordata[1];
+    _ImuData->acc_z = data_->sensordata[2];
 
-    _ImuData.accelerometer[0] = data_->sensordata[0];
-    _ImuData.accelerometer[1] = data_->sensordata[1];
-    _ImuData.accelerometer[2] = data_->sensordata[2];
+    _ImuData->accelerometer[0] = data_->sensordata[0];
+    _ImuData->accelerometer[1] = data_->sensordata[1];
+    _ImuData->accelerometer[2] = data_->sensordata[2];
 
-    _ImuData.heave = data_->qvel[0] ;
-    _ImuData.heave_dt = data_->qvel[1] ;
-    _ImuData.heave_ddt = data_->qvel[2] ;
+    _ImuData->heave = data_->qvel[0] ;
+    _ImuData->heave_dt = data_->qvel[1] ;
+    _ImuData->heave_ddt = data_->qvel[2] ;
 
 
-    _ImuData.gyr_x = data_->qvel[3];
-    _ImuData.gyr_y = data_->qvel[4];
-    _ImuData.gyr_z = data_->qvel[5];
+    _ImuData->gyr_x = data_->qvel[3];
+    _ImuData->gyr_y = data_->qvel[4];
+    _ImuData->gyr_z = data_->qvel[5];
 
-    _ImuData.gyro[0] = data_->qvel[3];
-    _ImuData.gyro[1] = data_->qvel[4];
-    _ImuData.gyro[2] = data_->qvel[5];
+    _ImuData->gyro[0] = data_->qvel[3];
+    _ImuData->gyro[1] = data_->qvel[4];
+    _ImuData->gyro[2] = data_->qvel[5];
 
-    _ImuData.quat[0] = data_->qpos[3];
-    _ImuData.quat[1] = data_->qpos[4];
-    _ImuData.quat[2] = data_->qpos[5];
-    _ImuData.quat[3] = data_->qpos[6];
+    _ImuData->quat[0] = data_->qpos[3];
+    _ImuData->quat[1] = data_->qpos[4];
+    _ImuData->quat[2] = data_->qpos[5];
+    _ImuData->quat[3] = data_->qpos[6];
 
-    _ImuData.pos_x = data_->qpos[0];
-    _ImuData.pos_y = data_->qpos[1];
-    _ImuData.pos_z = data_->qpos[2];
-    printf("body pos\n\n");
+    _ImuData->pos_x = data_->qpos[0];
+    _ImuData->pos_y = data_->qpos[1];
+    _ImuData->pos_z = data_->qpos[2];
+
+    //write to file;
     for (int i=0; i<19; i++) 
-		  outputFile<<data_->qpos[i]<<","; 
-    printf("outputFile\n\n");
-	outputFile<<std::endl;
-  // printf("outputFile\n\n");
+    {
+      outputFile<<data_->qpos[i]<<","; 
+    }
+	  outputFile<<std::endl;
 
 
 
