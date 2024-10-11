@@ -180,7 +180,8 @@ for(int i=0;i<3; i++)
         _robotParams = new RobotControlParameters();
       taskManager = new PeriodicTaskManager();
 
-
+    WriteState(0, 0, 0, 0, 0, 0, 0,
+               0);
 
     ctrl = new EmbeddedController();
 
