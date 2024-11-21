@@ -98,7 +98,7 @@ class MujocoEnv {
     if (post_constraint_) {
       mj_rnePostConstraint(model_, data_);
     }
-    mj_step(model_, data_);
+    // mj_step(model_, data_);
   }
 };
 

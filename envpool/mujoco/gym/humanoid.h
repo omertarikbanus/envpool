@@ -48,7 +48,7 @@ class HumanoidEnvFns {
         "terminate_when_unhealthy"_.Bind(true),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
-        "healthy_z_min"_.Bind(0.05), "healthy_z_max"_.Bind(0.95),
+        "healthy_z_min"_.Bind(0.05), "healthy_z_max"_.Bind(0.45),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "reset_noise_scale"_.Bind(0));
   }
@@ -103,7 +103,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       : Env<HumanoidEnvSpec>(spec, env_id),
         // MujocoEnv(spec.config["base_path"_] +
         // "/mujoco/assets_gym/humanoid.xml",
-        MujocoEnv(std::string("/home/tarik/thesis-project/legged-sim/resource/"
+        MujocoEnv(std::string("/home/banus/thesis-project/legged-sim/resource/"
                               "opy_v05/opy_v05.xml"),
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
                   spec.config["max_episode_steps"_]),
@@ -137,8 +137,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     _robotRunner->controlParameters = _robotParams;
     _robotRunner->initializeParameters();
     _robotRunner->init();
+    ctrl->_controlFSM->data.controlParameters->control_mode=1;
+
+    std::cout<<(ctrl->_controlFSM->currentState->stateName==FSM_StateName::PASSIVE)<<std::endl;
+
     std::string fname;
-    fname = "logs/" + std::to_string(env_id_) + "_log.csv";
+    fname = "/home/banus/thesis-project/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
     outputFile.open(fname.c_str());
 
 
@@ -180,8 +184,8 @@ for(int i=0;i<3; i++)
         _robotParams = new RobotControlParameters();
       taskManager = new PeriodicTaskManager();
 
-    WriteState(0, 0, 0, 0, 0, 0, 0,
-               0);
+    WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
 
     ctrl = new EmbeddedController();
 
@@ -193,6 +197,8 @@ for(int i=0;i<3; i++)
     _robotRunner->controlParameters = _robotParams;
     _robotRunner->initializeParameters();
     _robotRunner->init();
+    ctrl->_controlFSM->data.controlParameters->control_mode=1;
+
     done_ = false;
     elapsed_step_ = 0;
    
@@ -260,6 +266,9 @@ for(int i=0;i<3; i++)
 
  private:
   bool IsHealthy() {
+    if(ctrl->_controlFSM->data.controlParameters->control_mode==0) return false; // end if state is passive
+
+    
     return healthy_z_min_ < data_->qpos[2] && data_->qpos[2] < healthy_z_max_;
   }
 
@@ -300,7 +309,7 @@ for(int i=0;i<3; i++)
     for (int i = 0; i < 6 * model_->nbody; ++i) {
       *(obs++) = data_->cfrc_ext[i];
     }
-    //quadruped obs count 361
+    //quadruped obs count = 361
 
     // info
     state["info:reward_linvel"_] = xv * forward_reward_weight_;
