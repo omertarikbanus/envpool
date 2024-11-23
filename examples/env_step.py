@@ -22,25 +22,52 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 
 def gym_sync_step() -> None:
+  debug_prints = 1
+  
   num_envs = 1
+  if debug_prints:
+    print(f"num_envs set to {num_envs}")
+  if debug_prints:
+    print(f" envpool.list_all_envs() { envpool.list_all_envs()}")
+  envpool.list_all_envs()
   env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
+  if debug_prints:
+    print(f"Environment created with {num_envs} environments")
+  
   action_num = env.action_space.shape[0]
+  if debug_prints:
+    print(f"Action space shape: {env.action_space.shape}, action_num set to {action_num}")
+  
   # if is_legacy_gym:
   #   obs = env.reset()  # reset all envs
+  #   if debug_prints:
+  #     print(f"Environment reset, obs: {obs}")
   # else:
-  #   obs, _ = env.reset()  # reset all envs
-  # assert obs.shape == (num_envs, 4, 84, 84)
+  # # obs, _ = env.reset()  # reset all envs
+  #   if debug_prints:
+  #     print(f"Environment reset, obs: {obs}")
+
+  # # assert obs.shape == (num_envs, 4, 84, 84)
+  # if debug_prints:
+  #   print(f"Observation shape after reset: {obs.shape}")
+
   for _ in range(1400):
-  
     # autoreset is automatically enabled in envpool
     action = np.random.randint(action_num, size=(num_envs, action_num))
+    if debug_prints:
+      print(f"Sampled action: {action}")
+
     # result = env.step(action)
     if is_legacy_gym:
       obs, rew, done, info = env.step(action)
+      if debug_prints:
+        print(f"Step result (legacy) - obs: {obs}, rew: {rew}, done: {done}, info: {info}")
     else:
       obs, rew, term, trunc, info = env.step(action)
+      if debug_prints:
+        print(f"Step result - obs: {obs}, rew: {rew}, term: {term}, trunc: {trunc}, info: {info}")
     # print("obs", obs)
-      # print(f"obs, rew, term, trunc, info {obs.shape, rew, term, trunc, info}")
+    # print(f"obs, rew, term, trunc, info {obs.shape, rew, term, trunc, info}")
 
   # Of course, you can specify env_id to step corresponding envs
   # if is_legacy_gym:
@@ -50,6 +77,9 @@ def gym_sync_step() -> None:
   # assert obs.shape == (2, 4, 84, 84)
   partial_action = np.array([0, 0, 2])
   env_id = np.array([3, 2, 0])
+  if debug_prints:
+    print(f"Partial action: {partial_action}, env_id: {env_id}")
+
   # result = env.step(partial_action, env_id)
   # obs, info = result[0], result[-1]
   # np.testing.assert_allclose(info["env_id"], env_id)

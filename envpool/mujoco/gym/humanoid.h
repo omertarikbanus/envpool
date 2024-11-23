@@ -39,6 +39,8 @@
 
 namespace mujoco_gym {
 
+int debug_print = 1;
+
 class HumanoidEnvFns {
  public:
   static decltype(auto) DefaultConfig() {
@@ -82,20 +84,20 @@ using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
 
 class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
  protected:
-	bool terminate_when_unhealthy_, no_pos_, use_contact_force_;
-	mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
-	mjtNum healthy_z_min_, healthy_z_max_;
-	mjtNum contact_cost_weight_, contact_cost_max_;
-	std::uniform_real_distribution<> dist_;
-	RobotRunner* _robotRunner;
-	SpiCommand* _Command;
-	SpiData* _Feedback;
-	VectorNavData* _ImuData;
-	GamepadCommand* _GamepadCommand;
-	RobotController* ctrl;
-	RobotControlParameters* _robotParams;
-	// EmbeddedController robot_ctrl;
-	std::ofstream outputFile;
+    bool terminate_when_unhealthy_, no_pos_, use_contact_force_;
+    mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
+    mjtNum healthy_z_min_, healthy_z_max_;
+    mjtNum contact_cost_weight_, contact_cost_max_;
+    std::uniform_real_distribution<> dist_;
+    RobotRunner* _robotRunner;
+    SpiCommand* _Command;
+    SpiData* _Feedback;
+    VectorNavData* _ImuData;
+    GamepadCommand* _GamepadCommand;
+    RobotController* ctrl;
+    RobotControlParameters* _robotParams;
+    // EmbeddedController robot_ctrl;
+    std::ofstream outputFile;
   PeriodicTaskManager* taskManager;
 
  public:
@@ -103,7 +105,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       : Env<HumanoidEnvSpec>(spec, env_id),
         // MujocoEnv(spec.config["base_path"_] +
         // "/mujoco/assets_gym/humanoid.xml",
-        MujocoEnv(std::string("/home/banus/thesis-project/legged-sim/resource/"
+        MujocoEnv(std::string("/app/envpool/mujoco/legged-sim/resource/"
                               "opy_v05/opy_v05.xml"),
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
                   spec.config["max_episode_steps"_]),
@@ -119,17 +121,27 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
+    if (debug_print) std::cout << "HumanoidEnv constructor called with env_id: " << env_id << std::endl;
+
     EmbeddedController robot_ctrl; 
     _Command = new SpiCommand();
+    if (debug_print) std::cout << "_Command initialized" << std::endl;
     _Feedback = new SpiData();
+    if (debug_print) std::cout << "_Feedback initialized" << std::endl;
     _ImuData = new VectorNavData();
+    if (debug_print) std::cout << "_ImuData initialized" << std::endl;
     _GamepadCommand = new GamepadCommand();
+    if (debug_print) std::cout << "_GamepadCommand initialized" << std::endl;
     _robotParams = new RobotControlParameters();
+    if (debug_print) std::cout << "_robotParams initialized" << std::endl;
     taskManager = new PeriodicTaskManager();
+    if (debug_print) std::cout << "taskManager initialized" << std::endl;
 
     ctrl = &robot_ctrl;
+    if (debug_print) std::cout << "ctrl set to robot_ctrl" << std::endl;
 
     _robotRunner = new RobotRunner(ctrl, taskManager, 0.002, "robot-control");
+    if (debug_print) std::cout << "_robotRunner initialized" << std::endl;
     _robotRunner->driverCommand = _GamepadCommand;
     _robotRunner->_ImuData = _ImuData;
     _robotRunner->_Feedback = _Feedback;
@@ -139,57 +151,75 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     _robotRunner->init();
     ctrl->_controlFSM->data.controlParameters->control_mode=1;
 
+    if (debug_print) std::cout << "Control mode set to 1" << std::endl;
+
     std::cout<<(ctrl->_controlFSM->currentState->stateName==FSM_StateName::PASSIVE)<<std::endl;
 
     std::string fname;
-    fname = "/home/banus/thesis-project/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
+    fname = "/app/logs/" + std::to_string(env_id_) + "_log.csv";
     outputFile.open(fname.c_str());
-
-
+    if (debug_print) std::cout << "Output file opened: " << fname << std::endl;
   }
 
   void MujocoResetModel() override {
     printf("mjResetModel\n");
     for (int i = 0; i < model_->nq; ++i) {
       data_->qpos[i] = init_qpos_[i] + dist_(gen_);
+      if (debug_print) std::cout << "qpos[" << i << "] set to " << data_->qpos[i] << std::endl;
     }
     for (int i = 0; i < model_->nv; ++i) {
       data_->qvel[i] = init_qvel_[i] + dist_(gen_);
+      if (debug_print) std::cout << "qvel[" << i << "] set to " << data_->qvel[i] << std::endl;
     }
     int kSideSign_[4]={-1,1,-1,1};
     model_->opt.timestep=0.002;
+    if (debug_print) std::cout << "model_->opt.timestep set to 0.002" << std::endl;
     for(int leg=0; leg<4; leg++){
        data_->qpos[(leg)*3+  0  +7]=1*(M_PI/180)*kSideSign_[leg];     // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
        data_->qpos[(leg)*3+  1   +7]=-90*(M_PI/180);//*kDirSign_[leg];
        data_->qpos[(leg)*3+  2  +7]=173*(M_PI/180);//*kDirSign_[leg];
+       if (debug_print) std::cout << "Leg " << leg << " qpos set" << std::endl;
     }
 
 #ifdef ENVPOOL_TEST
     std::memcpy(qpos0_, data_->qpos, sizeof(mjtNum) * model_->nq);
     std::memcpy(qvel0_, data_->qvel, sizeof(mjtNum) * model_->nv);
+    if (debug_print) std::cout << "qpos0_ and qvel0_ set for ENVPOOL_TEST" << std::endl;
 #endif
   }
 
-  bool IsDone() override { return done_; }
+  bool IsDone() override { 
+    if (debug_print) std::cout << "IsDone called, returning " << done_ << std::endl;
+    return done_; 
+  }
 
   void Reset() override {
-for(int i=0;i<3; i++)
-    printf("Reset\n");
+    for(int i=0;i<3; i++)
+      printf("Reset\n");
     MujocoReset();
+    if (debug_print) std::cout << "MujocoReset called" << std::endl;
 
     _Command = new SpiCommand();
+    if (debug_print) std::cout << "_Command re-initialized" << std::endl;
     _Feedback = new SpiData();
+    if (debug_print) std::cout << "_Feedback re-initialized" << std::endl;
     _ImuData = new VectorNavData();
+    if (debug_print) std::cout << "_ImuData re-initialized" << std::endl;
     _GamepadCommand = new GamepadCommand();
-        _robotParams = new RobotControlParameters();
-      taskManager = new PeriodicTaskManager();
+    if (debug_print) std::cout << "_GamepadCommand re-initialized" << std::endl;
+    _robotParams = new RobotControlParameters();
+    if (debug_print) std::cout << "_robotParams re-initialized" << std::endl;
+    taskManager = new PeriodicTaskManager();
+    if (debug_print) std::cout << "taskManager re-initialized" << std::endl;
 
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-
+    if (debug_print) std::cout << "Initial state written" << std::endl;
 
     ctrl = new EmbeddedController();
+    if (debug_print) std::cout << "ctrl re-initialized" << std::endl;
 
     _robotRunner = new RobotRunner(ctrl, taskManager, 0.002, "robot-control");
+    if (debug_print) std::cout << "_robotRunner re-initialized" << std::endl;
     _robotRunner->driverCommand = _GamepadCommand;
     _robotRunner->_ImuData = _ImuData;
     _robotRunner->_Feedback = _Feedback;
@@ -198,57 +228,64 @@ for(int i=0;i<3; i++)
     _robotRunner->initializeParameters();
     _robotRunner->init();
     ctrl->_controlFSM->data.controlParameters->control_mode=1;
+    if (debug_print) std::cout << "Control mode set to 1" << std::endl;
 
     done_ = false;
     elapsed_step_ = 0;
-   
+    if (debug_print) std::cout << "Reset done, elapsed_step_ set to 0" << std::endl;
   }
 
   void Step(const Action& action) override {
     // step
+    if (debug_print) std::cout << "Step called" << std::endl;
 
+    _robotRunner->run();
+    if (debug_print) std::cout << "_robotRunner->run() called" << std::endl;
 
-    
-	_robotRunner->run();
+    mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
+    if (debug_print) std::cout << "Action data retrieved" << std::endl;
+    mjtNum motor_commands[12];
+    for(int leg=0; leg<4; leg++){
+      motor_commands[leg*3+  0    + 0 ] =_Command->tau_abad_ff[leg]+_Command->kp_abad[leg]*(_Command->q_des_abad[leg] - _Feedback->q_abad[leg]) +
+      _Command->kd_abad[leg]* (_Command->qd_des_abad[leg] - _Feedback->qd_abad[leg]);    //Torque
 
+      motor_commands[leg*3+  1    + 0 ] =_Command->tau_hip_ff[leg]+_Command->kp_hip[leg]* (_Command->q_des_hip[leg] - _Feedback->q_hip[leg]) +
+      _Command->kd_hip[leg]* (_Command->qd_des_hip[leg] - _Feedback->qd_hip[leg]) ;   //Torque
 
-  mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
-  mjtNum motor_commands[12];
-   for(int leg=0; leg<4; leg++){
-
-        motor_commands[leg*3+  0    + 0 ] =_Command->tau_abad_ff[leg]+_Command->kp_abad[leg]*(_Command->q_des_abad[leg] - _Feedback->q_abad[leg]) +
-        _Command->kd_abad[leg]* (_Command->qd_des_abad[leg] - _Feedback->qd_abad[leg]);    //Torque
-
-        motor_commands[leg*3+  1    + 0 ] =_Command->tau_hip_ff[leg]+_Command->kp_hip[leg]* (_Command->q_des_hip[leg] - _Feedback->q_hip[leg]) +
-        _Command->kd_hip[leg]* (_Command->qd_des_hip[leg] - _Feedback->qd_hip[leg]) ;   //Torque
-
-        motor_commands[leg*3+  2    + 0 ] =_Command->tau_knee_ff[leg]+_Command->kp_knee[leg]* (_Command->q_des_knee[leg] - _Feedback->q_knee[leg]) +
-        _Command->kd_knee[leg]* (_Command->qd_des_knee[leg] - _Feedback->qd_knee[leg]) ;    //Torque
+      motor_commands[leg*3+  2    + 0 ] =_Command->tau_knee_ff[leg]+_Command->kp_knee[leg]* (_Command->q_des_knee[leg] - _Feedback->q_knee[leg]) +
+      _Command->kd_knee[leg]* (_Command->qd_des_knee[leg] - _Feedback->qd_knee[leg]) ;    //Torque
+      if (debug_print) std::cout << "Motor commands for leg " << leg << " set" << std::endl;
     }
- 
-    
+
     const auto& before = GetMassCenter();
-    
+    if (debug_print) std::cout << "Mass center before step: " << before[0] << ", " << before[1] << std::endl;
+
     MujocoStep(motor_commands);
+    if (debug_print) std::cout << "MujocoStep called" << std::endl;
     const auto& after = GetMassCenter();
+    if (debug_print) std::cout << "Mass center after step: " << after[0] << ", " << after[1] << std::endl;
 
     // ctrl_cost
     mjtNum ctrl_cost = 0.0;
     for (int i = 0; i < model_->nu; ++i) {
       ctrl_cost += ctrl_cost_weight_ * act[i] * act[i];
+      if (debug_print) std::cout << "ctrl_cost updated: " << ctrl_cost << std::endl;
     }
     // xv and yv
     mjtNum dt = frame_skip_ * model_->opt.timestep;
     mjtNum xv = (after[0] - before[0]) / dt;
     mjtNum yv = (after[1] - before[1]) / dt;
+    if (debug_print) std::cout << "xv: " << xv << ", yv: " << yv << std::endl;
     // contact cost
     mjtNum contact_cost = 0.0;
     if (use_contact_force_) {
       for (int i = 0; i < 6 * model_->nbody; ++i) {
         mjtNum x = data_->cfrc_ext[i];
         contact_cost += contact_cost_weight_ * x * x;
+        if (debug_print) std::cout << "contact_cost updated: " << contact_cost << std::endl;
       }
       contact_cost = std::min(contact_cost, contact_cost_max_);
+      if (debug_print) std::cout << "contact_cost (min): " << contact_cost << std::endl;
     }
 
     // reward and done
@@ -256,20 +293,26 @@ for(int i=0;i<3; i++)
         terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
     auto reward = static_cast<float>(xv * forward_reward_weight_ +
                                      healthy_reward - ctrl_cost - contact_cost);
+    if (debug_print) std::cout << "Reward calculated: " << reward << std::endl;
     ++elapsed_step_;
     done_ = (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
             (elapsed_step_ >= max_episode_steps_);
+    if (debug_print) std::cout << "done_: " << done_ << ", elapsed_step_: " << elapsed_step_ << std::endl;
     WriteState(reward, xv, yv, ctrl_cost, contact_cost, after[0], after[1],
                healthy_reward);
-
+    if (debug_print) std::cout << "State written" << std::endl;
   }
 
  private:
   bool IsHealthy() {
-    if(ctrl->_controlFSM->data.controlParameters->control_mode==0) return false; // end if state is passive
-
+    if(ctrl->_controlFSM->data.controlParameters->control_mode==0) {
+      if (debug_print) std::cout << "Control mode is passive, returning false" << std::endl;
+      return false; // end if state is passive
+    }
     
-    return healthy_z_min_ < data_->qpos[2] && data_->qpos[2] < healthy_z_max_;
+    bool healthy = healthy_z_min_ < data_->qpos[2] && data_->qpos[2] < healthy_z_max_;
+    if (debug_print) std::cout << "IsHealthy: " << healthy << std::endl;
+    return healthy;
   }
 
   std::array<mjtNum, 2> GetMassCenter() {

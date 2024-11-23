@@ -6,16 +6,4 @@ gym>=0.26
 gymnasium>=0.26,!=0.27.0
 optree>=0.6.0
 jax[cpu]
-absl-py
 packaging
-tqdm
-protobuf<=4.20.0
-torch!=2.0.0,!=2.0.1
-tianshou>=0.4.10,<1.0.0
-opencv-python-headless
-box2d-py
-dm-control>=1.0.5
-mujoco>=2.2.1,<2.3
-mujoco_py>=2.1.2.14
-pygame
-minigrid
