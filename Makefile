@@ -158,7 +158,8 @@ docker-ci-push: docker-ci
 
 docker-ci-launch: docker-ci
 	docker run --network=host -v /home/ubuntu:/home/github-action --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
-
+docker-run:
+	docker run --network=host -v /:/host -v $(shell pwd):/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it fusion:legged_sim_working zsh
 docker-dev: docker-ci
 	docker run --network=host -v /:/host -v $(shell pwd):/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) zsh
 
@@ -189,3 +190,9 @@ release-test2:
 	cd examples && python3 make_env.py && python3 env_step.py
 
 release-test: release-test1 release-test2
+
+custom-t: 
+	bazel run --config=test //:setup -- bdist_wheel > bazel_build_log.log
+	pip3 uninstall envpool -y
+	pip3 install bazel-bin/setup.runfiles/envpool/dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl 
+	python3 examples/env_step.py 
