@@ -8,7 +8,8 @@ COMMIT_HASH    = $(shell git log -1 --format=%h)
 COPYRIGHT      = "Garena Online Private Limited"
 BAZELOPT       =
 DATE           = $(shell date "+%Y-%m-%d")
-DOCKER_TAG     = $(DATE)-$(COMMIT_HASH)
+# DOCKER_TAG     = $(DATE)-$(COMMIT_HASH)
+DOCKER_TAG     = tarik
 DOCKER_USER    = trinkle23897
 PATH           := $(HOME)/go/bin:$(PATH)
 
@@ -159,9 +160,14 @@ docker-ci-push: docker-ci
 docker-ci-launch: docker-ci
 	docker run --network=host -v /home/ubuntu:/home/github-action --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
 docker-run:
-	docker run --network=host -v /:/host -v $(shell pwd):/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it fusion:legged_sim_working zsh
+	docker run --network=host -v /:/host -v $(shell pwd)/../:/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it --rm \
+    -e DISPLAY=$(DISPLAY) \
+    -e XAUTHORITY=/tmp/.docker.xauth \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v $(XAUTHORITY):/tmp/.docker.xauth \
+	 $(PROJECT_NAME):$(DOCKER_TAG) bash
 docker-dev: docker-ci
-	docker run --network=host -v /:/host -v $(shell pwd):/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) zsh
+	docker run --network=host -v /:/host -v $(shell pwd)/../:/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
 
 # for mainland China
 docker-dev-cn:

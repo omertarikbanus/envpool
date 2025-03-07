@@ -22,7 +22,7 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 
 def gym_sync_step() -> None:
-  debug_prints = 1
+  debug_prints = 0
   
   num_envs = 1
   if debug_prints:
@@ -51,7 +51,7 @@ def gym_sync_step() -> None:
   # if debug_prints:
   #   print(f"Observation shape after reset: {obs.shape}")
 
-  for _ in range(1400):
+  for _ in range(30000):
     # autoreset is automatically enabled in envpool
     action = np.random.randint(action_num, size=(num_envs, action_num))
     if debug_prints:

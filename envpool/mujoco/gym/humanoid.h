@@ -17,16 +17,19 @@
 #ifndef ENVPOOL_MUJOCO_GYM_HUMANOID_H_
 #define ENVPOOL_MUJOCO_GYM_HUMANOID_H_
 
+#include <RobotRunner.h>
+
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 #include <limits>
 #include <memory>
-#include <iostream>
 #include <string>
+
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
 #include "envpool/mujoco/gym/mujoco_env.h"
-#include <RobotRunner.h>
+#include "mbc_interface.h"
 // #include <Utilities/Utilities_print.h>
 // #include <Math/orientation_tools.h>
 // #include <eigen3/Eigen/Dense>
@@ -35,11 +38,10 @@
 #include <Controllers/EmbeddedController.hpp>
 // #include "Utilities/PeriodicTask.h"
 #include <Utilities/RobotCommands.h>
-#include  <eigen3/Eigen/Dense>
+
+#include <eigen3/Eigen/Dense>
 
 namespace mujoco_gym {
-
-int debug_print = 1;
 
 class HumanoidEnvFns {
  public:
@@ -58,25 +60,24 @@ class HumanoidEnvFns {
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
-    return MakeDict(
-        "obs"_.Bind(Spec<mjtNum>({361}, {-inf, inf})),
+    return MakeDict("obs"_.Bind(Spec<mjtNum>({361}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
-        "info:qpos0"_.Bind(Spec<mjtNum>({24})),
-        "info:qvel0"_.Bind(Spec<mjtNum>({23})),
+                    "info:qpos0"_.Bind(Spec<mjtNum>({24})),
+                    "info:qvel0"_.Bind(Spec<mjtNum>({23})),
 #endif
-        "info:reward_linvel"_.Bind(Spec<mjtNum>({-1})),
-        "info:reward_quadctrl"_.Bind(Spec<mjtNum>({-1})),
-        "info:reward_alive"_.Bind(Spec<mjtNum>({-1})),
-        "info:reward_impact"_.Bind(Spec<mjtNum>({-1})),
-        "info:x_position"_.Bind(Spec<mjtNum>({-1})),
-        "info:y_position"_.Bind(Spec<mjtNum>({-1})),
-        "info:distance_from_origin"_.Bind(Spec<mjtNum>({-1})),
-        "info:x_velocity"_.Bind(Spec<mjtNum>({-1})),
-        "info:y_velocity"_.Bind(Spec<mjtNum>({-1})));
+                    "info:reward_linvel"_.Bind(Spec<mjtNum>({-1})),
+                    "info:reward_quadctrl"_.Bind(Spec<mjtNum>({-1})),
+                    "info:reward_alive"_.Bind(Spec<mjtNum>({-1})),
+                    "info:reward_impact"_.Bind(Spec<mjtNum>({-1})),
+                    "info:x_position"_.Bind(Spec<mjtNum>({-1})),
+                    "info:y_position"_.Bind(Spec<mjtNum>({-1})),
+                    "info:distance_from_origin"_.Bind(Spec<mjtNum>({-1})),
+                    "info:x_velocity"_.Bind(Spec<mjtNum>({-1})),
+                    "info:y_velocity"_.Bind(Spec<mjtNum>({-1})));
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 12}, {-40, 40})));
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 47}, {-10e9, 10e9})));
   }
 };
 
@@ -84,28 +85,21 @@ using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
 
 class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
  protected:
-    bool terminate_when_unhealthy_, no_pos_, use_contact_force_;
-    mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
-    mjtNum healthy_z_min_, healthy_z_max_;
-    mjtNum contact_cost_weight_, contact_cost_max_;
-    std::uniform_real_distribution<> dist_;
-    RobotRunner* _robotRunner;
-    SpiCommand* _Command;
-    SpiData* _Feedback;
-    VectorNavData* _ImuData;
-    GamepadCommand* _GamepadCommand;
-    RobotController* ctrl;
-    RobotControlParameters* _robotParams;
-    // EmbeddedController robot_ctrl;
-    std::ofstream outputFile;
-  PeriodicTaskManager* taskManager;
+  bool terminate_when_unhealthy_, no_pos_, use_contact_force_;
+  mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
+  mjtNum healthy_z_min_, healthy_z_max_;
+  mjtNum contact_cost_weight_, contact_cost_max_;
+  std::uniform_real_distribution<> dist_;
+  ModelBasedControllerInterface mbc;
+  std::ofstream outputFile;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
       : Env<HumanoidEnvSpec>(spec, env_id),
+        mbc(),
         // MujocoEnv(spec.config["base_path"_] +
         // "/mujoco/assets_gym/humanoid.xml",
-        MujocoEnv(std::string("/app/envpool/mujoco/legged-sim/resource/"
+        MujocoEnv(std::string("/app/envpool/envpool/mujoco/legged-sim/resource/"
                               "opy_v05/opy_v05.xml"),
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
                   spec.config["max_episode_steps"_]),
@@ -121,171 +115,80 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
-    if (debug_print) std::cout << "HumanoidEnv constructor called with env_id: " << env_id << std::endl;
-
-    EmbeddedController robot_ctrl; 
-    _Command = new SpiCommand();
-    if (debug_print) std::cout << "_Command initialized" << std::endl;
-    _Feedback = new SpiData();
-    if (debug_print) std::cout << "_Feedback initialized" << std::endl;
-    _ImuData = new VectorNavData();
-    if (debug_print) std::cout << "_ImuData initialized" << std::endl;
-    _GamepadCommand = new GamepadCommand();
-    if (debug_print) std::cout << "_GamepadCommand initialized" << std::endl;
-    _robotParams = new RobotControlParameters();
-    if (debug_print) std::cout << "_robotParams initialized" << std::endl;
-    taskManager = new PeriodicTaskManager();
-    if (debug_print) std::cout << "taskManager initialized" << std::endl;
-
-    ctrl = &robot_ctrl;
-    if (debug_print) std::cout << "ctrl set to robot_ctrl" << std::endl;
-
-    _robotRunner = new RobotRunner(ctrl, taskManager, 0.002, "robot-control");
-    if (debug_print) std::cout << "_robotRunner initialized" << std::endl;
-    _robotRunner->driverCommand = _GamepadCommand;
-    _robotRunner->_ImuData = _ImuData;
-    _robotRunner->_Feedback = _Feedback;
-    _robotRunner->_Command = _Command;
-    _robotRunner->controlParameters = _robotParams;
-    _robotRunner->initializeParameters();
-    _robotRunner->init();
-    ctrl->_controlFSM->data.controlParameters->control_mode=1;
-
-    if (debug_print) std::cout << "Control mode set to 1" << std::endl;
-
-    std::cout<<(ctrl->_controlFSM->currentState->stateName==FSM_StateName::PASSIVE)<<std::endl;
-
     std::string fname;
-    fname = "/app/logs/" + std::to_string(env_id_) + "_log.csv";
+    fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
     outputFile.open(fname.c_str());
-    if (debug_print) std::cout << "Output file opened: " << fname << std::endl;
   }
 
   void MujocoResetModel() override {
-    printf("mjResetModel\n");
     for (int i = 0; i < model_->nq; ++i) {
       data_->qpos[i] = init_qpos_[i] + dist_(gen_);
-      if (debug_print) std::cout << "qpos[" << i << "] set to " << data_->qpos[i] << std::endl;
     }
     for (int i = 0; i < model_->nv; ++i) {
       data_->qvel[i] = init_qvel_[i] + dist_(gen_);
-      if (debug_print) std::cout << "qvel[" << i << "] set to " << data_->qvel[i] << std::endl;
     }
-    int kSideSign_[4]={-1,1,-1,1};
-    model_->opt.timestep=0.002;
-    if (debug_print) std::cout << "model_->opt.timestep set to 0.002" << std::endl;
-    for(int leg=0; leg<4; leg++){
-       data_->qpos[(leg)*3+  0  +7]=1*(M_PI/180)*kSideSign_[leg];     // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
-       data_->qpos[(leg)*3+  1   +7]=-90*(M_PI/180);//*kDirSign_[leg];
-       data_->qpos[(leg)*3+  2  +7]=173*(M_PI/180);//*kDirSign_[leg];
-       if (debug_print) std::cout << "Leg " << leg << " qpos set" << std::endl;
+    int kSideSign_[4] = {-1, 1, -1, 1};
+
+    model_->opt.timestep = 0.002;
+
+    for (int leg = 0; leg < 4; leg++) {
+      data_->qpos[(leg) * 3 + 0 + 7] =
+          1 * (M_PI / 180) *
+          kSideSign_[leg];  // Add 7 to skip the first 7 dofs from body.
+                            // (Position + Quaternion)
+      data_->qpos[(leg) * 3 + 1 + 7] = -90 * (M_PI / 180);  //*kDirSign_[leg];
+      data_->qpos[(leg) * 3 + 2 + 7] = 173 * (M_PI / 180);  //*kDirSign_[leg];
     }
 
 #ifdef ENVPOOL_TEST
     std::memcpy(qpos0_, data_->qpos, sizeof(mjtNum) * model_->nq);
     std::memcpy(qvel0_, data_->qvel, sizeof(mjtNum) * model_->nv);
-    if (debug_print) std::cout << "qpos0_ and qvel0_ set for ENVPOOL_TEST" << std::endl;
 #endif
   }
 
-  bool IsDone() override { 
-    if (debug_print) std::cout << "IsDone called, returning " << done_ << std::endl;
-    return done_; 
-  }
+  bool IsDone() override { return done_; }
 
   void Reset() override {
-    for(int i=0;i<3; i++)
-      printf("Reset\n");
     MujocoReset();
-    if (debug_print) std::cout << "MujocoReset called" << std::endl;
-
-    _Command = new SpiCommand();
-    if (debug_print) std::cout << "_Command re-initialized" << std::endl;
-    _Feedback = new SpiData();
-    if (debug_print) std::cout << "_Feedback re-initialized" << std::endl;
-    _ImuData = new VectorNavData();
-    if (debug_print) std::cout << "_ImuData re-initialized" << std::endl;
-    _GamepadCommand = new GamepadCommand();
-    if (debug_print) std::cout << "_GamepadCommand re-initialized" << std::endl;
-    _robotParams = new RobotControlParameters();
-    if (debug_print) std::cout << "_robotParams re-initialized" << std::endl;
-    taskManager = new PeriodicTaskManager();
-    if (debug_print) std::cout << "taskManager re-initialized" << std::endl;
-
+    mbc.reset();
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    if (debug_print) std::cout << "Initial state written" << std::endl;
-
-    ctrl = new EmbeddedController();
-    if (debug_print) std::cout << "ctrl re-initialized" << std::endl;
-
-    _robotRunner = new RobotRunner(ctrl, taskManager, 0.002, "robot-control");
-    if (debug_print) std::cout << "_robotRunner re-initialized" << std::endl;
-    _robotRunner->driverCommand = _GamepadCommand;
-    _robotRunner->_ImuData = _ImuData;
-    _robotRunner->_Feedback = _Feedback;
-    _robotRunner->_Command = _Command;
-    _robotRunner->controlParameters = _robotParams;
-    _robotRunner->initializeParameters();
-    _robotRunner->init();
-    ctrl->_controlFSM->data.controlParameters->control_mode=1;
-    if (debug_print) std::cout << "Control mode set to 1" << std::endl;
-
     done_ = false;
     elapsed_step_ = 0;
-    if (debug_print) std::cout << "Reset done, elapsed_step_ set to 0" << std::endl;
   }
 
   void Step(const Action& action) override {
     // step
-    if (debug_print) std::cout << "Step called" << std::endl;
-
-    _robotRunner->run();
-    if (debug_print) std::cout << "_robotRunner->run() called" << std::endl;
-
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
-    if (debug_print) std::cout << "Action data retrieved" << std::endl;
+    mbc.setAction(act);
+    mbc.run();
+
     mjtNum motor_commands[12];
-    for(int leg=0; leg<4; leg++){
-      motor_commands[leg*3+  0    + 0 ] =_Command->tau_abad_ff[leg]+_Command->kp_abad[leg]*(_Command->q_des_abad[leg] - _Feedback->q_abad[leg]) +
-      _Command->kd_abad[leg]* (_Command->qd_des_abad[leg] - _Feedback->qd_abad[leg]);    //Torque
-
-      motor_commands[leg*3+  1    + 0 ] =_Command->tau_hip_ff[leg]+_Command->kp_hip[leg]* (_Command->q_des_hip[leg] - _Feedback->q_hip[leg]) +
-      _Command->kd_hip[leg]* (_Command->qd_des_hip[leg] - _Feedback->qd_hip[leg]) ;   //Torque
-
-      motor_commands[leg*3+  2    + 0 ] =_Command->tau_knee_ff[leg]+_Command->kp_knee[leg]* (_Command->q_des_knee[leg] - _Feedback->q_knee[leg]) +
-      _Command->kd_knee[leg]* (_Command->qd_des_knee[leg] - _Feedback->qd_knee[leg]) ;    //Torque
-      if (debug_print) std::cout << "Motor commands for leg " << leg << " set" << std::endl;
+    std::array<double, 12> mc = mbc.getMotorCommands();
+    for (int i = 0; i < 12; ++i) {
+      motor_commands[i] = mc[i];
     }
-
     const auto& before = GetMassCenter();
-    if (debug_print) std::cout << "Mass center before step: " << before[0] << ", " << before[1] << std::endl;
 
     MujocoStep(motor_commands);
-    if (debug_print) std::cout << "MujocoStep called" << std::endl;
     const auto& after = GetMassCenter();
-    if (debug_print) std::cout << "Mass center after step: " << after[0] << ", " << after[1] << std::endl;
 
     // ctrl_cost
     mjtNum ctrl_cost = 0.0;
     for (int i = 0; i < model_->nu; ++i) {
       ctrl_cost += ctrl_cost_weight_ * act[i] * act[i];
-      if (debug_print) std::cout << "ctrl_cost updated: " << ctrl_cost << std::endl;
     }
     // xv and yv
     mjtNum dt = frame_skip_ * model_->opt.timestep;
     mjtNum xv = (after[0] - before[0]) / dt;
     mjtNum yv = (after[1] - before[1]) / dt;
-    if (debug_print) std::cout << "xv: " << xv << ", yv: " << yv << std::endl;
     // contact cost
     mjtNum contact_cost = 0.0;
     if (use_contact_force_) {
       for (int i = 0; i < 6 * model_->nbody; ++i) {
         mjtNum x = data_->cfrc_ext[i];
         contact_cost += contact_cost_weight_ * x * x;
-        if (debug_print) std::cout << "contact_cost updated: " << contact_cost << std::endl;
       }
       contact_cost = std::min(contact_cost, contact_cost_max_);
-      if (debug_print) std::cout << "contact_cost (min): " << contact_cost << std::endl;
     }
 
     // reward and done
@@ -293,25 +196,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
     auto reward = static_cast<float>(xv * forward_reward_weight_ +
                                      healthy_reward - ctrl_cost - contact_cost);
-    if (debug_print) std::cout << "Reward calculated: " << reward << std::endl;
     ++elapsed_step_;
     done_ = (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
             (elapsed_step_ >= max_episode_steps_);
-    if (debug_print) std::cout << "done_: " << done_ << ", elapsed_step_: " << elapsed_step_ << std::endl;
     WriteState(reward, xv, yv, ctrl_cost, contact_cost, after[0], after[1],
                healthy_reward);
-    if (debug_print) std::cout << "State written" << std::endl;
   }
 
  private:
   bool IsHealthy() {
-    if(ctrl->_controlFSM->data.controlParameters->control_mode==0) {
-      if (debug_print) std::cout << "Control mode is passive, returning false" << std::endl;
-      return false; // end if state is passive
+    if (mbc._controller->_controlFSM->data.controlParameters->control_mode ==
+        0) {
+      return false;  // end if state is passive
     }
-    
-    bool healthy = healthy_z_min_ < data_->qpos[2] && data_->qpos[2] < healthy_z_max_;
-    if (debug_print) std::cout << "IsHealthy: " << healthy << std::endl;
+
+    bool healthy =
+        healthy_z_min_ < data_->qpos[2] && data_->qpos[2] < healthy_z_max_;
     return healthy;
   }
 
@@ -352,7 +252,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     for (int i = 0; i < 6 * model_->nbody; ++i) {
       *(obs++) = data_->cfrc_ext[i];
     }
-    //quadruped obs count = 361
+    // quadruped obs count = 361
 
     // info
     state["info:reward_linvel"_] = xv * forward_reward_weight_;
@@ -366,59 +266,18 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:x_velocity"_] = xv;
     state["info:y_velocity"_] = yv;
 
-    for(int leg=0; leg<4; leg++){
-      _Feedback->q_abad [leg]  =  data_->qpos[(leg)*3+    0	+7];  // Add 7 to skip the first 7 dofs from body. (Position + Quaternion)
-      _Feedback->q_hip  [leg]  =  data_->qpos[(leg)*3+    1	+7];
-      _Feedback->q_knee [leg]  =  data_->qpos[(leg)*3+    2	+7];
-      _Feedback->qd_abad[leg]  =  data_->qvel[(leg)*3+    0	+6];
-      _Feedback->qd_hip [leg]  =  data_->qvel[(leg)*3+    1	+6];
-      _Feedback->qd_knee[leg]  =  data_->qvel[(leg)*3+    2	+6];
+    mbc.setFeedback(data_);
+    // write to file;
+    for (int i = 0; i < 19; i++) {
+      outputFile << data_->qpos[i] << ",";
     }
-    _ImuData->acc_x = data_->sensordata[0];
-    _ImuData->acc_y = data_->sensordata[1];
-    _ImuData->acc_z = data_->sensordata[2];
-
-    _ImuData->accelerometer[0] = data_->sensordata[0];
-    _ImuData->accelerometer[1] = data_->sensordata[1];
-    _ImuData->accelerometer[2] = data_->sensordata[2];
-
-    _ImuData->heave = data_->qvel[0] ;
-    _ImuData->heave_dt = data_->qvel[1] ;
-    _ImuData->heave_ddt = data_->qvel[2] ;
-
-
-    _ImuData->gyr_x = data_->qvel[3];
-    _ImuData->gyr_y = data_->qvel[4];
-    _ImuData->gyr_z = data_->qvel[5];
-
-    _ImuData->gyro[0] = data_->qvel[3];
-    _ImuData->gyro[1] = data_->qvel[4];
-    _ImuData->gyro[2] = data_->qvel[5];
-
-    _ImuData->quat[0] = data_->qpos[3];
-    _ImuData->quat[1] = data_->qpos[4];
-    _ImuData->quat[2] = data_->qpos[5];
-    _ImuData->quat[3] = data_->qpos[6];
-
-    _ImuData->pos_x = data_->qpos[0];
-    _ImuData->pos_y = data_->qpos[1];
-    _ImuData->pos_z = data_->qpos[2];
-
-    //write to file;
-    for (int i=0; i<19; i++) 
-    {
-      outputFile<<data_->qpos[i]<<","; 
-    }
-	  outputFile<<std::endl;
-
-
+    outputFile << std::endl;
 
 #ifdef ENVPOOL_TEST
     state["info:qpos0"_].Assign(qpos0_, model_->nq);
     state["info:qvel0"_].Assign(qvel0_, model_->nv);
 #endif
   }
-
 };
 
 using HumanoidEnvPool = AsyncEnvPool<HumanoidEnv>;

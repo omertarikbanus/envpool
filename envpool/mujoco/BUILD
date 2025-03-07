@@ -115,6 +115,7 @@ genrule(
 cc_library(
     name = "mujoco_gym_env",
     hdrs = glob([
+        "mbc_interface.h",
         "legged-sim/**/*.h",
         "legged-sim/**/*.hh",
         "legged-sim/**/*.hpp",
@@ -134,6 +135,7 @@ cc_library(
         "gym/walker2d.h",
         ]),
     srcs = glob([  
+    "mbc_interface.h",
     "legged-sim/src/**/*.cpp",
     "legged-sim/src/FSM/*.cpp",
     "legged-sim/src/*.cpp",
@@ -160,6 +162,7 @@ cc_library(
             
         ]),
     includes = [
+        ".",
         "legged-sim",
         "legged-sim/include",
         "legged-sim/include/Controllers",
@@ -194,7 +197,7 @@ cc_library(
 
     ],
     linkopts = ["-ltinyxml2 -lpthread  -usr/local/lib/libosqp.so -usr/local/lib/libqdldl.so -usr/local/lib/libqpOASES.so "], 
-    copts = ["-O3 -ggdb -w  -D__NO_COPYRIGHT__ -Wno-error  -Wall -pedantic -Wfloat-equal -Wshadow -DLINUX -finline-functions"],
+    copts = [" --debug -g -O0 -ggdb -w  -D__NO_COPYRIGHT__ -Wno-error  -Wall -pedantic -Wfloat-equal -Wshadow -DLINUX -finline-functions"],
 )
 # -no-pie 
 pybind_extension(
