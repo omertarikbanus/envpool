@@ -9,6 +9,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <cmath>  // For std::sqrt, std::abs
 
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
@@ -76,6 +77,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjtNum contact_cost_weight_, contact_cost_max_;
   std::uniform_real_distribution<> dist_;
   ModelBasedControllerInterface mbc;
+  // New: Backup of the controller
+  ModelBasedControllerInterface mbc_backup;
   std::ofstream outputFile;
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
@@ -86,8 +89,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   HumanoidEnv(const Spec& spec, int env_id)
       : Env<HumanoidEnvSpec>(spec, env_id),
         mbc(),
-        // MujocoEnv(spec.config["base_path"_] +
-        // "/mujoco/assets_gym/humanoid.xml",
+        // Construct MujocoEnv using a fixed XML file path.
         MujocoEnv(std::string("/app/envpool/envpool/mujoco/legged-sim/resource/"
                               "opy_v05/opy_v05.xml"),
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
@@ -107,6 +109,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     std::string fname;
     fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
     outputFile.open(fname.c_str());
+    // Save the initial controller configuration to backup
+    mbc_backup = mbc;
   }
 
   void MujocoResetModel() override {
@@ -139,7 +143,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   void Reset() override {
     MujocoReset();
-    mbc.reset();
+    // Instead of resetting the controller, we copy the backup.
+    mbc = mbc_backup;
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     done_ = false;
     elapsed_step_ = 0;
@@ -154,7 +159,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum motor_commands[12];
     std::array<double, 12> mc = mbc.getMotorCommands();
     for (int i = 0; i < 12; ++i) {
-      // Added: clamp motor commands to torque bounds
+      // Clamp motor commands to torque bounds.
       motor_commands[i] = std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_), -torque_limit_);
     }
     const auto& before = GetMassCenter();
@@ -162,16 +167,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     MujocoStep(motor_commands);
     const auto& after = GetMassCenter();
 
-    // ctrl_cost
+    // Compute control cost.
     mjtNum ctrl_cost = 0.0;
     for (int i = 0; i < model_->nu; ++i) {
       ctrl_cost += ctrl_cost_weight_ * act[i] * act[i];
     }
-    // xv and yv
+    // Compute velocities.
     mjtNum dt = frame_skip_ * model_->opt.timestep;
     mjtNum xv = (after[0] - before[0]) / dt;
     mjtNum yv = (after[1] - before[1]) / dt;
-    // contact cost
+    // Compute contact cost.
     mjtNum contact_cost = 0.0;
     if (use_contact_force_) {
       for (int i = 0; i < 6 * model_->nbody; ++i) {
@@ -184,13 +189,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // reward and done
     mjtNum healthy_reward =
         terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
-    auto reward = static_cast<float>(xv * forward_reward_weight_ +
-                                     healthy_reward - ctrl_cost - contact_cost);
+    // auto reward = static_cast<float>(xv * forward_reward_weight_ +
+    //                                  healthy_reward - ctrl_cost - contact_cost);
+    // Use the standing reward function.
+    auto reward = ComputeStandingReward();
+
     ++elapsed_step_;
     done_ = (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
             (elapsed_step_ >= max_episode_steps_);
     WriteState(reward, xv, yv, ctrl_cost, contact_cost, after[0], after[1],
-               healthy_reward);
+               healthy_reward_);
   }
 
  private:
@@ -217,6 +225,66 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     }
     return {mass_x / mass_sum, mass_y / mass_sum};
   }
+
+  // ------------------------------------------------------------------------
+  // Additional reward function for encouraging a stable standing posture.
+  // This function computes a reward based on:
+  //   - The error between the current torso height and a desired height.
+  //   - The sum of the absolute roll and pitch (from the base orientation).
+  //   - A penalty on the magnitude of linear and angular velocities.
+  // A bonus is applied if the height and orientation errors are small, and a
+  // large penalty is applied if the robot is considered to have fallen.
+  // ------------------------------------------------------------------------
+  mjtNum ComputeStandingReward() {
+    // Parameters (tune these based on your experimental setup)
+    const mjtNum desired_height = 0.5;      // target torso height (meters)
+    const mjtNum height_weight = 1.0;         // weight for height error
+    const mjtNum orientation_weight = 2.0;    // weight for orientation error (roll + pitch)
+    const mjtNum velocity_weight = 0.5;       // weight for penalizing movement
+    const mjtNum fall_penalty = 10.0;         // penalty if the robot falls
+    const mjtNum stability_threshold = 0.05;  // error tolerance for bonus reward
+
+    // Get current torso height (assuming data_->qpos[2] is the z-position)
+    mjtNum current_height = data_->qpos[2];
+
+    // Convert base orientation quaternion (stored in qpos[3]-qpos[6]) to Euler angles.
+    // Note: Adjust the order if your model uses a different convention.
+    Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4], data_->qpos[5], data_->qpos[6]);
+    Eigen::Vector3<mjtNum> euler = quat.toRotationMatrix().eulerAngles(0, 1, 2);
+    mjtNum roll = std::abs(euler[0]);
+    mjtNum pitch = std::abs(euler[1]);
+
+    // Compute errors.
+    mjtNum height_error = std::abs(current_height - desired_height);
+    mjtNum orientation_error = roll + pitch;
+
+    // Compute base linear and angular velocities (from qvel; first 3 = linear, next 3 = angular)
+    mjtNum linear_velocity = std::sqrt(data_->qvel[0]*data_->qvel[0] +
+                                       data_->qvel[1]*data_->qvel[1] +
+                                       data_->qvel[2]*data_->qvel[2]);
+    mjtNum angular_velocity = std::sqrt(data_->qvel[3]*data_->qvel[3] +
+                                        data_->qvel[4]*data_->qvel[4] +
+                                        data_->qvel[5]*data_->qvel[5]);
+    mjtNum movement_penalty = velocity_weight * (linear_velocity + angular_velocity);
+
+    // Base reward calculation (negative penalty on errors)
+    mjtNum reward = - (height_weight * height_error +
+                       orientation_weight * orientation_error +
+                       movement_penalty);
+
+    // Add a bonus if the errors are within a small threshold (i.e., stable posture)
+    if (height_error < stability_threshold && orientation_error < stability_threshold) {
+      reward += 1.0;
+    }
+
+    // Apply a large penalty if the torso height indicates a fall
+    if (current_height < 0.2) {
+      reward -= fall_penalty;
+    }
+
+    return reward;
+  }
+  // ------------------------------------------------------------------------
 
   void WriteState(float reward, mjtNum xv, mjtNum yv, mjtNum ctrl_cost,
                   mjtNum contact_cost, mjtNum x_after, mjtNum y_after,
@@ -254,13 +322,13 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:y_velocity"_] = yv;
 
     mbc.setFeedback(data_);
-        // Write to CSV only if csv_logging_enabled_ is set to 1.
-        if (csv_logging_enabled_ == 1) {
-          for (int i = 0; i < 19; i++) {
-            outputFile << data_->qpos[i] << ",";
-          }
-          outputFile << std::endl;
-        }
+    // Write to CSV only if csv_logging_enabled_ is set to 1.
+    if (csv_logging_enabled_ == 1) {
+      for (int i = 0; i < 19; i++) {
+        outputFile << data_->qpos[i] << ",";
+      }
+      outputFile << std::endl;
+    }
 
 #ifdef ENVPOOL_TEST
     state["info:qpos0"_].Assign(qpos0_, model_->nq);
