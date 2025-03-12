@@ -1,19 +1,3 @@
-/*
- * Copyright 2022 Garena Online Private Limited
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 #ifndef ENVPOOL_MUJOCO_GYM_HUMANOID_H_
 #define ENVPOOL_MUJOCO_GYM_HUMANOID_H_
 
@@ -77,7 +61,8 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 47}, {-10e9, 10e9})));
+    // Fix action shape: change from 47 to 22 dimensions.
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 22}, {-1, 1})));
   }
 };
 
@@ -92,6 +77,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   std::uniform_real_distribution<> dist_;
   ModelBasedControllerInterface mbc;
   std::ofstream outputFile;
+  // Added: Torque bound constant (example value; adjust as needed)
+  const mjtNum torque_limit_ = 65.0;
+  // Added: CSV logging switch (set to 1 manually to enable CSV writing)
+  int csv_logging_enabled_ = 0;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -165,7 +154,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum motor_commands[12];
     std::array<double, 12> mc = mbc.getMotorCommands();
     for (int i = 0; i < 12; ++i) {
-      motor_commands[i] = mc[i];
+      // Added: clamp motor commands to torque bounds
+      motor_commands[i] = std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_), -torque_limit_);
     }
     const auto& before = GetMassCenter();
 
@@ -252,9 +242,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     for (int i = 0; i < 6 * model_->nbody; ++i) {
       *(obs++) = data_->cfrc_ext[i];
     }
-    // quadruped obs count = 361
-
-    // info
     state["info:reward_linvel"_] = xv * forward_reward_weight_;
     state["info:reward_quadctrl"_] = -ctrl_cost;
     state["info:reward_alive"_] = healthy_reward;
@@ -267,11 +254,13 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:y_velocity"_] = yv;
 
     mbc.setFeedback(data_);
-    // write to file;
-    for (int i = 0; i < 19; i++) {
-      outputFile << data_->qpos[i] << ",";
-    }
-    outputFile << std::endl;
+        // Write to CSV only if csv_logging_enabled_ is set to 1.
+        if (csv_logging_enabled_ == 1) {
+          for (int i = 0; i < 19; i++) {
+            outputFile << data_->qpos[i] << ",";
+          }
+          outputFile << std::endl;
+        }
 
 #ifdef ENVPOOL_TEST
     state["info:qpos0"_].Assign(qpos0_, model_->nq);

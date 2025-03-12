@@ -151,7 +151,7 @@ class ModelBasedControllerInterface {
       _controller->_controlFSM->data.locomotionCtrlData.vFoot_des[leg][2] =
           act[8 + leg * 4];
       _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
-          act[9 + leg * 4];
+          (act[9 + leg * 4]>0.5);
     }
   }
 

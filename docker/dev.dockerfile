@@ -36,7 +36,9 @@ WORKDIR $HOME
 # RUN echo "set-option -g history-limit 10000" >> .tmux.conf.local
 # RUN echo "export PATH=$PATH:$HOME/go/bin" >> .zshrc
 
-RUN pip3 install gym numpy matplotlib  jax jaxlib flax optax   
+RUN pip3 install gym numpy matplotlib  jax jaxlib flax optax stable-baselines3  tensorboard "shimmy>=2.0"
+
+
 RUN export USE_BAZEL_VERSION=6.5.0
 WORKDIR /app
 COPY docker/entrypoint.sh /entrypoint.sh
