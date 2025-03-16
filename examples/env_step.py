@@ -50,8 +50,11 @@ def gym_sync_step() -> None:
   # # assert obs.shape == (num_envs, 4, 84, 84)
   # if debug_prints:
   #   print(f"Observation shape after reset: {obs.shape}")
-
-  for _ in range(30000):
+  # Add to env_step.py
+  if debug_prints:
+    print(f"Observation space: {env.observation_space}")
+    print(f"Observation shape: {env.observation_space.shape}")
+  for _ in range(10):
     # autoreset is automatically enabled in envpool
     action = np.random.randint(action_num, size=(num_envs, action_num))
     if debug_prints:
@@ -65,7 +68,10 @@ def gym_sync_step() -> None:
     else:
       obs, rew, term, trunc, info = env.step(action)
       if debug_prints:
+        print(f"obs {obs}")
         print(f"Step result - obs: {obs}, rew: {rew}, term: {term}, trunc: {trunc}, info: {info}")
+        for i in obs:
+          print(i)
     # print("obs", obs)
     # print(f"obs, rew, term, trunc, info {obs.shape, rew, term, trunc, info}")
 

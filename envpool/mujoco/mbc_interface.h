@@ -37,10 +37,19 @@ class ModelBasedControllerInterface {
     _robot_runner->controlParameters = _control_params;
     _robot_runner->initializeParameters();
     _robot_runner->init();
-    setModeStandUp();
-    setModeLocomotion();
+    // setModeStandUp();
+    // setModeLocomotion();
   }
+  void construct()
+  {
+    _controller->_controlFSM->data.controlParameters->control_mode = 1;
 
+    while (_controller->_controlFSM->currentState->stateName !=
+           FSM_StateName::BALANCE_STAND) {
+      _robot_runner->run();
+    }
+    
+  }
   void setModeStandUp() {
     _controller->_controlFSM->data.controlParameters->control_mode = 1;
 
@@ -48,6 +57,7 @@ class ModelBasedControllerInterface {
            FSM_StateName::BALANCE_STAND) {
       _robot_runner->run();
     }
+    
   }
   void setModeLocomotion() {
     _controller->_controlFSM->data.controlParameters->control_mode = 4;
@@ -57,7 +67,13 @@ class ModelBasedControllerInterface {
     }
   }
 
-  void run() { _robot_runner->run(); }
+  int getMode(){
+    return int(_controller->_controlFSM->currentState->stateName);
+  }
+
+
+  void run() {
+     _robot_runner->run(); }
 
   std::array<double, 12> getMotorCommands() {
     std::array<double, 12> motor_commands;

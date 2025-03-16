@@ -4,12 +4,12 @@
 #include <RobotRunner.h>
 
 #include <algorithm>
+#include <cmath>  // For std::sqrt, std::abs
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
 #include <string>
-#include <cmath>  // For std::sqrt, std::abs
 
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
@@ -79,11 +79,13 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   ModelBasedControllerInterface mbc;
   // New: Backup of the controller
   ModelBasedControllerInterface mbc_backup;
+  mjModel* model_backup_;
+  mjData* data_backup_;
   std::ofstream outputFile;
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
-  int csv_logging_enabled_ = 0;
+  int csv_logging_enabled_ = 1;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -108,9 +110,53 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
               spec.config["reset_noise_scale"_]) {
     std::string fname;
     fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
+    
     outputFile.open(fname.c_str());
     // Save the initial controller configuration to backup
+    while (mbc.getMode() != 6) {
+      
+      mjtNum dummy_action[22];
+      // set all values to zero;
+      for (int i = 0; i < 22; i++) {
+        dummy_action[i] = 0;
+      }
+      mjtNum* act = dummy_action;
+      mbc.setAction(act);
+      mbc.run();
+
+      mjtNum motor_commands[12];
+      std::array<double, 12> mc = mbc.getMotorCommands();
+      for (int i = 0; i < 12; ++i) {
+        // Clamp motor commands to torque bounds.
+        motor_commands[i] =
+            std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_),
+                     -torque_limit_);
+      }
+      const auto& before = GetMassCenter();
+
+      MujocoStep(motor_commands);
+
+      std::cout<<"height: "<<data_->qpos[2]<<std::endl;
+      if (csv_logging_enabled_ == 1) {
+        for (int i = 0; i < 19; i++) {
+          outputFile << data_->qpos[i] << ",";
+        }
+        outputFile << std::endl;
+      }
+    }
+
+    if (csv_logging_enabled_ == 1) {
+      for (int j = 0; j < 10; j++) {
+        for (int i = 0; i < 19; i++) {
+          outputFile << 0.2 << ",";
+        }
+        outputFile << std::endl;
+      }
+    }
     mbc_backup = mbc;
+    model_backup_ = mj_copyModel(nullptr, model_);
+    data_backup_ = mj_copyData(nullptr,model_, data_ );
+
   }
 
   void MujocoResetModel() override {
@@ -142,9 +188,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   bool IsDone() override { return done_; }
 
   void Reset() override {
+    std::cout << "reset" << std::endl;
+
+    if (csv_logging_enabled_ == 1) {
+      for (int j = 0; j < 10; j++) {
+        for (int i = 0; i < 19; i++) {
+          outputFile << 0 << ",";
+        }
+        outputFile << std::endl;
+      }
+    }
     MujocoReset();
     // Instead of resetting the controller, we copy the backup.
     mbc = mbc_backup;
+    model_ = mj_copyModel(nullptr, model_backup_);
+    data_ = mj_copyData(nullptr,model_, data_backup_ );
+
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     done_ = false;
     elapsed_step_ = 0;
@@ -160,7 +219,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     std::array<double, 12> mc = mbc.getMotorCommands();
     for (int i = 0; i < 12; ++i) {
       // Clamp motor commands to torque bounds.
-      motor_commands[i] = std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_), -torque_limit_);
+      motor_commands[i] = std::max(
+          std::min(static_cast<mjtNum>(mc[i]), torque_limit_), -torque_limit_);
     }
     const auto& before = GetMassCenter();
 
@@ -190,7 +250,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum healthy_reward =
         terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
     // auto reward = static_cast<float>(xv * forward_reward_weight_ +
-    //                                  healthy_reward - ctrl_cost - contact_cost);
+    //                                  healthy_reward - ctrl_cost -
+    //                                  contact_cost);
     // Use the standing reward function.
     auto reward = ComputeStandingReward();
 
@@ -237,19 +298,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // ------------------------------------------------------------------------
   mjtNum ComputeStandingReward() {
     // Parameters (tune these based on your experimental setup)
-    const mjtNum desired_height = 0.5;      // target torso height (meters)
-    const mjtNum height_weight = 1.0;         // weight for height error
-    const mjtNum orientation_weight = 2.0;    // weight for orientation error (roll + pitch)
-    const mjtNum velocity_weight = 0.5;       // weight for penalizing movement
-    const mjtNum fall_penalty = 10.0;         // penalty if the robot falls
-    const mjtNum stability_threshold = 0.05;  // error tolerance for bonus reward
+    const mjtNum desired_height = 0.35;  // target torso height (meters)
+    const mjtNum height_weight = 5.0;   // weight for height error
+    const mjtNum orientation_weight =
+        2.0;  // weight for orientation error (roll + pitch)
+    const mjtNum velocity_weight = 0.5;  // weight for penalizing movement
+    const mjtNum fall_penalty = 10.0;    // penalty if the robot falls
+    const mjtNum stability_threshold =
+        0.05;  // error tolerance for bonus reward
 
     // Get current torso height (assuming data_->qpos[2] is the z-position)
     mjtNum current_height = data_->qpos[2];
 
-    // Convert base orientation quaternion (stored in qpos[3]-qpos[6]) to Euler angles.
-    // Note: Adjust the order if your model uses a different convention.
-    Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4], data_->qpos[5], data_->qpos[6]);
+    // Convert base orientation quaternion (stored in qpos[3]-qpos[6]) to Euler
+    // angles. Note: Adjust the order if your model uses a different convention.
+    Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4],
+                                   data_->qpos[5], data_->qpos[6]);
     Eigen::Vector3<mjtNum> euler = quat.toRotationMatrix().eulerAngles(0, 1, 2);
     mjtNum roll = std::abs(euler[0]);
     mjtNum pitch = std::abs(euler[1]);
@@ -258,22 +322,26 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum height_error = std::abs(current_height - desired_height);
     mjtNum orientation_error = roll + pitch;
 
-    // Compute base linear and angular velocities (from qvel; first 3 = linear, next 3 = angular)
-    mjtNum linear_velocity = std::sqrt(data_->qvel[0]*data_->qvel[0] +
-                                       data_->qvel[1]*data_->qvel[1] +
-                                       data_->qvel[2]*data_->qvel[2]);
-    mjtNum angular_velocity = std::sqrt(data_->qvel[3]*data_->qvel[3] +
-                                        data_->qvel[4]*data_->qvel[4] +
-                                        data_->qvel[5]*data_->qvel[5]);
-    mjtNum movement_penalty = velocity_weight * (linear_velocity + angular_velocity);
+    // Compute base linear and angular velocities (from qvel; first 3 = linear,
+    // next 3 = angular)
+    mjtNum linear_velocity = std::sqrt(data_->qvel[0] * data_->qvel[0] +
+                                       data_->qvel[1] * data_->qvel[1] +
+                                       data_->qvel[2] * data_->qvel[2]);
+    mjtNum angular_velocity = std::sqrt(data_->qvel[3] * data_->qvel[3] +
+                                        data_->qvel[4] * data_->qvel[4] +
+                                        data_->qvel[5] * data_->qvel[5]);
+    mjtNum movement_penalty =
+        velocity_weight * (linear_velocity + angular_velocity);
 
     // Base reward calculation (negative penalty on errors)
-    mjtNum reward = - (height_weight * height_error +
-                       orientation_weight * orientation_error +
-                       movement_penalty);
+    mjtNum reward =
+        -(height_weight * height_error +
+          orientation_weight * orientation_error + movement_penalty)+10.0;
 
-    // Add a bonus if the errors are within a small threshold (i.e., stable posture)
-    if (height_error < stability_threshold && orientation_error < stability_threshold) {
+    // Add a bonus if the errors are within a small threshold (i.e., stable
+    // posture)
+    if (height_error < stability_threshold &&
+        orientation_error < stability_threshold) {
       reward += 1.0;
     }
 
@@ -291,25 +359,76 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                   mjtNum healthy_reward) {
     State state = Allocate();
     state["reward"_] = reward;
+    // Debug the state allocation - check if it's properly created
+    // std::cout << "State obs buffer size: "
+    // << state["obs"_].Shape()[0]  << state["obs"_].Shape()[1] << std::endl;
     mjtNum* obs = static_cast<mjtNum*>(state["obs"_].Data());
-    for (int i = no_pos_ ? 2 : 0; i < model_->nq; ++i) {
-      *(obs++) = data_->qpos[i];
+    mjtNum* obs_start = obs;  // Save the starting pointer for debugging
+
+    // for (int i = no_pos_ ? 2 : 0; i < model_->nq; ++i) {
+    // *(obs++) = data_->qpos[i];
+    // std::cout << "obs data type: " << typeid(data_->qpos[i]).name() <<
+    // std::endl;
+    // }
+    // for (int i = 0; i < model_->nv; ++i) {
+    // *(obs++) = data_->qvel[i];
+    // }
+    // for (int i = 0; i < 10 * model_->nbody; ++i) {
+    // *(obs++) = data_->cinert[i];
+    // }
+    // for (int i = 0; i < 6 * model_->nbody; ++i) {
+    // *(obs++) = data_->cvel[i];
+    // }
+    // for (int i = 0; i < model_->nv; ++i) {
+    // *(obs++) = data_->qfrc_actuator[i];
+    // }
+    // for (int i = 0; i < 6 * model_->nbody; ++i) {
+    // *(obs++) = data_->cfrc_ext[i];
+    // }
+    // Create a temporary vector to hold all observations
+    std::vector<mjtNum> all_obs;
+    all_obs.reserve(3);  // Pre-allocate space for efficiency
+
+    // Fill the vector with observations
+    for (int i = 0; i < 3; ++i) {
+      all_obs.push_back(data_->qpos[i]);
     }
-    for (int i = 0; i < model_->nv; ++i) {
-      *(obs++) = data_->qvel[i];
-    }
-    for (int i = 0; i < 10 * model_->nbody; ++i) {
-      *(obs++) = data_->cinert[i];
-    }
-    for (int i = 0; i < 6 * model_->nbody; ++i) {
-      *(obs++) = data_->cvel[i];
-    }
-    for (int i = 0; i < model_->nv; ++i) {
-      *(obs++) = data_->qfrc_actuator[i];
-    }
-    for (int i = 0; i < 6 * model_->nbody; ++i) {
-      *(obs++) = data_->cfrc_ext[i];
-    }
+    //  for (int i = 0; i < model_->nv; ++i) {
+    //      all_obs.push_back(data_->qvel[i]);
+    //  }
+    //  for (int i = 0; i < 10 * model_->nbody; ++i) {
+    //      all_obs.push_back(data_->cinert[i]);
+    //  }
+    //  for (int i = 0; i < 6 * model_->nbody; ++i) {
+    //      all_obs.push_back(data_->cvel[i]);
+    //  }
+    //  for (int i = 0; i < model_->nv; ++i) {
+    //      all_obs.push_back(data_->qfrc_actuator[i]);
+    //  }
+    //  for (int i = 0; i < 6 * model_->nbody; ++i) {
+    //      all_obs.push_back(data_->cfrc_ext[i]);
+    //  }
+
+    // Now copy the vector to the state all at once
+    state["obs"_].Assign(all_obs.data(), all_obs.size());
+
+    // Print confirmation
+    //  std::cout << "Filled " << all_obs.size() << " elements in observation
+    //  array" << std::endl; std::cout << "First few values: "
+    //            << all_obs[0] << " "
+    //            << all_obs[1] << " "
+    //            << all_obs[2] << " "
+    //            << std::endl;
+    //   // Print the first 30 observation values using the saved starting
+    //   pointer std::cout << "obs values: "; for(int i=0; i<30; i++) {
+    //   std::cout << obs_start[i] << " ";
+    //   }
+    //   std::cout << std::endl;
+
+    // Add this to WriteState() after filling all observations
+    int filled_elements = obs - obs_start;
+    // std::cout << "Filled " << filled_elements << " elements in observation
+    // array" << std::endl;
     state["info:reward_linvel"_] = xv * forward_reward_weight_;
     state["info:reward_quadctrl"_] = -ctrl_cost;
     state["info:reward_alive"_] = healthy_reward;

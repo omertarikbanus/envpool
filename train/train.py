@@ -109,7 +109,7 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=8, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=12, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--total-timesteps", type=int, default=200000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
@@ -160,32 +160,7 @@ def main():
     print(f"EnvPool Evaluation - {args.env_name}")
     print(f"Mean Reward: {mean_reward:.2f} +/- {std_reward:.2f}")
 
-    # For additional evaluation, test on a standard Gym environment.
-    if not is_legacy_gym:
-        def legacy_wrap(gym_env):
-            gym_env.reset_fn = gym_env.reset
-            gym_env.step_fn = gym_env.step
 
-            def legacy_reset():
-                return gym_env.reset_fn()[0]
-
-            def legacy_step(action):
-                obs, rew, term, trunc, info = gym_env.step_fn(action)
-                return obs, rew, term + trunc, info
-
-            gym_env.reset = legacy_reset
-            gym_env.step = legacy_step
-            return gym_env
-
-        test_env = legacy_wrap(gymnasium.make(args.env_name))
-    else:
-        test_env = gym.make(args.env_name)
-
-    mean_reward, std_reward = evaluate_policy(model, test_env, n_eval_episodes=20, warn=False, render=False)
-    print(f"Gym Evaluation - {args.env_name}")
-    print(f"Mean Reward: {mean_reward:.2f} +/- {std_reward:.2f}")
-
-    test_env.close()
     env.close()
 
 
