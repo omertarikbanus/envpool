@@ -14,7 +14,7 @@ RUN apt update && apt upgrade -y && \
     npm wget curl zsh tmux vim golang-1.21 clang-format clang-tidy swig qtdeclarative5-dev  \
     python3-pip libgoogle-glog-dev libeigen3-dev libboost-all-dev libgflags2.2 libgflags-dev \
     libglfw3-dev libopengl-dev libtinyxml2-dev libglew-dev libglib2.0-dev libcurses-ocaml-dev python3-dev \
-    libxinerama-dev libxcursor-dev libxi-dev cmake g++ ca-certificates liblcm-dev 
+    libxinerama-dev libxcursor-dev libxi-dev cmake g++ ca-certificates liblcm-dev libxcb-xinerama0 libxcb-xinerama0-dev libx11-xcb1 libx11-xcb-dev libxcb1 xvfb libxcb-util1 kst
 
 RUN npm install -g @bazel/bazelisk
 
@@ -36,12 +36,14 @@ WORKDIR $HOME
 # RUN echo "set-option -g history-limit 10000" >> .tmux.conf.local
 # RUN echo "export PATH=$PATH:$HOME/go/bin" >> .zshrc
 
-RUN pip3 install gym numpy matplotlib  jax jaxlib flax optax stable-baselines3  tensorboard "shimmy>=2.0"
+RUN pip3 install mujoco gym numpy matplotlib  jax jaxlib flax optax stable-baselines3  tensorboard "shimmy>=2.0"
 
 
 RUN export USE_BAZEL_VERSION=6.5.0
 WORKDIR /app
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+RUN ln -s /usr/include/aarch64-linux-gnu/qt5 /usr/include/qt
+RUN ln -s /usr/include/eigen3/Eigen /usr/include/Eigen
 ENTRYPOINT ["/entrypoint.sh"]
 

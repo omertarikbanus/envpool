@@ -112,6 +112,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
     
     outputFile.open(fname.c_str());
+    
+    MujocoReset();
     // Save the initial controller configuration to backup
     while (mbc.getMode() != 6) {
       
@@ -136,23 +138,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
       MujocoStep(motor_commands);
 
-      std::cout<<"height: "<<data_->qpos[2]<<std::endl;
-      if (csv_logging_enabled_ == 1) {
-        for (int i = 0; i < 19; i++) {
-          outputFile << data_->qpos[i] << ",";
-        }
-        outputFile << std::endl;
-      }
+      writeDataToCSV(0);
     }
-
-    if (csv_logging_enabled_ == 1) {
-      for (int j = 0; j < 10; j++) {
-        for (int i = 0; i < 19; i++) {
-          outputFile << 0.2 << ",";
-        }
-        outputFile << std::endl;
-      }
-    }
+    writeDataToCSV(2);
     mbc_backup = mbc;
     model_backup_ = mj_copyModel(nullptr, model_);
     data_backup_ = mj_copyData(nullptr,model_, data_ );
@@ -160,19 +148,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   }
 
   void MujocoResetModel() override {
-    for (int i = 0; i < model_->nq; ++i) {
-      data_->qpos[i] = init_qpos_[i] + dist_(gen_);
-    }
-    for (int i = 0; i < model_->nv; ++i) {
-      data_->qvel[i] = init_qvel_[i] + dist_(gen_);
-    }
+    // for (int i = 0; i < model_->nq; ++i) {
+    //   data_->qpos[i] = init_qpos_[i] + dist_(gen_);
+    // }
+    // for (int i = 0; i < model_->nv; ++i) {
+    //   data_->qvel[i] = init_qvel_[i] + dist_(gen_);
+    // }
     int kSideSign_[4] = {-1, 1, -1, 1};
 
     model_->opt.timestep = 0.002;
-
+    
+    
+    // data_->qpos[2] = 0.6;  // Set the height to 0.125
+   
     for (int leg = 0; leg < 4; leg++) {
       data_->qpos[(leg) * 3 + 0 + 7] =
-          1 * (M_PI / 180) *
+          0 * (M_PI / 180) *
           kSideSign_[leg];  // Add 7 to skip the first 7 dofs from body.
                             // (Position + Quaternion)
       data_->qpos[(leg) * 3 + 1 + 7] = -90 * (M_PI / 180);  //*kDirSign_[leg];
@@ -190,14 +181,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   void Reset() override {
     std::cout << "reset" << std::endl;
 
-    if (csv_logging_enabled_ == 1) {
-      for (int j = 0; j < 10; j++) {
-        for (int i = 0; i < 19; i++) {
-          outputFile << 0 << ",";
-        }
-        outputFile << std::endl;
-      }
-    }
+    writeDataToCSV(1);
     MujocoReset();
     // Instead of resetting the controller, we copy the backup.
     mbc = mbc_backup;
@@ -442,17 +426,56 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     mbc.setFeedback(data_);
     // Write to CSV only if csv_logging_enabled_ is set to 1.
-    if (csv_logging_enabled_ == 1) {
-      for (int i = 0; i < 19; i++) {
-        outputFile << data_->qpos[i] << ",";
-      }
-      outputFile << std::endl;
-    }
+  writeDataToCSV();
 
 #ifdef ENVPOOL_TEST
     state["info:qpos0"_].Assign(qpos0_, model_->nq);
     state["info:qvel0"_].Assign(qvel0_, model_->nv);
 #endif
+  }
+
+  void writeDataToCSV(int mode = 0) {
+    if (csv_logging_enabled_ == 0) {
+      return;  // Skip writing if logging is disabled
+    }
+    // Check if the file is open
+    if (!outputFile.is_open()) {
+      std::cerr << "Error: Unable to open CSV file for writing." << std::endl;
+      return;
+    }
+    // Write the header only once
+    if (outputFile.tellp() == 0) {
+      outputFile << "body_x,body_y,body_z,"
+                 << "quat_w,quat_x,quat_y,quat_z,"
+                 << "FR_abad,FR_hip,FR_knee,"
+                 << "FL_abad,FL_hip,FL_knee,"
+                 << "HR_abad,HR_hip,HR_knee,"  
+                 << "HL_abad,HL_hip,HL_knee" << std::endl;
+    }
+    // Write the data to CSV
+    if (mode == 0) {
+      // Write the data to CSV
+      for (int i = 0; i < 19; ++i) {
+        outputFile << double(data_->qpos[i]);
+        if (i < 18) outputFile << ",";
+      }
+      outputFile << std::endl;
+    } else if (mode == 1) {
+      // Write the data to CSV
+      for (int i = 0; i < 19; ++i) {
+        outputFile << 0.2;
+        if (i < 18) outputFile << ",";
+      }
+      outputFile << std::endl;
+    }
+    else if (mode == 2) {
+      // Write the data to CSV
+      for (int i = 0; i < 19; ++i) {
+        outputFile << 0;
+        if (i < 18) outputFile << ",";
+      }
+      outputFile << std::endl;
+    }
   }
 };
 
