@@ -33,10 +33,8 @@ try:
 except ImportError:
   pass
 
-try:
-  import envpool.mujoco.gym.registration  # noqa: F401
-except ImportError:
-  pass
+import envpool.mujoco.gym.registration  # noqa: F401
+
 
 try:
   import envpool.procgen.registration  # noqa: F401

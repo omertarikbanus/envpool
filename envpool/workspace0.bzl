@@ -328,18 +328,31 @@ def workspace():
         build_file = "//third_party/vizdoom_extra_maps:vizdoom_extra_maps.BUILD",
     )
 
+    
+    # maybe(
+    #     http_archive,
+    #     name = "mujoco",
+    #     sha256 = "d1cb3a720546240d894cd315b7fd358a2b96013a1f59b6d718036eca6f6edac2",
+    #     strip_prefix = "mujoco-2.2.1",
+    #     urls = [
+    #         "https://github.com/deepmind/mujoco/releases/download/2.2.1/mujoco-2.2.1-linux-x86_64.tar.gz",
+    #         "https://ml.cs.tsinghua.edu.cn/~jiayi/envpool/deepmind/mujoco/mujoco-2.2.1-linux-x86_64.tar.gz",
+    #     ],
+    #     build_file = "//third_party/mujoco:mujoco.BUILD",
+    # )
+    # this is for arm64, which is not supported by mujoco
     maybe(
         http_archive,
         name = "mujoco",
-        sha256 = "d1cb3a720546240d894cd315b7fd358a2b96013a1f59b6d718036eca6f6edac2",
+        sha256 = "d5c9fb84325e00e8a46a6ad4ed53e940c6282f3e35171e8064c3e802bafc0849",
         strip_prefix = "mujoco-2.2.1",
         urls = [
-            "https://github.com/deepmind/mujoco/releases/download/2.2.1/mujoco-2.2.1-linux-x86_64.tar.gz",
+            "https://github.com/google-deepmind/mujoco/releases/download/2.2.1/mujoco-2.2.1-linux-aarch64.tar.gz",
             "https://ml.cs.tsinghua.edu.cn/~jiayi/envpool/deepmind/mujoco/mujoco-2.2.1-linux-x86_64.tar.gz",
         ],
         build_file = "//third_party/mujoco:mujoco.BUILD",
     )
-
+    
     maybe(
         http_archive,
         name = "mujoco_gym_xml",

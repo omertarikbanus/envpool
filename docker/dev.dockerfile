@@ -38,7 +38,14 @@ WORKDIR $HOME
 
 RUN pip3 install mujoco gym numpy matplotlib  jax jaxlib flax optax stable-baselines3  tensorboard "shimmy>=2.0"
 
-
+RUN git clone --branch 2.2.1 https://github.com/deepmind/mujoco.git /home/root/mujoco && \
+    cd /home/root/mujoco && \
+    mkdir -p build && \
+    cd build && \
+    cmake .. && \
+    cmake --build . --config Release && \
+    cmake --install .
+RUN ldconfig
 RUN export USE_BAZEL_VERSION=6.5.0
 WORKDIR /app
 COPY docker/entrypoint.sh /entrypoint.sh

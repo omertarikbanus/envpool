@@ -34,7 +34,7 @@ genrule(
 genrule(
     name = "gen_mujoco_so",
     srcs = ["@mujoco//:mujoco_so"],
-    outs = ["libmujoco.so.2.2.1"],
+    outs = ["libmujoco.so"],
     cmd = "cp $< $@",
 )
 # cc_import(

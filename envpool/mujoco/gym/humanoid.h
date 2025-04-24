@@ -78,7 +78,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   std::uniform_real_distribution<> dist_;
   ModelBasedControllerInterface mbc;
   // New: Backup of the controller
-  ModelBasedControllerInterface mbc_backup;
   mjModel* model_backup_;
   mjData* data_backup_;
   std::ofstream outputFile;
@@ -123,6 +122,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         dummy_action[i] = 0;
       }
       mjtNum* act = dummy_action;
+      mbc.setFeedback(data_);
       mbc.setAction(act);
       mbc.run();
 
@@ -141,7 +141,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       writeDataToCSV(0);
     }
     writeDataToCSV(2);
-    mbc_backup = mbc;
     model_backup_ = mj_copyModel(nullptr, model_);
     data_backup_ = mj_copyData(nullptr,model_, data_ );
 
@@ -184,11 +183,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     writeDataToCSV(1);
     MujocoReset();
     // Instead of resetting the controller, we copy the backup.
-    mbc = mbc_backup;
     model_ = mj_copyModel(nullptr, model_backup_);
     data_ = mj_copyData(nullptr,model_, data_backup_ );
 
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    mbc.setFeedback(data_);
+    mbc.setModeLocomotion();
     done_ = false;
     elapsed_step_ = 0;
   }
@@ -462,19 +462,23 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       outputFile << std::endl;
     } else if (mode == 1) {
       // Write the data to CSV
+      for (int i = 0; i < 19; ++i){
       for (int i = 0; i < 19; ++i) {
         outputFile << 0.2;
         if (i < 18) outputFile << ",";
       }
       outputFile << std::endl;
     }
+    }
     else if (mode == 2) {
       // Write the data to CSV
+      for (int i = 0; i < 19; ++i) {
       for (int i = 0; i < 19; ++i) {
         outputFile << 0;
         if (i < 18) outputFile << ",";
       }
       outputFile << std::endl;
+    }
     }
   }
 };

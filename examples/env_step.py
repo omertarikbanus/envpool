@@ -54,9 +54,14 @@ def gym_sync_step() -> None:
   if debug_prints:
     print(f"Observation space: {env.observation_space}")
     print(f"Observation shape: {env.observation_space.shape}")
-  for _ in range(10):
+  for _ in range(20000):
     # autoreset is automatically enabled in envpool
-    action = np.random.randint(action_num, size=(num_envs, action_num))
+    # action = np.random.randint(action_num, size=(num_envs, action_num))
+    action= np.zeros((num_envs, action_num), dtype=np.float32)
+    for leg in range(4):
+      action[0][4*leg+7] = -5.0*(-1)**leg
+      action[0][4*leg+8] =81.0
+      action[0][4*leg+9] = 1
     if debug_prints:
       print(f"Sampled action: {action}")
 

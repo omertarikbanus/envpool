@@ -159,15 +159,57 @@ docker-ci-push: docker-ci
 
 docker-ci-launch: docker-ci
 	docker run --network=host -v /home/ubuntu:/home/github-action --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
+
 docker-run:
-	docker run --network=host -v /:/host -v $(shell pwd)/../:/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it --rm \
-    -e DISPLAY=$(DISPLAY) \
-    -e XAUTHORITY=/tmp/.docker.xauth \
-    -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v $(XAUTHORITY):/tmp/.docker.xauth \
-	 $(PROJECT_NAME):$(DOCKER_TAG) bash
-docker-dev: docker-ci
-	docker run --network=host -v /:/host -v $(shell pwd)/../:/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
+		docker run --network=host \
+		-v $(shell pwd)/../:/app \
+		-v $(HOME)/.cache:/root/.cache \
+		-v /:/host \
+		--shm-size=4gb -it --rm \
+		-e DISPLAY=$(DISPLAY) \
+			-e QT_X11_NO_MITSHM=1 \
+		-e XAUTHORITY=/tmp/.docker.xauth \
+		-v /tmp/.X11-unix:/tmp/.X11-unix \
+		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
+		$(PROJECT_NAME):$(DOCKER_TAG) bash
+
+docker-run-mac:
+	mkdir -p /tmp/runtime-dir-$(USER)
+	chmod 700 /tmp/runtime-dir-$(USER)
+	docker run --network=host \
+		-v $(shell pwd)/../:/app \
+		-v $(HOME)/.cache:/root/.cache \
+		-v /:/host \
+		-v /tmp/.X11-unix:/tmp/.X11-unix \
+		-v /tmp/runtime-dir-$(USER):/tmp/runtime-dir \
+		--shm-size=4gb -it --rm \
+		-e DISPLAY=host.docker.internal:0 \
+		-e QT_X11_NO_MITSHM=1 \
+		-e XDG_RUNTIME_DIR=/tmp/runtime-dir \
+		-e LIBGL_ALWAYS_INDIRECT=1 \
+		-e MESA_GL_VERSION_OVERRIDE=3.3 \
+		$(PROJECT_NAME):$(DOCKER_TAG) bash
+
+# docker-run-mac:
+# 		mkdir -p /tmp/runtime-dir-$(USER) 
+# 		chmod 700 /tmp/runtime-dir-$(USER) 
+# 		xhost + 127.0.0.1 
+# 		docker run --network=host \
+# 			-v $(shell pwd)/../:/app \
+# 			-v $(HOME)/.cache:/root/.cache \
+# 			-v /tmp/.X11-unix:/tmp/.X11-unix \
+# 			-v /tmp/runtime-dir-$(USER):/tmp/runtime-dir \
+# 			--shm-size=4gb -it --rm \
+# 			-e DISPLAY=host.docker.internal:0 \
+# 			-e QT_X11_NO_MITSHM=1 \
+# 			-e XDG_RUNTIME_DIR=/tmp/runtime-dir \
+# 			-e LIBGL_ALWAYS_INDIRECT=1 \
+# 			-e MESA_GL_VERSION_OVERRIDE=3.3 \
+# 			-e XAUTHORITY=/tmp/.docker.xauth \
+# 			$(PROJECT_NAME):$(DOCKER_TAG) bash
+
+docker-dev: docker-ci docker-run-mac 
+#  	docker run --network=host -v /:/host -v $(shell pwd)/../:/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
 
 # for mainland China
 docker-dev-cn:
@@ -201,4 +243,4 @@ custom-t:
 	bazel run --config=test //:setup -- bdist_wheel > bazel_build_log.log
 	pip3 uninstall envpool -y
 	pip3 install bazel-bin/setup.runfiles/envpool/dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl 
-	python3 examples/env_step.py 
+	python3 examples/env_step.py

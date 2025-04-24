@@ -4,9 +4,23 @@ build --action_env=CUDA_DIR=/usr/local/cuda
 build --action_env=LD_LIBRARY_PATH=/usr/local/lib:/usr/lib/nvidia
 build --incompatible_strict_action_env --cxxopt=-std=c++17 --host_cxxopt=-std=c++17 --client_env=BAZEL_CXXOPTS=-std=c++17
 build:debug --cxxopt=-DENVPOOL_TEST --compilation_mode=dbg -s
-build:test --cxxopt=-DENVPOOL_TEST --copt=-g0 --copt=-O3 --copt=-DNDEBUG --copt=-msse --copt=-msse2 --copt=-mmmx
-build:release --copt=-g0 --copt=-O3 --copt=-DNDEBUG --copt=-msse --copt=-msse2 --copt=-mmmx
 
+# # x86 specific configurations
+# build:x86 --copt=-g0 --copt=-O3 --copt=-DNDEBUG --copt=-msse --copt=-msse2 --copt=-mmmx
+# build:test-x86 --config=x86 --cxxopt=-DENVPOOL_TEST
+# build:release-x86 --config=x86
+
+# # ARM specific configurations
+# build:arm --copt=-g0 --copt=-O3 --copt=-DNDEBUG --copt=-DEIGEN_DONT_VECTORIZE --copt=-DEIGEN_DONT_ALIGN
+# build:arm --linkopt=-lc  # Add this line to explicitly link with libc
+# build:test-arm --config=arm --cxxopt=-DENVPOOL_TEST
+# build:release-arm --config=arm
+
+# Legacy configs that auto-detect architecture
+build:test --cxxopt=-DENVPOOL_TEST --copt=-g0 --copt=-O3 --copt=-DNDEBUG
+build:release --copt=-g0 --copt=-O3 --copt=-DNDEBUG
+
+# Clang tidy configuration
 build:clang-tidy --aspects @bazel_clang_tidy//clang_tidy:clang_tidy.bzl%clang_tidy_aspect
 build:clang-tidy --@bazel_clang_tidy//:clang_tidy_config=//:clang_tidy_config
 build:clang-tidy --output_groups=report

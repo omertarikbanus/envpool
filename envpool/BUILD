@@ -37,7 +37,7 @@ py_library(
         "//envpool/mujoco:mujoco_gym_registration",
         "//envpool/procgen:procgen_registration",
         "//envpool/toy_text:toy_text_registration",
-        "//envpool/vizdoom:vizdoom_registration",
+        # "//envpool/vizdoom:vizdoom_registration",
     ],
 )
 
@@ -55,7 +55,7 @@ py_library(
         "//envpool/procgen",
         "//envpool/python",
         "//envpool/toy_text",
-        "//envpool/vizdoom",
+        # "//envpool/vizdoom",
     ],
 )
 
