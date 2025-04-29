@@ -111,7 +111,7 @@ def parse_args():
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
     parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=200000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=300000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
@@ -136,18 +136,35 @@ def main():
     env = VecMonitor(env)  # Monitor for tracking episode stats
 
     # Configure PPO model with tuned hyperparameters.
-    model = PPO(
-        "MlpPolicy",
-        env,
-        n_steps=2048,
-        learning_rate=1e-3,
-        gamma=0.9,
-        gae_lambda=0.95,
-        verbose=1,
-        seed=args.seed,
-        tensorboard_log=args.tb_log_dir,
-    )
+    # model = PPO(
+    #     "MlpPolicy",
+    #     env,
+    #     n_steps=2048,
+    #     learning_rate=1e-3,
+    #     gamma=0.9,
+    #     gae_lambda=0.95,
+    #     verbose=1,
+    #     seed=args.seed,
+    #     tensorboard_log=args.tb_log_dir,
+    # )
     
+
+    model = PPO(
+    "MlpPolicy",
+    env,
+    n_steps=1024,
+    
+    learning_rate=3e-4,
+    gamma=0.995,
+    gae_lambda=0.97,
+    clip_range=0.3,
+    ent_coef=0.01,
+    policy_kwargs=dict(net_arch=[dict(pi=[256, 256],
+                                      vf=[256, 256])]),
+    verbose=1,
+    seed=args.seed,
+    tensorboard_log=args.tb_log_dir,
+)
     logging.info("Starting training...")
     model.learn(total_timesteps=args.total_timesteps)
     logging.info("Training complete.")

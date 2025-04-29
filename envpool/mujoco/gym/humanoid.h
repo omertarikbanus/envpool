@@ -81,6 +81,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjModel* model_backup_;
   mjData* data_backup_;
   std::ofstream outputFile;
+  float lastReward = 0;
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
@@ -426,6 +427,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     mbc.setFeedback(data_);
     // Write to CSV only if csv_logging_enabled_ is set to 1.
+  lastReward= reward;
   writeDataToCSV();
 
 #ifdef ENVPOOL_TEST
@@ -450,22 +452,24 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                  << "FR_abad,FR_hip,FR_knee,"
                  << "FL_abad,FL_hip,FL_knee,"
                  << "HR_abad,HR_hip,HR_knee,"  
-                 << "HL_abad,HL_hip,HL_knee" << std::endl;
+                 << "HL_abad,HL_hip,HL_knee, reward" << std::endl;
     }
     // Write the data to CSV
     if (mode == 0) {
       // Write the data to CSV
       for (int i = 0; i < 19; ++i) {
         outputFile << double(data_->qpos[i]);
-        if (i < 18) outputFile << ",";
+        outputFile << ",";
       }
+      outputFile << lastReward;
+
       outputFile << std::endl;
     } else if (mode == 1) {
       // Write the data to CSV
       for (int i = 0; i < 19; ++i){
-      for (int i = 0; i < 19; ++i) {
-        outputFile << 0.2;
-        if (i < 18) outputFile << ",";
+      for (int i = 0; i < 20; ++i) {
+        outputFile << -0.01;
+        if (i < 19) outputFile << ",";
       }
       outputFile << std::endl;
     }
@@ -473,9 +477,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     else if (mode == 2) {
       // Write the data to CSV
       for (int i = 0; i < 19; ++i) {
-      for (int i = 0; i < 19; ++i) {
-        outputFile << 0;
-        if (i < 18) outputFile << ",";
+      for (int i = 0; i < 20; ++i) {
+        outputFile << -0.05;
+        if (i < 19) outputFile << ",";
       }
       outputFile << std::endl;
     }

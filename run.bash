@@ -25,14 +25,9 @@ export USE_BAZEL_VERSION=6.5.0
 # Build with cleaner output
 echo "Building EnvPool wheel..."
 
-if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ] || [ "$ARCH" = "armv7l" ]; then
-  # Use ARM-specific config for ARM architectures
-  echo "Using ARM configuration..."
-  # bazel run --config=release-arm //:setup -- bdist_wheel 
-  bazel run --config=release //:setup -- bdist_wheel
-else
-  bazel run --config=release-x86 //:setup -- bdist_wheel
-fi
+
+bazel run --config=release //:setup -- bdist_wheel
+
 
 # Find the wheel file
 WHEEL_PATH=$(find bazel-bin/setup.runfiles/envpool/dist -name "envpool-*-${PYTHON_VERSION}-${PYTHON_VERSION}-${PLATFORM}.whl" 2>/dev/null)
