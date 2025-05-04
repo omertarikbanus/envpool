@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "mujoco_lib",
-    srcs = glob(["lib/*"]),
+    srcs = ["build/lib/libmujoco.so"],
     hdrs = glob(["include/mujoco/*.h"]),
     includes = [
         "include",
@@ -14,5 +14,5 @@ cc_library(
 
 filegroup(
     name = "mujoco_so",
-    srcs = ["lib/libmujoco.so"],
+    srcs = ["build/lib/libmujoco.so"],
 )

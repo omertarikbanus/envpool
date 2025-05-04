@@ -341,17 +341,17 @@ def workspace():
     #     build_file = "//third_party/mujoco:mujoco.BUILD",
     # )
     # this is for arm64, which is not supported by mujoco
-    maybe(
-        http_archive,
-        name = "mujoco",
-        sha256 = "d5c9fb84325e00e8a46a6ad4ed53e940c6282f3e35171e8064c3e802bafc0849",
-        strip_prefix = "mujoco-2.2.1",
-        urls = [
-            "https://github.com/google-deepmind/mujoco/releases/download/2.2.1/mujoco-2.2.1-linux-aarch64.tar.gz",
-            "https://ml.cs.tsinghua.edu.cn/~jiayi/envpool/deepmind/mujoco/mujoco-2.2.1-linux-x86_64.tar.gz",
-        ],
-        build_file = "//third_party/mujoco:mujoco.BUILD",
-    )
+    # maybe(
+    #     http_archive,
+    #     name = "mujoco",
+    #     sha256 = "d5c9fb84325e00e8a46a6ad4ed53e940c6282f3e35171e8064c3e802bafc0849",
+    #     strip_prefix = "mujoco-2.2.1",
+    #     urls = [
+    #         "https://github.com/google-deepmind/mujoco/releases/download/2.2.1/mujoco-2.2.1-linux-aarch64.tar.gz",
+    #         "https://ml.cs.tsinghua.edu.cn/~jiayi/envpool/deepmind/mujoco/mujoco-2.2.1-linux-x86_64.tar.gz",
+    #     ],
+    #     build_file = "//third_party/mujoco:mujoco.BUILD",
+    # )
     
     maybe(
         http_archive,

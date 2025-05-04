@@ -10,11 +10,59 @@ WORKDIR /app
 # COPY docker/certs/AselsanRootCA.crt /usr/local/share/ca-certificates/
 # ARG PATH=$PATH:$HOME/go/bin
 RUN apt update && apt upgrade -y && \
-    apt install -y build-essential cmake git sudo \
-    npm wget curl zsh tmux vim golang-1.21 clang-format clang-tidy swig qtdeclarative5-dev  \
-    python3-pip libgoogle-glog-dev libeigen3-dev libboost-all-dev libgflags2.2 libgflags-dev \
-    libglfw3-dev libopengl-dev libtinyxml2-dev libglew-dev libglib2.0-dev libcurses-ocaml-dev python3-dev \
-    libxinerama-dev libxcursor-dev libxi-dev cmake g++ ca-certificates liblcm-dev libxcb-xinerama0 libxcb-xinerama0-dev libx11-xcb1 libx11-xcb-dev libxcb1 xvfb libxcb-util1 kst
+    apt install -y \
+    # Build essentials
+    build-essential \
+    ca-certificates \
+    cmake \
+    g++ \
+    git \
+    sudo \
+    # Development tools
+    clang-format \
+    clang-tidy \
+    curl \
+    tmux \
+    vim \
+    wget \
+    zsh \
+    # Programming languages and tools
+    golang-1.21 \
+    npm \
+    python3-dev \
+    python3-pip \
+    swig \
+    # Graphics and UI libraries
+    kst \
+    libegl1 \
+    libgl1-mesa-glx \
+    libglew-dev \
+    libglfw3-dev \
+    libopengl-dev \
+    libosmesa6 \
+    libosmesa6-dev \
+    libxcb-xinerama0 \
+    libxcb-xinerama0-dev \
+    libxcb-util1 \
+    libxcursor-dev \
+    libxi-dev \
+    libxinerama-dev \
+    qtdeclarative5-dev \
+    xvfb \
+    ffmpeg \
+    # Other libraries
+    libboost-all-dev \
+    libcurses-ocaml-dev \
+    libeigen3-dev \
+    libgflags-dev \
+    libgflags2.2 \
+    libglib2.0-dev \
+    libgoogle-glog-dev \
+    liblcm-dev \
+    libtinyxml2-dev \
+    libx11-xcb-dev \
+    libx11-xcb1 \
+    libxcb1
 
 RUN npm install -g @bazel/bazelisk
 
@@ -36,17 +84,17 @@ WORKDIR $HOME
 # RUN echo "set-option -g history-limit 10000" >> .tmux.conf.local
 # RUN echo "export PATH=$PATH:$HOME/go/bin" >> .zshrc
 
-RUN pip3 install mujoco gym numpy matplotlib  jax jaxlib flax optax stable-baselines3  tensorboard "shimmy>=2.0"
+RUN pip3 install mujoco gym numpy matplotlib  jax==0.5.3  flax optax stable-baselines3  tensorboard "shimmy>=2.0"
 
-RUN git clone --branch 2.2.1 https://github.com/deepmind/mujoco.git /home/root/mujoco && \
-    cd /home/root/mujoco && \
+RUN git clone --branch 2.3.7 https://github.com/deepmind/mujoco.git /root/mujoco && \
+    cd /root/mujoco && \
     mkdir -p build && \
     cd build && \
-    cmake .. && \
-    cmake --build . --config Release && \
+    cmake -DMJ_OSMESA=ON .. && \
+    cmake --build . --parallel  && \
     cmake --install .
 RUN ldconfig
-RUN export USE_BAZEL_VERSION=6.5.0
+RUN echo "export USE_BAZEL_VERSION=6.5.0" >> /root/.bashrc
 WORKDIR /app
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

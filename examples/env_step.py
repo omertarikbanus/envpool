@@ -17,6 +17,10 @@ import numpy as np
 from packaging import version
 import time
 import envpool
+import os
+
+os.environ["MUJOCO_GL"] = "osmesa"
+print(os.environ.get("MUJOCO_GL")) 
 
 is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
@@ -24,7 +28,7 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 def gym_sync_step() -> None:
   debug_prints = 0
   
-  num_envs = 1
+  num_envs = 8
   if debug_prints:
     print(f"num_envs set to {num_envs}")
   if debug_prints:
@@ -54,14 +58,14 @@ def gym_sync_step() -> None:
   if debug_prints:
     print(f"Observation space: {env.observation_space}")
     print(f"Observation shape: {env.observation_space.shape}")
-  for _ in range(20000):
+  for _ in range(10):
     # autoreset is automatically enabled in envpool
     # action = np.random.randint(action_num, size=(num_envs, action_num))
     action= np.zeros((num_envs, action_num), dtype=np.float32)
     for leg in range(4):
-      action[0][4*leg+7] = -5.0*(-1)**leg
-      action[0][4*leg+8] =81.0
-      action[0][4*leg+9] = 1
+      action[0][4*leg+7] = 0
+      action[0][4*leg+8] = 86
+      action[0][4*leg+9] = 1.0
     if debug_prints:
       print(f"Sampled action: {action}")
 

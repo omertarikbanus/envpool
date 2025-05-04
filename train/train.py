@@ -109,9 +109,9 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=16, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=300000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=250000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
@@ -152,7 +152,7 @@ def main():
     model = PPO(
     "MlpPolicy",
     env,
-    n_steps=1024,
+    n_steps=10000,
     
     learning_rate=3e-4,
     gamma=0.995,

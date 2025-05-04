@@ -9,7 +9,7 @@ COPYRIGHT      = "Garena Online Private Limited"
 BAZELOPT       =
 DATE           = $(shell date "+%Y-%m-%d")
 # DOCKER_TAG     = $(DATE)-$(COMMIT_HASH)
-DOCKER_TAG     = tarik
+DOCKER_TAG     = may
 DOCKER_USER    = trinkle23897
 PATH           := $(HOME)/go/bin:$(PATH)
 

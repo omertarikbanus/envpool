@@ -196,7 +196,7 @@ cc_library(
         "@mujoco//:mujoco_lib",
 
     ],
-    linkopts = ["-ltinyxml2 -lpthread  -usr/local/lib/libosqp.so -usr/local/lib/libqdldl.so -usr/local/lib/libqpOASES.so "], 
+    linkopts = ["-ltinyxml2 -lpthread -lOSMesa -lGL -ldl -lm -lEGL "],
     copts = [" --debug -g -O0 -ggdb -w  -D__NO_COPYRIGHT__ -Wno-error  -Wall -pedantic -Wfloat-equal -Wshadow -DLINUX -finline-functions"],
 )
 # -no-pie 

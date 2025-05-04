@@ -37,7 +37,7 @@ class HumanoidEnvFns {
         "terminate_when_unhealthy"_.Bind(true),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
-        "healthy_z_min"_.Bind(0.05), "healthy_z_max"_.Bind(0.45),
+        "healthy_z_min"_.Bind(0.15), "healthy_z_max"_.Bind(0.45),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "reset_noise_scale"_.Bind(0));
   }
@@ -78,8 +78,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   std::uniform_real_distribution<> dist_;
   ModelBasedControllerInterface mbc;
   // New: Backup of the controller
-  mjModel* model_backup_;
-  mjData* data_backup_;
+
   std::ofstream outputFile;
   float lastReward = 0;
   // Added: Torque bound constant (example value; adjust as needed)
@@ -92,8 +91,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       : Env<HumanoidEnvSpec>(spec, env_id),
         mbc(),
         // Construct MujocoEnv using a fixed XML file path.
-        MujocoEnv(std::string("/app/envpool/envpool/mujoco/legged-sim/resource/"
-                              "opy_v05/opy_v05.xml"),
+        MujocoEnv(std::string("/app/envpool/envpool/mujoco/legged-sim/resource/opy_v05/opy_v05.xml"),
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
                   spec.config["max_episode_steps"_]),
         terminate_when_unhealthy_(spec.config["terminate_when_unhealthy"_]),
@@ -108,6 +106,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
+
+    if(env_id_ == 0) {
+      EnableRender(true);
+      csv_logging_enabled_ = 1;
+      }
+    
     std::string fname;
     fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
     
@@ -142,8 +146,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       writeDataToCSV(0);
     }
     writeDataToCSV(2);
-    model_backup_ = mj_copyModel(nullptr, model_);
-    data_backup_ = mj_copyData(nullptr,model_, data_ );
+    model_backup_ = mj_copyModel(model_backup_, model_);
+    data_backup_ = mj_copyData(data_backup_,model_, data_ );
 
   }
 
@@ -240,7 +244,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // Use the standing reward function.
     auto reward = ComputeStandingReward();
 
-    ++elapsed_step_;
+    // ++elapsed_step_;
     done_ = (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
             (elapsed_step_ >= max_episode_steps_);
     WriteState(reward, xv, yv, ctrl_cost, contact_cost, after[0], after[1],
@@ -282,61 +286,60 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // large penalty is applied if the robot is considered to have fallen.
   // ------------------------------------------------------------------------
   mjtNum ComputeStandingReward() {
-    // Parameters (tune these based on your experimental setup)
-    const mjtNum desired_height = 0.35;  // target torso height (meters)
-    const mjtNum height_weight = 5.0;   // weight for height error
-    const mjtNum orientation_weight =
-        2.0;  // weight for orientation error (roll + pitch)
-    const mjtNum velocity_weight = 0.5;  // weight for penalizing movement
-    const mjtNum fall_penalty = 10.0;    // penalty if the robot falls
-    const mjtNum stability_threshold =
-        0.05;  // error tolerance for bonus reward
-
-    // Get current torso height (assuming data_->qpos[2] is the z-position)
-    mjtNum current_height = data_->qpos[2];
-
-    // Convert base orientation quaternion (stored in qpos[3]-qpos[6]) to Euler
-    // angles. Note: Adjust the order if your model uses a different convention.
-    Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4],
-                                   data_->qpos[5], data_->qpos[6]);
-    Eigen::Vector3<mjtNum> euler = quat.toRotationMatrix().eulerAngles(0, 1, 2);
-    mjtNum roll = std::abs(euler[0]);
-    mjtNum pitch = std::abs(euler[1]);
-
-    // Compute errors.
-    mjtNum height_error = std::abs(current_height - desired_height);
-    mjtNum orientation_error = roll + pitch;
-
-    // Compute base linear and angular velocities (from qvel; first 3 = linear,
-    // next 3 = angular)
-    mjtNum linear_velocity = std::sqrt(data_->qvel[0] * data_->qvel[0] +
-                                       data_->qvel[1] * data_->qvel[1] +
-                                       data_->qvel[2] * data_->qvel[2]);
-    mjtNum angular_velocity = std::sqrt(data_->qvel[3] * data_->qvel[3] +
-                                        data_->qvel[4] * data_->qvel[4] +
-                                        data_->qvel[5] * data_->qvel[5]);
-    mjtNum movement_penalty =
-        velocity_weight * (linear_velocity + angular_velocity);
-
-    // Base reward calculation (negative penalty on errors)
-    mjtNum reward =
-        -(height_weight * height_error +
-          orientation_weight * orientation_error + movement_penalty)+10.0;
-
-    // Add a bonus if the errors are within a small threshold (i.e., stable
-    // posture)
-    if (height_error < stability_threshold &&
-        orientation_error < stability_threshold) {
+    // ---------- Tunable constants ----------
+    const mjtNum desired_h = 0.35;           // m
+    const mjtNum height_w  = 400.0;          // (= 4 / 0.01^2)
+    const mjtNum orient_w  = 10;            // cost per deg^2 * 0.01
+    const mjtNum vel_w     =  35.0;           // per (m/s)^2 or (rad/s)^2
+    const mjtNum fall_pen  = 500.0;          // one-off
+    const mjtNum bonus_eps_h = 0.01;         // m
+    const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
+    const mjtNum bonus_eps_v = 0.01;         // m/s
+    // ---------------------------------------
+  
+    // Height
+    mjtNum h = data_->qpos[2];
+    mjtNum height_err = h - desired_h;
+  
+    // Orientation: quaternion → roll,pitch
+    Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4],
+                                data_->qpos[5], data_->qpos[6]);
+    Eigen::Vector3<mjtNum> eul = q.toRotationMatrix().eulerAngles(0, 1, 2);
+    mjtNum roll  = eul[0];
+    mjtNum pitch = eul[1];
+  
+    // Velocities
+    mjtNum lin_v = std::sqrt(data_->qvel[0]*data_->qvel[0] +
+                             data_->qvel[1]*data_->qvel[1] +
+                             data_->qvel[2]*data_->qvel[2]);
+    mjtNum ang_v = std::sqrt(data_->qvel[3]*data_->qvel[3] +
+                             data_->qvel[4]*data_->qvel[4] +
+                             data_->qvel[5]*data_->qvel[5]);
+  
+    // Costs (squared errors)
+    mjtNum height_cost = height_w * height_err * height_err;
+    mjtNum orient_cost = orient_w * (roll*roll + pitch*pitch);   // rad²
+    mjtNum move_cost   = vel_w   * (lin_v*lin_v + ang_v*ang_v);
+  
+    // Alive bonus
+    mjtNum reward = 10.0 - height_cost - orient_cost - move_cost;
+  
+    // Extra stillness bonus
+    if (std::abs(height_err) < bonus_eps_h &&
+        std::abs(roll)       < bonus_eps_o &&
+        std::abs(pitch)      < bonus_eps_o &&
+        lin_v                < bonus_eps_v &&
+        ang_v                < bonus_eps_v)
       reward += 1.0;
+  
+    // Fall penalty (only once, when torso drops below knee height)
+    if (h < 0.20 || !!IsHealthy()) {
+      reward -= fall_pen;
     }
-
-    // Apply a large penalty if the torso height indicates a fall
-    if (current_height < 0.2) {
-      reward -= fall_penalty;
-    }
-
+  
     return reward;
   }
+  
   // ------------------------------------------------------------------------
 
   void WriteState(float reward, mjtNum xv, mjtNum yv, mjtNum ctrl_cost,
@@ -426,7 +429,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:y_velocity"_] = yv;
 
     mbc.setFeedback(data_);
-    // Write to CSV only if csv_logging_enabled_ is set to 1.
   lastReward= reward;
   writeDataToCSV();
 

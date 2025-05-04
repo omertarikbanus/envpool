@@ -1,5 +1,12 @@
 workspace(name = "envpool")
 
+# in /app/envpool/WORKSPACE (at the top, before any http_archive for mujoco)
+new_local_repository(
+    name = "mujoco",
+    path = "/root/mujoco",                      # your clone
+    build_file = "//third_party/mujoco:mujoco.BUILD",
+)
+
 load("//envpool:workspace0.bzl", workspace0 = "workspace")
 
 workspace0()
