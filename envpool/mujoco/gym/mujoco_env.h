@@ -146,7 +146,9 @@ inline void MujocoEnv::MujocoStep(const mjtNum* action) {
   for (int i = 0; i < model_->nu; ++i) {
     data_->ctrl[i] = action[i];
   }
-  for (int i = 0; i < frame_skip_; ++i) mj_step(model_, data_);
+  // for (int i = 0; i < frame1_skip_; ++i) mj_step(model_, data_);
+  mj_step(model_, data_);
+
   if (post_constraint_) mj_rnePostConstraint(model_, data_);
   
   if (render_enabled_) {

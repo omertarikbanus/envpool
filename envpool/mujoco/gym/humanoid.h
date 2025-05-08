@@ -202,18 +202,25 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // step
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
     mbc.setAction(act);
-    mbc.run();
-
-    mjtNum motor_commands[12];
-    std::array<double, 12> mc = mbc.getMotorCommands();
-    for (int i = 0; i < 12; ++i) {
-      // Clamp motor commands to torque bounds.
-      motor_commands[i] = std::max(
-          std::min(static_cast<mjtNum>(mc[i]), torque_limit_), -torque_limit_);
-    }
+    //repeat frameskip times
     const auto& before = GetMassCenter();
 
-    MujocoStep(motor_commands);
+    for (int i = 0; i < frame_skip_; ++i) {
+      mbc.setFeedback(data_);
+      mbc.run();
+
+      mjtNum motor_commands[12];
+      std::array<double, 12> mc = mbc.getMotorCommands();
+      for (int i = 0; i < 12; ++i) {
+        // Clamp motor commands to torque bounds.
+        motor_commands[i] = std::max(
+            std::min(static_cast<mjtNum>(mc[i]), torque_limit_), -torque_limit_);
+      }
+      MujocoStep(motor_commands);
+    }
+   
+
+   
     const auto& after = GetMassCenter();
 
     // Compute control cost.
@@ -428,7 +435,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:x_velocity"_] = xv;
     state["info:y_velocity"_] = yv;
 
-    mbc.setFeedback(data_);
   lastReward= reward;
   writeDataToCSV();
 
