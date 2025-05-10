@@ -91,7 +91,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       : Env<HumanoidEnvSpec>(spec, env_id),
         mbc(),
         // Construct MujocoEnv using a fixed XML file path.
-        MujocoEnv(std::string("/app/envpool/envpool/mujoco/legged-sim/resource/opy_v05/opy_v05.xml"),
+        MujocoEnv(std::string("/app/envpool/envpool/mujoco/legged-sim/resource/"
+                              "opy_v05/opy_v05.xml"),
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
                   spec.config["max_episode_steps"_]),
         terminate_when_unhealthy_(spec.config["terminate_when_unhealthy"_]),
@@ -106,21 +107,19 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
-
-    if(env_id_ == 0) {
+    if (env_id_ == 0) {
       EnableRender(true);
       csv_logging_enabled_ = 1;
-      }
-    
+    }
+
     std::string fname;
     fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
-    
+
     outputFile.open(fname.c_str());
-    
+
     MujocoReset();
     // Save the initial controller configuration to backup
     while (mbc.getMode() != 6) {
-      
       mjtNum dummy_action[22];
       // set all values to zero;
       for (int i = 0; i < 22; i++) {
@@ -147,8 +146,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     }
     writeDataToCSV(2);
     model_backup_ = mj_copyModel(model_backup_, model_);
-    data_backup_ = mj_copyData(data_backup_,model_, data_ );
-
+    data_backup_ = mj_copyData(data_backup_, model_, data_);
   }
 
   void MujocoResetModel() override {
@@ -161,10 +159,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     int kSideSign_[4] = {-1, 1, -1, 1};
 
     model_->opt.timestep = 0.002;
-    
-    
+
     // data_->qpos[2] = 0.6;  // Set the height to 0.125
-   
+
     for (int leg = 0; leg < 4; leg++) {
       data_->qpos[(leg) * 3 + 0 + 7] =
           0 * (M_PI / 180) *
@@ -183,26 +180,25 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   bool IsDone() override { return done_; }
 
   void Reset() override {
-    std::cout << "reset" << std::endl;
-
     writeDataToCSV(1);
-    MujocoReset();
-    // Instead of resetting the controller, we copy the backup.
+    std::cout << "Resetting the environment..." << std::endl;
+    done_ = false;
+    elapsed_step_ = 0;
+    // MujocoReset();
+    mj_deleteData(data_);
+    mj_deleteModel(model_);
     model_ = mj_copyModel(nullptr, model_backup_);
-    data_ = mj_copyData(nullptr,model_, data_backup_ );
-
+    data_ = mj_copyData(nullptr, model_, data_backup_);
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     mbc.setFeedback(data_);
     mbc.setModeLocomotion();
-    done_ = false;
-    elapsed_step_ = 0;
   }
 
   void Step(const Action& action) override {
     // step
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
     mbc.setAction(act);
-    //repeat frameskip times
+    // repeat frameskip times
     const auto& before = GetMassCenter();
 
     for (int i = 0; i < frame_skip_; ++i) {
@@ -213,14 +209,13 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       std::array<double, 12> mc = mbc.getMotorCommands();
       for (int i = 0; i < 12; ++i) {
         // Clamp motor commands to torque bounds.
-        motor_commands[i] = std::max(
-            std::min(static_cast<mjtNum>(mc[i]), torque_limit_), -torque_limit_);
+        motor_commands[i] =
+            std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_),
+                     -torque_limit_);
       }
       MujocoStep(motor_commands);
     }
-   
 
-   
     const auto& after = GetMassCenter();
 
     // Compute control cost.
@@ -303,34 +298,34 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
     const mjtNum bonus_eps_v = 0.01;         // m/s
     // ---------------------------------------
-  
+
     // Height
     mjtNum h = data_->qpos[2];
     mjtNum height_err = h - desired_h;
-  
+
     // Orientation: quaternion → roll,pitch
     Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4],
                                 data_->qpos[5], data_->qpos[6]);
     Eigen::Vector3<mjtNum> eul = q.toRotationMatrix().eulerAngles(0, 1, 2);
     mjtNum roll  = eul[0];
     mjtNum pitch = eul[1];
-  
+
     // Velocities
-    mjtNum lin_v = std::sqrt(data_->qvel[0]*data_->qvel[0] +
-                             data_->qvel[1]*data_->qvel[1] +
-                             data_->qvel[2]*data_->qvel[2]);
-    mjtNum ang_v = std::sqrt(data_->qvel[3]*data_->qvel[3] +
-                             data_->qvel[4]*data_->qvel[4] +
-                             data_->qvel[5]*data_->qvel[5]);
-  
+    mjtNum lin_v = std::sqrt(data_->qvel[0] * data_->qvel[0] +
+                             data_->qvel[1] * data_->qvel[1] +
+                             data_->qvel[2] * data_->qvel[2]);
+    mjtNum ang_v = std::sqrt(data_->qvel[3] * data_->qvel[3] +
+                             data_->qvel[4] * data_->qvel[4] +
+                             data_->qvel[5] * data_->qvel[5]);
+
     // Costs (squared errors)
     mjtNum height_cost = height_w * height_err * height_err;
-    mjtNum orient_cost = orient_w * (roll*roll + pitch*pitch);   // rad²
-    mjtNum move_cost   = vel_w   * (lin_v*lin_v + ang_v*ang_v);
-  
+    mjtNum orient_cost = orient_w * (roll * roll + pitch * pitch);  // rad²
+    mjtNum move_cost   = vel_w * (lin_v * lin_v + ang_v * ang_v);
+
     // Alive bonus
     mjtNum reward = 10.0 - height_cost - orient_cost - move_cost;
-  
+
     // Extra stillness bonus
     if (std::abs(height_err) < bonus_eps_h &&
         std::abs(roll)       < bonus_eps_o &&
@@ -338,15 +333,15 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         lin_v                < bonus_eps_v &&
         ang_v                < bonus_eps_v)
       reward += 1.0;
-  
+
     // Fall penalty (only once, when torso drops below knee height)
     if (h < 0.20 || !!IsHealthy()) {
       reward -= fall_pen;
     }
-  
+
     return reward;
   }
-  
+
   // ------------------------------------------------------------------------
 
   void WriteState(float reward, mjtNum xv, mjtNum yv, mjtNum ctrl_cost,
@@ -435,8 +430,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:x_velocity"_] = xv;
     state["info:y_velocity"_] = yv;
 
-  lastReward= reward;
-  writeDataToCSV();
+    lastReward = reward;
+    writeDataToCSV();
 
 #ifdef ENVPOOL_TEST
     state["info:qpos0"_].Assign(qpos0_, model_->nq);
@@ -459,7 +454,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                  << "quat_w,quat_x,quat_y,quat_z,"
                  << "FR_abad,FR_hip,FR_knee,"
                  << "FL_abad,FL_hip,FL_knee,"
-                 << "HR_abad,HR_hip,HR_knee,"  
+                 << "HR_abad,HR_hip,HR_knee,"
                  << "HL_abad,HL_hip,HL_knee, reward" << std::endl;
     }
     // Write the data to CSV
@@ -474,23 +469,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       outputFile << std::endl;
     } else if (mode == 1) {
       // Write the data to CSV
-      for (int i = 0; i < 19; ++i){
-      for (int i = 0; i < 20; ++i) {
-        outputFile << -0.01;
-        if (i < 19) outputFile << ",";
+      for (int i = 0; i < 19; ++i) {
+        for (int i = 0; i < 20; ++i) {
+          outputFile << -0.01;
+          if (i < 19) outputFile << ",";
+        }
+        outputFile << std::endl;
       }
-      outputFile << std::endl;
-    }
-    }
-    else if (mode == 2) {
+    } else if (mode == 2) {
       // Write the data to CSV
       for (int i = 0; i < 19; ++i) {
-      for (int i = 0; i < 20; ++i) {
-        outputFile << -0.05;
-        if (i < 19) outputFile << ",";
+        for (int i = 0; i < 20; ++i) {
+          outputFile << -0.05;
+          if (i < 19) outputFile << ",";
+        }
+        outputFile << std::endl;
       }
-      outputFile << std::endl;
-    }
     }
   }
 };

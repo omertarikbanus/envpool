@@ -19,10 +19,11 @@
 #include <GL/osmesa.h>
 #include <mjxmacro.h>
 #include <mujoco.h>
-#include <iostream>
+
 #include <array>
 #include <cstdio>   // FILE*
 #include <cstring>  // std::memcpy
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -35,9 +36,9 @@ namespace mujoco_gym {
 static void write_all(FILE* pipe, const unsigned char* buf, size_t nbytes) {
   while (nbytes) {
     size_t n = fwrite(buf, 1, nbytes, pipe);
-    if (n == 0)                     // pipe closed or broken
+    if (n == 0)  // pipe closed or broken
       throw std::runtime_error("fwrite to ffmpeg pipe failed");
-    buf    += n;
+    buf += n;
     nbytes -= n;
   }
 }
@@ -130,12 +131,11 @@ inline MujocoEnv::~MujocoEnv() {
 }
 
 inline void MujocoEnv::MujocoReset() {
+  elapsed_step_ = 0;
+  done_ = false;
   mj_resetData(model_, data_);
   MujocoResetModel();
   mj_forward(model_, data_);
-  
-  elapsed_step_ = 0;
-  done_ = false;
 }
 
 inline void MujocoEnv::MujocoResetModel() {
@@ -146,24 +146,18 @@ inline void MujocoEnv::MujocoStep(const mjtNum* action) {
   for (int i = 0; i < model_->nu; ++i) {
     data_->ctrl[i] = action[i];
   }
-  // for (int i = 0; i < frame1_skip_; ++i) mj_step(model_, data_);
   mj_step(model_, data_);
 
   if (post_constraint_) mj_rnePostConstraint(model_, data_);
-  
+
   if (render_enabled_) {
-    int render_every = std::max(1, static_cast<int>(1.0 / (fps_ * frame_skip_ * model_->opt.timestep)));
-    // std::cout << "Render every: " << render_every << std::endl;
-    // std::cout << "Elapsed step: " << elapsed_step_ << std::endl;
-    if (  elapsed_step_ % render_every == 0) {
+    int render_every = std::max(
+        1, static_cast<int>(1.0 / (fps_ * frame_skip_ * model_->opt.timestep)));
+    if (elapsed_step_ % render_every == 0) {
       RenderFrame();
-
-
-      // std::cout<<"Render frame: " << elapsed_step_ / render_every << std::endl;
     }
   }
   ++elapsed_step_;
-  
 }
 
 // --------------------- Rendering helpers ----------------------
@@ -199,7 +193,6 @@ inline void MujocoEnv::RenderInit() {
 }
 
 inline void MujocoEnv::RenderFrame() {
-  // std::cout << "MujocoEnv::RenderFrame" << std::endl;
   if (!OSMesaMakeCurrent(ctx, fb, GL_UNSIGNED_BYTE, render_w_, render_h_))
     throw std::runtime_error("OSMesaMakeCurrent failed");
 
@@ -221,6 +214,10 @@ inline void MujocoEnv::RenderClose() {
   if (ffmpeg_pipe_) pclose(ffmpeg_pipe_);
   mjr_freeContext(&con_);
   mjv_freeScene(&scn_);
+  if (ctx) {
+    OSMesaDestroyContext(ctx);
+    ctx = nullptr;
+  }
 }
 
 inline void MujocoEnv::EnableRender(bool on) {
@@ -232,7 +229,6 @@ inline void MujocoEnv::EnableRender(bool on) {
     render_enabled_ = false;
   }
 }
-
 
 }  // namespace mujoco_gym
 
