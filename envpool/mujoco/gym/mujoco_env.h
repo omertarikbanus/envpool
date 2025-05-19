@@ -36,8 +36,8 @@ namespace mujoco_gym {
 static void write_all(FILE* pipe, const unsigned char* buf, size_t nbytes) {
   while (nbytes) {
     size_t n = fwrite(buf, 1, nbytes, pipe);
-    if (n == 0)  // pipe closed or broken
-      throw std::runtime_error("fwrite to ffmpeg pipe failed");
+    if (n != 1920)  // pipe closed or broken
+      std::cerr << "fwrite to ffmpeg pipe failed" << std::endl;
     buf += n;
     nbytes -= n;
   }
@@ -207,6 +207,7 @@ inline void MujocoEnv::RenderFrame() {
               rgb_.data() + static_cast<size_t>(y) * render_w_ * 3,
               static_cast<size_t>(render_w_) * 3);
   }
+  fflush(ffmpeg_pipe_);
 }
 
 inline void MujocoEnv::RenderClose() {

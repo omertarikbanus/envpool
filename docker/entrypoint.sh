@@ -8,7 +8,8 @@
 
 echo "User mode"
 exec bash
-echo "export USE_BAZEL_VERSION=6.5.0" >> ~/.bashrc 
+echo "export USE_BAZEL_VERSION=6.5.0" >> ~/.bashrc
+echo -e '\n# Auto-Warpify\n[[ "$-" == *i* ]] && printf '\''\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash", "uname": "'$(uname)'", "tmux": false }}\x9c'\'' ' >> ~/.bashrc
 ln -sf /app/legged-sim /app/envpool/envpool/mujoco/legged-sim
 ln -s /usr/include/aarch64-linux-gnu/qt5 /usr/include/qt
 ln -s /usr/include/eigen3/Eigen /usr/include/Eigen

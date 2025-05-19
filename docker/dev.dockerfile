@@ -64,8 +64,24 @@ RUN apt update && apt upgrade -y && \
     libx11-xcb1 \
     libxcb1
 
-RUN npm install -g @bazel/bazelisk
+RUN pip3 install mujoco gym numpy matplotlib  jax==0.5.3  flax optax stable-baselines3  tensorboard "shimmy>=2.0"
 
+
+RUN npm install -g @bazel/bazelisk
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+
+RUN git clone https://github.com/gpakosz/.tmux.git
+
+RUN ln -s -f .tmux/.tmux.conf
+RUN cp .tmux/.tmux.conf.local .
+RUN echo "set-option -g default-shell /bin/zsh" >> .tmux.conf.local
+RUN echo "set-option -g history-limit 10000" >> .tmux.conf.local
+RUN echo "export PATH=$PATH:$HOME/go/bin" >> .zshrc
+
+RUN useradd -ms /bin/zsh github-action
+
+WORKDIR /app
 #     RUN go install github.com/bazelbuild/bazelisk@latest 
 
 # RUN ln -sf $HOME/go/bin/bazelisk $HOME/go/bin/bazel
@@ -84,7 +100,6 @@ WORKDIR $HOME
 # RUN echo "set-option -g history-limit 10000" >> .tmux.conf.local
 # RUN echo "export PATH=$PATH:$HOME/go/bin" >> .zshrc
 
-RUN pip3 install mujoco gym numpy matplotlib  jax==0.5.3  flax optax stable-baselines3  tensorboard "shimmy>=2.0"
 
 RUN git clone --branch 2.3.7 https://github.com/deepmind/mujoco.git /root/mujoco && \
     cd /root/mujoco && \
@@ -95,6 +110,8 @@ RUN git clone --branch 2.3.7 https://github.com/deepmind/mujoco.git /root/mujoco
     cmake --install .
 RUN ldconfig
 RUN echo "export USE_BAZEL_VERSION=6.5.0" >> /root/.bashrc
+RUN echo "export USE_BAZEL_VERSION=6.5.0" >> /root/.zshrc
+
 WORKDIR /app
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

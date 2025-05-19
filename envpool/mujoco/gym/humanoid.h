@@ -145,8 +145,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       writeDataToCSV(0);
     }
     writeDataToCSV(2);
-    model_backup_ = mj_copyModel(model_backup_, model_);
-    data_backup_ = mj_copyData(data_backup_, model_, data_);
+    model_backup_ = mj_copyModel(nullptr, model_);
+    data_backup_ = mj_copyData(nullptr, model_, data_);
   }
 
   void MujocoResetModel() override {
