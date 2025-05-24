@@ -62,10 +62,13 @@ def gym_sync_step() -> None:
     # autoreset is automatically enabled in envpool
     # action = np.random.randint(action_num, size=(num_envs, action_num))
     action= np.zeros((num_envs, action_num), dtype=np.float32)
-    for leg in range(4):
-      action[0][4*leg+7] = 0
-      action[0][4*leg+8] = 86
-      action[0][4*leg+9] = 1.0
+    for env_id in range(num_envs):
+      action[env_id][2]=0.36
+      for leg in range(4):
+        # 1 if leg is even, -1 if leg is odd
+        action[env_id][7*leg+7] = 5 * (1.0 if leg % 2 == 0 else -1.0)
+        action[env_id][7*leg+8] = 82
+        action[env_id][7*leg+9] = 1.0
     if debug_prints:
       print(f"Sampled action: {action}")
 

@@ -45,7 +45,7 @@ class HumanoidEnvFns {
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
-    return MakeDict("obs"_.Bind(Spec<mjtNum>({361}, {-inf, inf})),
+    return MakeDict("obs"_.Bind(Spec<mjtNum>({42}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -62,8 +62,8 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    // Fix action shape: change from 47 to 22 dimensions.
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 22}, {-1, 1})));
+    // Fix action shape: change from 47 to 34 dimensions.
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 34}, {-1, 1})));
   }
 };
 
@@ -355,62 +355,19 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum* obs = static_cast<mjtNum*>(state["obs"_].Data());
     mjtNum* obs_start = obs;  // Save the starting pointer for debugging
 
-    // for (int i = no_pos_ ? 2 : 0; i < model_->nq; ++i) {
-    // *(obs++) = data_->qpos[i];
-    // std::cout << "obs data type: " << typeid(data_->qpos[i]).name() <<
-    // std::endl;
-    // }
-    // for (int i = 0; i < model_->nv; ++i) {
-    // *(obs++) = data_->qvel[i];
-    // }
-    // for (int i = 0; i < 10 * model_->nbody; ++i) {
-    // *(obs++) = data_->cinert[i];
-    // }
-    // for (int i = 0; i < 6 * model_->nbody; ++i) {
-    // *(obs++) = data_->cvel[i];
-    // }
-    // for (int i = 0; i < model_->nv; ++i) {
-    // *(obs++) = data_->qfrc_actuator[i];
-    // }
-    // for (int i = 0; i < 6 * model_->nbody; ++i) {
-    // *(obs++) = data_->cfrc_ext[i];
-    // }
-    // Create a temporary vector to hold all observations
-    std::vector<mjtNum> all_obs;
-    all_obs.reserve(3);  // Pre-allocate space for efficiency
+    mbc.setObservation(obs);
 
-    // Fill the vector with observations
-    for (int i = 0; i < 3; ++i) {
-      all_obs.push_back(data_->qpos[i]);
-    }
-    //  for (int i = 0; i < model_->nv; ++i) {
-    //      all_obs.push_back(data_->qvel[i]);
-    //  }
-    //  for (int i = 0; i < 10 * model_->nbody; ++i) {
-    //      all_obs.push_back(data_->cinert[i]);
-    //  }
-    //  for (int i = 0; i < 6 * model_->nbody; ++i) {
-    //      all_obs.push_back(data_->cvel[i]);
-    //  }
-    //  for (int i = 0; i < model_->nv; ++i) {
-    //      all_obs.push_back(data_->qfrc_actuator[i]);
-    //  }
-    //  for (int i = 0; i < 6 * model_->nbody; ++i) {
-    //      all_obs.push_back(data_->cfrc_ext[i]);
-    //  }
-
-    // Now copy the vector to the state all at once
-    state["obs"_].Assign(all_obs.data(), all_obs.size());
+    state["obs"_].Assign(obs, 42);
 
     // Print confirmation
-    //  std::cout << "Filled " << all_obs.size() << " elements in observation
-    //  array" << std::endl; std::cout << "First few values: "
-    //            << all_obs[0] << " "
-    //            << all_obs[1] << " "
-    //            << all_obs[2] << " "
-    //            << std::endl;
-    //   // Print the first 30 observation values using the saved starting
-    //   pointer std::cout << "obs values: "; for(int i=0; i<30; i++) {
+    // std::cout << "Filled " << 42 << " elements in observation array" << std::endl;
+    // std::cout << "First few values: "
+    //           << obs[0] << " "
+    //           << obs[1] << " "
+    //           << obs[2] << " "
+    //           << std::endl;
+    //   // Print the first 30 observation values using the saved starting pointer
+    //   std::cout << "obs values: "; for(int i=0; i<30; i++) {
     //   std::cout << obs_start[i] << " ";
     //   }
     //   std::cout << std::endl;
