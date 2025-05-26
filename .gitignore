@@ -153,3 +153,6 @@ logs/**
 /envpool/mujoco/legged-sim
 train/logs/
 train/quadruped_ppo_model.zip
+runs_csv/
+runs/
+log.txt

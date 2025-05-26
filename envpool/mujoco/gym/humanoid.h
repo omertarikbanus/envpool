@@ -84,7 +84,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
-  int csv_logging_enabled_ = 1;
+  int csv_logging_enabled_ = 0;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -108,7 +108,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
     if (env_id_ == 0) {
-      EnableRender(true);
+      // EnableRender(true);
       csv_logging_enabled_ = 1;
     }
 
@@ -290,10 +290,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjtNum ComputeStandingReward() {
     // ---------- Tunable constants ----------
     const mjtNum desired_h = 0.35;           // m
-    const mjtNum height_w  = 400.0;          // (= 4 / 0.01^2)
-    const mjtNum orient_w  = 10;            // cost per deg^2 * 0.01
-    const mjtNum vel_w     =  35.0;           // per (m/s)^2 or (rad/s)^2
-    const mjtNum fall_pen  = 500.0;          // one-off
+    const mjtNum height_w  = 600.0;          // (= 4 / 0.01^2)
+    const mjtNum orient_w  = 0.1;            // cost per deg^2 * 0.01
+    const mjtNum vel_w     =  0.001;           // per (m/s)^2 or (rad/s)^2
+    const mjtNum fall_pen  = 50.0;          // one-off
     const mjtNum bonus_eps_h = 0.01;         // m
     const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
     const mjtNum bonus_eps_v = 0.01;         // m/s
@@ -323,9 +323,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum orient_cost = orient_w * (roll * roll + pitch * pitch);  // rad²
     mjtNum move_cost   = vel_w * (lin_v * lin_v + ang_v * ang_v);
 
+    // state["info:height_cost"_] = height_cost;
+    // state["info:orient_cost"_] = orient_cost;
+    // state["info:move_cost"_] = move_cost;
+    // Debug: print individual costs
+    // std::cout << "[StandingReward] height_cost=" << height_cost
+    //       << " orient_cost=" << orient_cost
+    //       << " move_cost=" << move_cost << std::endl;
     // Alive bonus
-    mjtNum reward = 10.0 - height_cost - orient_cost - move_cost;
-
+      mjtNum reward = 100.0 - height_cost - orient_cost - move_cost;
+      // std::cout << "[StandingReward] Initial reward: " << reward << std::endl;
     // Extra stillness bonus
     if (std::abs(height_err) < bonus_eps_h &&
         std::abs(roll)       < bonus_eps_o &&
@@ -333,12 +340,17 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         lin_v                < bonus_eps_v &&
         ang_v                < bonus_eps_v)
       reward += 1.0;
-
-    // Fall penalty (only once, when torso drops below knee height)
-    if (h < 0.20 || !!IsHealthy()) {
-      reward -= fall_pen;
+    // Penalty for falling
+    bool healthy = IsHealthy();                 // your existing function
+    if (h < 0.25 || h > 0.40 || !healthy) {                 // ← single '!'
+      // std::cout << "[StandingReward] Penalty for falling!" << std::endl;
+      // state["info:fall_pen"_] = 1.0;  // Debug: indicate a fall
+      reward -= fall_pen;                       // one-off? see below
+      // optionally end the episode here
     }
-
+    else {
+      // state["info:fall_pen"_] = 0.0;  // Debug: no fall
+    }
     return reward;
   }
 
@@ -376,16 +388,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     int filled_elements = obs - obs_start;
     // std::cout << "Filled " << filled_elements << " elements in observation
     // array" << std::endl;
-    state["info:reward_linvel"_] = xv * forward_reward_weight_;
-    state["info:reward_quadctrl"_] = -ctrl_cost;
-    state["info:reward_alive"_] = healthy_reward;
-    state["info:reward_impact"_] = -contact_cost;
-    state["info:x_position"_] = x_after;
-    state["info:y_position"_] = y_after;
-    state["info:distance_from_origin"_] =
-        std::sqrt(x_after * x_after + y_after * y_after);
-    state["info:x_velocity"_] = xv;
-    state["info:y_velocity"_] = yv;
+    // state["info:reward_linvel"_] = xv * forward_reward_weight_;
+    // state["info:reward_quadctrl"_] = -ctrl_cost;
+    // state["info:reward_alive"_] = healthy_reward;
+    // state["info:reward_impact"_] = -contact_cost;
+    // state["info:x_position"_] = x_after;
+    // state["info:y_position"_] = y_after;
+    // state["info:distance_from_origin"_] =
+    //     std::sqrt(x_after * x_after + y_after * y_after);
+    // state["info:x_velocity"_] = xv;
+    // state["info:y_velocity"_] = yv;
 
     lastReward = reward;
     writeDataToCSV();

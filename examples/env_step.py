@@ -80,10 +80,8 @@ def gym_sync_step() -> None:
     else:
       obs, rew, term, trunc, info = env.step(action)
       if debug_prints:
-        print(f"obs {obs}")
-        print(f"Step result - obs: {obs}, rew: {rew}, term: {term}, trunc: {trunc}, info: {info}")
-        for i in obs:
-          print(i)
+        print(f"Step result - obs: \n\n {obs} \n\n rew: \n\n {rew} \n\n term: \n\n {term} \n\n trunc: \n\n {trunc} \n\n info: \n\n {info}")
+
     # print("obs", obs)
     # print(f"obs, rew, term, trunc, info {obs.shape, rew, term, trunc, info}")
 
