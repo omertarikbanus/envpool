@@ -45,7 +45,7 @@ class HumanoidEnvFns {
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
-    return MakeDict("obs"_.Bind(Spec<mjtNum>({42}, {-inf, inf})),
+    return MakeDict("obs"_.Bind(Spec<mjtNum>({1}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -63,7 +63,7 @@ class HumanoidEnvFns {
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
     // Fix action shape: change from 47 to 34 dimensions.
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 34}, {-1, 1})));
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 1}, {-1, 1})));
   }
 };
 
@@ -192,6 +192,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     mbc.setFeedback(data_);
     mbc.setModeLocomotion();
+    mbc. _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.35;  // Set the height to 0.35
+
   }
 
   void Step(const Action& action) override {
@@ -257,11 +259,18 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   bool IsHealthy() {
     if (mbc._controller->_controlFSM->data.controlParameters->control_mode ==
         0) {
+      std::cout << "[IsHealthy] Passive state detected." << std::endl;
       return false;  // end if state is passive
     }
 
     bool healthy =
-        healthy_z_min_ < data_->qpos[2] && data_->qpos[2] < healthy_z_max_;
+        (healthy_z_min_ < data_->qpos[2]) && (data_->qpos[2] < healthy_z_max_);
+    if (!healthy) {
+      std::cout << "[IsHealthy] Unhealthy state detected: "
+                << "z position = " << data_->qpos[2]
+                << ", healthy_z_min = " << healthy_z_min_
+                << ", healthy_z_max = " << healthy_z_max_ << std::endl;
+    }
     return healthy;
   }
 
@@ -290,11 +299,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjtNum ComputeStandingReward() {
     // ---------- Tunable constants ----------
     const mjtNum desired_h = 0.35;           // m
-    const mjtNum height_w  = 600.0;          // (= 4 / 0.01^2)
-    const mjtNum orient_w  = 0.1;            // cost per deg^2 * 0.01
-    const mjtNum vel_w     =  0.001;           // per (m/s)^2 or (rad/s)^2
-    const mjtNum fall_pen  = 50.0;          // one-off
-    const mjtNum bonus_eps_h = 0.01;         // m
+    const mjtNum height_w  = 1.0;          // (= 4 / 0.01^2)
+    const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
+    const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
+    const mjtNum fall_pen  = 1000.0;          // one-off
+    const mjtNum bonus_eps_h = 0.05;         // m
     const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
     const mjtNum bonus_eps_v = 0.01;         // m/s
     // ---------------------------------------
@@ -331,7 +340,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //       << " orient_cost=" << orient_cost
     //       << " move_cost=" << move_cost << std::endl;
     // Alive bonus
-      mjtNum reward = 100.0 - height_cost - orient_cost - move_cost;
+      mjtNum reward = 1.0 - height_cost - orient_cost - move_cost;
       // std::cout << "[StandingReward] Initial reward: " << reward << std::endl;
     // Extra stillness bonus
     if (std::abs(height_err) < bonus_eps_h &&
@@ -342,13 +351,15 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       reward += 1.0;
     // Penalty for falling
     bool healthy = IsHealthy();                 // your existing function
-    if (h < 0.25 || h > 0.40 || !healthy) {                 // ← single '!'
+    if (h < 0.15 || h > 0.45 || !healthy) {                 // ← single '!'
       // std::cout << "[StandingReward] Penalty for falling!" << std::endl;
       // state["info:fall_pen"_] = 1.0;  // Debug: indicate a fall
       reward -= fall_pen;                       // one-off? see below
       // optionally end the episode here
     }
-    else {
+    if (h > 0.3 && h < 0.4 && healthy) {
+
+      reward += 2.5;  // Bonus for being in the healthy range
       // state["info:fall_pen"_] = 0.0;  // Debug: no fall
     }
     return reward;
@@ -369,7 +380,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     mbc.setObservation(obs);
 
-    state["obs"_].Assign(obs, 42);
+    state["obs"_].Assign(obs, 1);
 
     // Print confirmation
     // std::cout << "Filled " << 42 << " elements in observation array" << std::endl;

@@ -15,6 +15,8 @@ class ModelBasedControllerInterface {
     reset();
     // Constructor implementation
   }
+    float side_sign[4] = {-1, 1, -1, 1};
+
 
   ~ModelBasedControllerInterface() = default;
 
@@ -161,32 +163,32 @@ class ModelBasedControllerInterface {
     // where the first 6 elements are for the body position and orientation,
     // and the next 28 elements are for the foot positions, forces, and contact states.
     
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[0] = act[0];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[1] = act[1];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = act[2];
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[0] = 0; //act[0];
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[1] = 0; //act[1];
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] += (act[0]) * 0.1;
   
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = act[3];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[1] = act[4];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[2] = act[5];
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0; //act[3];
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[1] = 0; //act[4];
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[2] = 0; //act[5];
 
     for (int leg = 0; leg < 4; leg++) {
 
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] =
-          act[6 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] =
-          act[7 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] =
-          act[8 + leg * 7];
+      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] = 0 ;
+          // act[6 + leg * 7];
+      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] = 0; 
+          // act[7 + leg * 7];
+      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] = 0;
+          // act[1 + leg * 2];
 
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] =
-          act[9 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] =
-          act[10 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] =
-          act[11 + leg * 7];
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0;
+          // act[9 + leg * 7];
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = -5 * side_sign[leg];
+          // act[10 + leg * 7];
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 85;
+          // act[2 + leg * 2];
 
-      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
-          (act[12 + leg * 7] > 0.5);
+      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] = 1.0f;
+          // (act[12 + leg * 7] > 0.5);
     }
   }
 
@@ -197,48 +199,48 @@ class ModelBasedControllerInterface {
     // contact state, foot position, foot velocity]
 
     auto& seResult = _controller->_controlFSM->data._stateEstimator->getResult();
-    obs[0] = seResult.position[0];
-    obs[1] = seResult.position[1];
-    obs[2] = seResult.position[2];
+    // obs[0] = seResult.position[0];
+    // obs[1] = seResult.position[1];
+      obs[0] = seResult.position[2]*4 - 1; // Scale to [-1, 1] range
 
-    obs[3] = seResult.vBody[0];
-    obs[4] = seResult.vBody[1];
-    obs[5] = seResult.vBody[2];
+    // obs[3] = seResult.vBody[0];
+    // obs[4] = seResult.vBody[1];
+    // obs[5] = seResult.vBody[2];
 
-    obs[6] = seResult.aBody[0];
-    obs[7] = seResult.aBody[1];
-    obs[8] = seResult.aBody[2];
+    // obs[6] = seResult.aBody[0];
+    // obs[7] = seResult.aBody[1];
+    // obs[8] = seResult.aBody[2];
 
-    obs[9] = seResult.rpy[0];
-    obs[10] = seResult.rpy[1];
-    obs[11] = seResult.rpy[2];
+    // obs[9] = seResult.rpy[0];
+    // obs[10] = seResult.rpy[1];
+    // obs[11] = seResult.rpy[2];
 
-    obs[12] = seResult.omegaBody[0];
-    obs[13] = seResult.omegaBody[1];
-    obs[14] = seResult.omegaBody[2];
+    // obs[12] = seResult.omegaBody[0];
+    // obs[13] = seResult.omegaBody[1];
+    // obs[14] = seResult.omegaBody[2];
 
 
-    for (int leg = 0; leg < 4; leg++) {
-      obs[15 + leg * 3 + 0] =
-          (seResult.contactEstimate[leg]>0);
+    // for (int leg = 0; leg < 4; leg++) {
+    //   obs[15 + leg * 3 + 0] =
+    //       (seResult.contactEstimate[leg]>0);
 
-      obs[15 + leg * 3 + 1] =
-          _controller->_controlFSM->data._legController->datas[leg].p[0];
-      obs[15 + leg * 3 + 2] =
-          _controller->_controlFSM->data._legController->datas[leg].p[1];
-      obs[15 + leg * 3 + 3] =
-          _controller->_controlFSM->data._legController->datas[leg].p[2];
+    //   obs[15 + leg * 3 + 1] =
+    //       _controller->_controlFSM->data._legController->datas[leg].p[0];
+    //   obs[15 + leg * 3 + 2] =
+    //       _controller->_controlFSM->data._legController->datas[leg].p[1];
+    //   obs[15 + leg * 3 + 3] =
+    //       _controller->_controlFSM->data._legController->datas[leg].p[2];
 
-      obs[15 + leg * 3 + 4] =
-          _controller->_controlFSM->data._legController->datas[leg].v[0];
-      obs[15 + leg * 3 + 5] =
-          _controller->_controlFSM->data._legController->datas[leg].v[1];
-      obs[15 + leg * 3 + 6] =
-          _controller->_controlFSM->data._legController->datas[leg].v[2];
+    //   obs[15 + leg * 3 + 4] =
+    //       _controller->_controlFSM->data._legController->datas[leg].v[0];
+    //   obs[15 + leg * 3 + 5] =
+    //       _controller->_controlFSM->data._legController->datas[leg].v[1];
+    //   obs[15 + leg * 3 + 6] =
+    //       _controller->_controlFSM->data._legController->datas[leg].v[2];
 
 
       
-    }
+    // }
 
   }
   // private:

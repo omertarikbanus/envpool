@@ -63,22 +63,28 @@ def gym_sync_step() -> None:
     # action = np.random.randint(action_num, size=(num_envs, action_num))
     action= np.zeros((num_envs, action_num), dtype=np.float32)
     for env_id in range(num_envs):
-      action[env_id][2]=0.36
+      action[env_id][0]=0.25
       for leg in range(4):
+        pass
         # 1 if leg is even, -1 if leg is odd
-        action[env_id][7*leg+7] = 5 * (1.0 if leg % 2 == 0 else -1.0)
-        action[env_id][7*leg+8] = 82
-        action[env_id][7*leg+9] = 1.0
+        # action[env_id][0] = 0.35
+        # action[env_id][2*leg+1] = 0
+        # action[env_id][2*leg+2] = 82.0
+        # action[env_id][7*leg+9] = 1.0
     if debug_prints:
       print(f"Sampled action: {action}")
 
     # result = env.step(action)
     if is_legacy_gym:
       obs, rew, done, info = env.step(action)
+      print(rew)
       if debug_prints:
         print(f"Step result (legacy) - obs: {obs}, rew: {rew}, done: {done}, info: {info}")
     else:
       obs, rew, term, trunc, info = env.step(action)
+      print(rew)
+      print(f"obs: {obs}, obs.shape: {obs.shape}")
+
       if debug_prints:
         print(f"Step result - obs: \n\n {obs} \n\n rew: \n\n {rew} \n\n term: \n\n {term} \n\n trunc: \n\n {trunc} \n\n info: \n\n {info}")
 

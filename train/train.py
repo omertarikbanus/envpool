@@ -110,9 +110,9 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=6, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=2_500_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=500_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
@@ -168,19 +168,36 @@ def main():
     model = PPO(
     "MlpPolicy",
     env,
-    learning_rate=1e-4,
-    n_steps=128,               # 128 × 16 = 2048 samples / iteration
-    batch_size=256,
-    gamma=0.95,
+    
+    # ──────── Learning rate and clipping ────────
+    learning_rate=5e-3,       # moderately high to push KL into ~0.01–0.03
+    clip_range=0.35,          # allow up to ±30% policy shift per update
+    n_epochs=4,               # only 4 passes over each batch (avoid over‐fitting to stale data)
+
+    # ──────── On‐policy batch size ────────
+    n_steps=1024,             # collect 1,024 env steps per update cycle
+    batch_size=256,           # 2,048 / 256 = 8 mini‐batches per epoch
+
+    # ──────── Discounting and GAE ────────
+    gamma=0.99,
     gae_lambda=0.90,
-    clip_range=0.2,
-    ent_coef=0.02,
-    vf_coef=0.25,
-    max_grad_norm=0.5,
-    policy_kwargs=dict(net_arch=[dict(pi=[256,256], vf=[256,256])]),
+
+    # ──────── Entropy & value weighting ────────
+    ent_coef=0.1,            # keep entropy_loss around –10 to encourage exploration
+    vf_coef=0.25,             # balance value‐loss vs. policy‐loss
+    max_grad_norm=0.5,        # clip gradients at 0.5
+
+    # ──────── Network architecture ────────
+    policy_kwargs=dict(
+        net_arch=[
+            dict(pi=[64, 64],    # two hidden layers of 64 for the actor
+                 vf=[64, 64])    # and two of 64 for the critic
+        ]
+    ),
+
     verbose=1,
-    tensorboard_log="runs/ppo_debug",
-)
+    tensorboard_log="runs/ppo_final",
+    )
     model.set_logger(logger)
 
     logging.info("Starting training...")
