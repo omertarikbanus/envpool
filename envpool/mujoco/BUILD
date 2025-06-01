@@ -159,7 +159,8 @@ cc_library(
     # "legged-sim/third-party/osqp/**/*.h",
     "legged-sim/third-party/JCQP/**/*.cpp",
     "legged-sim/third-party/JCQP/**/*.c",
-            
+    "legged-sim/third-party/lcm/**/*.h",
+    "legged-sim/third-party/lcm/**/*.c",        
         ]),
     includes = [
         ".",
@@ -196,7 +197,7 @@ cc_library(
         "@mujoco//:mujoco_lib",
 
     ],
-    linkopts = ["-ltinyxml2 -lpthread -lOSMesa -lGL -ldl -lm -lEGL "],
+    linkopts = ["-ltinyxml2 -lpthread -lOSMesa -lGL -ldl -lm  -llcm -lEGL "],
     copts = [" --debug -g -O0 -ggdb -w  -D__NO_COPYRIGHT__ -Wno-error  -Wall -pedantic -Wfloat-equal -Wshadow -DLINUX -finline-functions"],
 )
 # -no-pie 

@@ -302,8 +302,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     const mjtNum height_w  = 1.0;          // (= 4 / 0.01^2)
     const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
     const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
-    const mjtNum fall_pen  = 1000.0;          // one-off
-    const mjtNum bonus_eps_h = 0.05;         // m
+    const mjtNum fall_pen  = 1.0;          // one-off
+    const mjtNum bonus_eps_h = 0.01;         // m
     const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
     const mjtNum bonus_eps_v = 0.01;         // m/s
     // ---------------------------------------

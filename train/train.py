@@ -170,9 +170,9 @@ def main():
     env,
     
     # ──────── Learning rate and clipping ────────
-    learning_rate=5e-3,       # moderately high to push KL into ~0.01–0.03
-    clip_range=0.35,          # allow up to ±30% policy shift per update
-    n_epochs=4,               # only 4 passes over each batch (avoid over‐fitting to stale data)
+    learning_rate=1e-4,       # moderately high to push KL into ~0.01–0.03
+    clip_range=0.2,          # allow up to ±30% policy shift per update
+    n_epochs=8,               # only 4 passes over each batch (avoid over‐fitting to stale data)
 
     # ──────── On‐policy batch size ────────
     n_steps=1024,             # collect 1,024 env steps per update cycle
@@ -185,7 +185,7 @@ def main():
     # ──────── Entropy & value weighting ────────
     ent_coef=0.1,            # keep entropy_loss around –10 to encourage exploration
     vf_coef=0.25,             # balance value‐loss vs. policy‐loss
-    max_grad_norm=0.5,        # clip gradients at 0.5
+    max_grad_norm=0.05,        # clip gradients at 0.5
 
     # ──────── Network architecture ────────
     policy_kwargs=dict(
@@ -198,6 +198,9 @@ def main():
     verbose=1,
     tensorboard_log="runs/ppo_final",
     )
+
+
+
     model.set_logger(logger)
 
     logging.info("Starting training...")
