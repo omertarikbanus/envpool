@@ -32,7 +32,7 @@ class HumanoidEnvFns {
  public:
   static decltype(auto) DefaultConfig() {
     return MakeDict(
-        "frame_skip"_.Bind(5), "post_constraint"_.Bind(true),
+        "frame_skip"_.Bind(25), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1.25),
         "terminate_when_unhealthy"_.Bind(true),
         "exclude_current_positions_from_observation"_.Bind(true),
@@ -81,6 +81,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   std::ofstream outputFile;
   float lastReward = 0;
+  float lastAction = 0;
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
@@ -199,6 +200,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   void Step(const Action& action) override {
     // step
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
+    lastAction = act[0];
     mbc.setAction(act);
     // repeat frameskip times
     const auto& before = GetMassCenter();
@@ -302,7 +304,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     const mjtNum height_w  = 1.0;          // (= 4 / 0.01^2)
     const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
     const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
-    const mjtNum fall_pen  = 1.0;          // one-off
+    const mjtNum fall_pen  = 500.0;          // one-off
     const mjtNum bonus_eps_h = 0.01;         // m
     const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
     const mjtNum bonus_eps_v = 0.01;         // m/s
@@ -418,7 +420,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:qvel0"_].Assign(qvel0_, model_->nv);
 #endif
   }
-
+#define N_LOG 22
   void writeDataToCSV(int mode = 0) {
     if (csv_logging_enabled_ == 0) {
       return;  // Skip writing if logging is disabled
@@ -435,7 +437,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                  << "FR_abad,FR_hip,FR_knee,"
                  << "FL_abad,FL_hip,FL_knee,"
                  << "HR_abad,HR_hip,HR_knee,"
-                 << "HL_abad,HL_hip,HL_knee, reward" << std::endl;
+                 << "HL_abad,HL_hip,HL_knee, reward, action, height " << std::endl;
     }
     // Write the data to CSV
     if (mode == 0) {
@@ -444,24 +446,26 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         outputFile << double(data_->qpos[i]);
         outputFile << ",";
       }
-      outputFile << lastReward;
-
+      outputFile << lastReward << ","; 
+  outputFile << lastAction << ","; 
+      outputFile << mbc._controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] << ",";  // Height
+      // Write the joint angles
       outputFile << std::endl;
     } else if (mode == 1) {
       // Write the data to CSV
-      for (int i = 0; i < 19; ++i) {
-        for (int i = 0; i < 20; ++i) {
+      for (int i = 0; i < N_LOG; ++i) {
+        for (int i = 0; i < N_LOG; ++i) {
           outputFile << -0.01;
-          if (i < 19) outputFile << ",";
+          if (i < N_LOG) outputFile << ",";
         }
         outputFile << std::endl;
       }
     } else if (mode == 2) {
       // Write the data to CSV
-      for (int i = 0; i < 19; ++i) {
-        for (int i = 0; i < 20; ++i) {
+      for (int i = 0; i < N_LOG; ++i) {
+        for (int i = 0; i < N_LOG; ++i) {
           outputFile << -0.05;
-          if (i < 19) outputFile << ",";
+          if (i < N_LOG) outputFile << ",";
         }
         outputFile << std::endl;
       }

@@ -112,7 +112,7 @@ def parse_args():
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
     parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=500_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=1_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
@@ -148,7 +148,7 @@ def main():
 
     # Use the adapter which will handle the action_space and observation_space conversion
     env = VecAdapter(env)
-    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
+    # env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
     env = VecMonitor(env)  # Monitor for tracking episode stats
 
     # Configure PPO model with tuned hyperparameters.
@@ -175,11 +175,11 @@ def main():
     n_epochs=8,               # only 4 passes over each batch (avoid over‐fitting to stale data)
 
     # ──────── On‐policy batch size ────────
-    n_steps=1024,             # collect 1,024 env steps per update cycle
-    batch_size=256,           # 2,048 / 256 = 8 mini‐batches per epoch
+    n_steps=256,             # collect 1,024 env steps per update cycle
+    batch_size=64,           # 2,048 / 256 = 8 mini‐batches per epoch
 
     # ──────── Discounting and GAE ────────
-    gamma=0.99,
+    gamma=0.9,
     gae_lambda=0.90,
 
     # ──────── Entropy & value weighting ────────
@@ -190,8 +190,8 @@ def main():
     # ──────── Network architecture ────────
     policy_kwargs=dict(
         net_arch=[
-            dict(pi=[64, 64],    # two hidden layers of 64 for the actor
-                 vf=[64, 64])    # and two of 64 for the critic
+            dict(pi=[8, 8],    # two hidden layers of 64 for the actor
+                 vf=[8, 8])    # and two of 64 for the critic
         ]
     ),
 
