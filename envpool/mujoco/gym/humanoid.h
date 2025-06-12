@@ -32,12 +32,12 @@ class HumanoidEnvFns {
  public:
   static decltype(auto) DefaultConfig() {
     return MakeDict(
-        "frame_skip"_.Bind(25), "post_constraint"_.Bind(true),
+        "frame_skip"_.Bind(10), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1.25),
         "terminate_when_unhealthy"_.Bind(true),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
-        "healthy_z_min"_.Bind(0.15), "healthy_z_max"_.Bind(0.45),
+        "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.45),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "reset_noise_scale"_.Bind(0));
   }
@@ -109,7 +109,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
     if (env_id_ == 0) {
-      // EnableRender(true);
+      EnableRender(true);
       csv_logging_enabled_ = 1;
     }
 
@@ -301,7 +301,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjtNum ComputeStandingReward() {
     // ---------- Tunable constants ----------
     const mjtNum desired_h = 0.35;           // m
-    const mjtNum height_w  = 1.0;          // (= 4 / 0.01^2)
+    const mjtNum height_w  = 100.0;          // (= 4 / 0.01^2)
     const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
     const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
     const mjtNum fall_pen  = 500.0;          // one-off
@@ -353,7 +353,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       reward += 1.0;
     // Penalty for falling
     bool healthy = IsHealthy();                 // your existing function
-    if (h < 0.15 || h > 0.45 || !healthy) {                 // ← single '!'
+    if (h < 0.20 || h > 0.45 || !healthy) {                 // ← single '!'
       // std::cout << "[StandingReward] Penalty for falling!" << std::endl;
       // state["info:fall_pen"_] = 1.0;  // Debug: indicate a fall
       reward -= fall_pen;                       // one-off? see below
