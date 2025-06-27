@@ -200,48 +200,48 @@ class ModelBasedControllerInterface {
     // contact state, foot position, foot velocity]
 
     auto& seResult = _controller->_controlFSM->data._stateEstimator->getResult();
-    // obs[0] = seResult.position[0];
-    // obs[1] = seResult.position[1];
-      obs[0] = seResult.position[2]*4 - 1; // Scale to [-1, 1] range
+    obs[0] = seResult.position[0];
+    obs[1] = seResult.position[1];
+    obs[0] = seResult.position[2]; // Scale to [-1, 1] range
 
-    // obs[3] = seResult.vBody[0];
-    // obs[4] = seResult.vBody[1];
-    // obs[5] = seResult.vBody[2];
+    obs[3] = seResult.vBody[0];
+    obs[4] = seResult.vBody[1];
+    obs[5] = seResult.vBody[2];
 
-    // obs[6] = seResult.aBody[0];
-    // obs[7] = seResult.aBody[1];
-    // obs[8] = seResult.aBody[2];
+    obs[6] = seResult.aBody[0];
+    obs[7] = seResult.aBody[1];
+    obs[8] = seResult.aBody[2];
 
-    // obs[9] = seResult.rpy[0];
-    // obs[10] = seResult.rpy[1];
-    // obs[11] = seResult.rpy[2];
+    obs[9] = seResult.rpy[0];
+    obs[10] = seResult.rpy[1];
+    obs[11] = seResult.rpy[2];
 
-    // obs[12] = seResult.omegaBody[0];
-    // obs[13] = seResult.omegaBody[1];
-    // obs[14] = seResult.omegaBody[2];
+    obs[12] = seResult.omegaBody[0];
+    obs[13] = seResult.omegaBody[1];
+    obs[14] = seResult.omegaBody[2];
 
 
-    // for (int leg = 0; leg < 4; leg++) {
-    //   obs[15 + leg * 3 + 0] =
-    //       (seResult.contactEstimate[leg]>0);
+    for (int leg = 0; leg < 4; leg++) {
+      obs[15 + leg * 7 + 0] =
+          (seResult.contactEstimate[leg]>0);
 
-    //   obs[15 + leg * 3 + 1] =
-    //       _controller->_controlFSM->data._legController->datas[leg].p[0];
-    //   obs[15 + leg * 3 + 2] =
-    //       _controller->_controlFSM->data._legController->datas[leg].p[1];
-    //   obs[15 + leg * 3 + 3] =
-    //       _controller->_controlFSM->data._legController->datas[leg].p[2];
+      obs[15 + leg * 7 + 1] =
+          _controller->_controlFSM->data._legController->datas[leg].p[0];
+      obs[15 + leg * 7 + 2] =
+          _controller->_controlFSM->data._legController->datas[leg].p[1];
+      obs[15 + leg * 7 + 3] =
+          _controller->_controlFSM->data._legController->datas[leg].p[2];
 
-    //   obs[15 + leg * 3 + 4] =
-    //       _controller->_controlFSM->data._legController->datas[leg].v[0];
-    //   obs[15 + leg * 3 + 5] =
-    //       _controller->_controlFSM->data._legController->datas[leg].v[1];
-    //   obs[15 + leg * 3 + 6] =
-    //       _controller->_controlFSM->data._legController->datas[leg].v[2];
+      obs[15 + leg * 7 + 4] =
+          _controller->_controlFSM->data._legController->datas[leg].v[0];
+      obs[15 + leg * 7 + 5] =
+          _controller->_controlFSM->data._legController->datas[leg].v[1];
+      obs[15 + leg * 7 + 6] =
+          _controller->_controlFSM->data._legController->datas[leg].v[2];
 
 
       
-    // }
+    }
 
   }
   // private:

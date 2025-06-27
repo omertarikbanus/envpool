@@ -32,7 +32,7 @@ class HumanoidEnvFns {
  public:
   static decltype(auto) DefaultConfig() {
     return MakeDict(
-        "frame_skip"_.Bind(10), "post_constraint"_.Bind(true),
+        "frame_skip"_.Bind(15), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1.25),
         "terminate_when_unhealthy"_.Bind(true),
         "exclude_current_positions_from_observation"_.Bind(true),
@@ -45,7 +45,7 @@ class HumanoidEnvFns {
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
-    return MakeDict("obs"_.Bind(Spec<mjtNum>({1}, {-inf, inf})),
+    return MakeDict("obs"_.Bind(Spec<mjtNum>({42}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -307,7 +307,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     const mjtNum fall_pen  = 500.0;          // one-off
     const mjtNum bonus_eps_h = 0.01;         // m
     const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
-    const mjtNum bonus_eps_v = 0.01;         // m/s
+    const mjtNum bonus_eps_v = 0.01;         // 
     // ---------------------------------------
 
     // Height

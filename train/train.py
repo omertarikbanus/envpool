@@ -112,7 +112,7 @@ def parse_args():
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
     parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=1_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=5_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
@@ -136,7 +136,8 @@ def main():
     logging.basicConfig(level=logging.INFO)
     logging.info("Experiment: quadruped_ppo_experiment")
     logging.info(f"Using EnvPool for environment {args.env_name} with {args.num_envs} envs. Seed: {args.seed}")
-
+    print(f"Using GPU: {th.cuda.is_available()}")
+    
     np.random.seed(args.seed)
     
     # Create EnvPool environment using the gym interface.
@@ -170,7 +171,7 @@ def main():
     env,
     
     # ──────── Learning rate and clipping ────────
-    learning_rate=1e-4,       # moderately high to push KL into ~0.01–0.03
+    learning_rate=2e-4,       # moderately high to push KL into ~0.01–0.03
     clip_range=0.2,          # allow up to ±30% policy shift per update
     n_epochs=8,               # only 4 passes over each batch (avoid over‐fitting to stale data)
 
@@ -179,19 +180,19 @@ def main():
     batch_size=64,           # 2,048 / 256 = 8 mini‐batches per epoch
 
     # ──────── Discounting and GAE ────────
-    gamma=0.9,
+    gamma=0.95,
     gae_lambda=0.90,
 
     # ──────── Entropy & value weighting ────────
     ent_coef=0.1,            # keep entropy_loss around –10 to encourage exploration
     vf_coef=0.25,             # balance value‐loss vs. policy‐loss
-    max_grad_norm=0.05,        # clip gradients at 0.5
+    max_grad_norm=0.5,        # clip gradients at 0.5
 
     # ──────── Network architecture ────────
     policy_kwargs=dict(
         net_arch=[
-            dict(pi=[8, 8],    # two hidden layers of 64 for the actor
-                 vf=[8, 8])    # and two of 64 for the critic
+            dict(pi=[64, 64],    # two hidden layers of 64 for the actor
+                 vf=[64, 64])    # and two of 64 for the critic
         ]
     ),
 
@@ -199,6 +200,33 @@ def main():
     tensorboard_log="runs/ppo_final",
     )
 
+    # the one above worked OK. I will try the following tomorrow. 
+    # model = PPO(
+    #     "MlpPolicy",
+    #     env,
+
+    #     learning_rate=2e-4,
+    #     clip_range=0.30,           # slightly tighter to re‐enable policy updates
+    #     n_epochs=4,
+
+    #     n_steps=2048,
+    #     batch_size=256,
+
+    #     gamma=0.95,
+    #     gae_lambda=0.90,
+
+    #     ent_coef=0.005,
+    #     vf_coef=0.10,              # lower value‐loss weight
+    #     max_grad_norm=0.5,
+
+    #     policy_kwargs=dict(
+    #         log_std_init=-1.0,     # initialize log‐std to e^{-1} ≈ 0.37 and keep it bounded
+    #         net_arch=[dict(pi=[64, 64], vf=[64, 64])]
+    #     ),
+
+    #     verbose=1,
+    #     tensorboard_log="runs/ppo_stable",
+    # )
 
 
     model.set_logger(logger)
