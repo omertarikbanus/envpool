@@ -45,7 +45,7 @@ class HumanoidEnvFns {
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
-    return MakeDict("obs"_.Bind(Spec<mjtNum>({42}, {-inf, inf})),
+    return MakeDict("obs"_.Bind(Spec<mjtNum>({44}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -82,6 +82,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   std::ofstream outputFile;
   float lastReward = 0;
   float lastAction = 0;
+  mjtNum desired_h;
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
@@ -109,7 +110,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
     if (env_id_ == 0) {
-      EnableRender(true);
+      // EnableRender(true);
+
       csv_logging_enabled_ = 1;
     }
 
@@ -119,58 +121,44 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     outputFile.open(fname.c_str());
 
     MujocoReset();
+    mbc.setModeLocomotion();
+
+    desired_h = 0.35;  // Set the desired height to 0.35
+
     // Save the initial controller configuration to backup
-    while (mbc.getMode() != 6) {
-      mjtNum dummy_action[22];
-      // set all values to zero;
-      for (int i = 0; i < 22; i++) {
-        dummy_action[i] = 0;
-      }
-      mjtNum* act = dummy_action;
-      mbc.setFeedback(data_);
-      mbc.setAction(act);
-      mbc.run();
+    // while (mbc.getMode() != 6) {
+    //   mjtNum dummy_action[22];
+    //   // set all values to zero;
+    //   for (int i = 0; i < 22; i++) {
+    //     dummy_action[i] = 0;
+    //   }
+    //   mjtNum* act = dummy_action;
+    //   mbc.setFeedback(data_);
+    //   mbc.setAction(act);
+    //   mbc.run();
 
-      mjtNum motor_commands[12];
-      std::array<double, 12> mc = mbc.getMotorCommands();
-      for (int i = 0; i < 12; ++i) {
-        // Clamp motor commands to torque bounds.
-        motor_commands[i] =
-            std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_),
-                     -torque_limit_);
-      }
-      const auto& before = GetMassCenter();
+    //   mjtNum motor_commands[12];
+    //   std::array<double, 12> mc = mbc.getMotorCommands();
+    //   for (int i = 0; i < 12; ++i) {
+    //     // Clamp motor commands to torque bounds.
+    //     motor_commands[i] =
+    //         std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_),
+    //                  -torque_limit_);
+    //   }
+    //   const auto& before = GetMassCenter();
 
-      MujocoStep(motor_commands);
+    //   MujocoStep(motor_commands);
 
-      writeDataToCSV(0);
-    }
+    //   writeDataToCSV(0);
+    // }
     writeDataToCSV(2);
     model_backup_ = mj_copyModel(nullptr, model_);
     data_backup_ = mj_copyData(nullptr, model_, data_);
   }
 
   void MujocoResetModel() override {
-    // for (int i = 0; i < model_->nq; ++i) {
-    //   data_->qpos[i] = init_qpos_[i] + dist_(gen_);
-    // }
-    // for (int i = 0; i < model_->nv; ++i) {
-    //   data_->qvel[i] = init_qvel_[i] + dist_(gen_);
-    // }
-    int kSideSign_[4] = {-1, 1, -1, 1};
+    setIC();
 
-    model_->opt.timestep = 0.002;
-
-    // data_->qpos[2] = 0.6;  // Set the height to 0.125
-
-    for (int leg = 0; leg < 4; leg++) {
-      data_->qpos[(leg) * 3 + 0 + 7] =
-          0 * (M_PI / 180) *
-          kSideSign_[leg];  // Add 7 to skip the first 7 dofs from body.
-                            // (Position + Quaternion)
-      data_->qpos[(leg) * 3 + 1 + 7] = -90 * (M_PI / 180);  //*kDirSign_[leg];
-      data_->qpos[(leg) * 3 + 2 + 7] = 173 * (M_PI / 180);  //*kDirSign_[leg];
-    }
 
 #ifdef ENVPOOL_TEST
     std::memcpy(qpos0_, data_->qpos, sizeof(mjtNum) * model_->nq);
@@ -185,11 +173,17 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     std::cout << "Resetting the environment..." << std::endl;
     done_ = false;
     elapsed_step_ = 0;
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_real_distribution<mjtNum> dis( 0.32, 0.4);
+    desired_h = dis(gen);
     // MujocoReset();
-    mj_deleteData(data_);
-    mj_deleteModel(model_);
-    model_ = mj_copyModel(nullptr, model_backup_);
-    data_ = mj_copyData(nullptr, model_, data_backup_);
+    // mj_deleteData(data_);
+    // mj_deleteModel(model_);
+    // model_ = mj_copyModel(nullptr, model_backup_);
+    // data_ = mj_copyData(nullptr, model_, data_backup_);
+    mj_resetData(model_, data_);
+    setIC();
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     mbc.setFeedback(data_);
     mbc.setModeLocomotion();
@@ -300,7 +294,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // ------------------------------------------------------------------------
   mjtNum ComputeStandingReward() {
     // ---------- Tunable constants ----------
-    const mjtNum desired_h = 0.35;           // m
+    // Desired height generated every reset
+    // static mjtNum desired_h = 0.35;  // Example value,
     const mjtNum height_w  = 100.0;          // (= 4 / 0.01^2)
     const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
     const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
@@ -381,7 +376,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum* obs_start = obs;  // Save the starting pointer for debugging
 
     mbc.setObservation(obs);
-
+    obs[44] = desired_h;                 
     state["obs"_].Assign(obs, 1);
 
     // Print confirmation
@@ -437,7 +432,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                  << "FR_abad,FR_hip,FR_knee,"
                  << "FL_abad,FL_hip,FL_knee,"
                  << "HR_abad,HR_hip,HR_knee,"
-                 << "HL_abad,HL_hip,HL_knee, reward, action, height " << std::endl;
+                 << "HL_abad,HL_hip,HL_knee, reward, action, height, des_h " << std::endl;
     }
     // Write the data to CSV
     if (mode == 0) {
@@ -447,8 +442,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         outputFile << ",";
       }
       outputFile << lastReward << ","; 
-  outputFile << lastAction << ","; 
+      outputFile << lastAction << ","; 
       outputFile << mbc._controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] << ",";  // Height
+      outputFile << desired_h;  // Desired height
       // Write the joint angles
       outputFile << std::endl;
     } else if (mode == 1) {

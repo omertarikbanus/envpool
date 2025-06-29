@@ -28,7 +28,7 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 def gym_sync_step() -> None:
   debug_prints = 0
   
-  num_envs = 1
+  num_envs = 32
   if debug_prints:
     print(f"num_envs set to {num_envs}")
   if debug_prints:
@@ -58,14 +58,15 @@ def gym_sync_step() -> None:
   if debug_prints:
     print(f"Observation space: {env.observation_space}")
     print(f"Observation shape: {env.observation_space.shape}")
+  action= np.zeros((num_envs, action_num), dtype=np.float32)
+  for env_id in range(num_envs):
+    action[env_id][0]=0.42
   for _ in range(1000):
     # autoreset is automatically enabled in envpool
     # action = np.random.randint(action_num, size=(num_envs, action_num))
-    action= np.zeros((num_envs, action_num), dtype=np.float32)
-    for env_id in range(num_envs):
-      action[env_id][0]=0.25
-      for leg in range(4):
-        pass
+
+      # for leg in range(4):
+      #   pass
         # 1 if leg is even, -1 if leg is odd
         # action[env_id][0] = 0.35
         # action[env_id][2*leg+1] = 0
@@ -82,8 +83,6 @@ def gym_sync_step() -> None:
         print(f"Step result (legacy) - obs: {obs}, rew: {rew}, done: {done}, info: {info}")
     else:
       obs, rew, term, trunc, info = env.step(action)
-      print(rew)
-      print(f"obs: {obs}, obs.shape: {obs.shape}")
 
       if debug_prints:
         print(f"Step result - obs: \n\n {obs} \n\n rew: \n\n {rew} \n\n term: \n\n {term} \n\n trunc: \n\n {trunc} \n\n info: \n\n {info}")

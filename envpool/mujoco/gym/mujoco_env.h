@@ -81,6 +81,7 @@ class MujocoEnv {
   MujocoEnv(const std::string& xml, int frame_skip, bool post_constraint,
             int max_episode_steps);
   ~MujocoEnv();
+  void setIC();
 
   // -------- core --------
   void MujocoReset();
@@ -129,7 +130,26 @@ inline MujocoEnv::~MujocoEnv() {
   delete[] qvel0_;
 #endif
 }
+void MujocoEnv::setIC() {
+    int kSideSign_[4] = {-1, 1, -1, 1};
 
+    model_->opt.timestep = 0.002;
+    const double minHeight = 0.2;  // minimum height
+    const double maxHeight = 0.4;  // maximum height
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_real_distribution<double> distribution(minHeight, maxHeight);
+    data_->qpos[2] = distribution(gen);  // Set height to a value sampled uniformly between minHeight and maxHeight
+
+    for (int leg = 0; leg < 4; leg++) {
+      data_->qpos[(leg) * 3 + 0 + 7] =
+          0 * (M_PI / 180) *
+          kSideSign_[leg];  // Add 7 to skip the first 7 dofs from body.
+                            // (Position + Quaternion)
+      data_->qpos[(leg) * 3 + 1 + 7] = -50 * (M_PI / 180);  //*kDirSign_[leg];
+      data_->qpos[(leg) * 3 + 2 + 7] = 100 * (M_PI / 180);  
+    }
+    }
 inline void MujocoEnv::MujocoReset() {
   elapsed_step_ = 0;
   done_ = false;

@@ -242,7 +242,8 @@ class ModelBasedControllerInterface {
 
       
     }
-
+   obs[43] = _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2];
+  
   }
   // private:
   // std::shared_ptr<EmbeddedController> _controller;

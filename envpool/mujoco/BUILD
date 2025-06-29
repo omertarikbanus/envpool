@@ -198,7 +198,7 @@ cc_library(
 
     ],
     linkopts = ["-ltinyxml2 -lpthread -lOSMesa -lGL -ldl -lm  -llcm -lEGL "],
-    copts = [" --debug -g -O0 -ggdb -w  -D__NO_COPYRIGHT__ -Wno-error  -Wall -pedantic -Wfloat-equal -Wshadow -DLINUX -finline-functions"],
+    copts = [" --debug -g -O3 -ggdb -w  -D__NO_COPYRIGHT__ -Wno-error  -Wall -pedantic -Wfloat-equal -Wshadow -DLINUX -finline-functions"],
 )
 # -no-pie 
 pybind_extension(

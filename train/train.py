@@ -112,7 +112,7 @@ def parse_args():
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
     parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=5_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=1_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
@@ -176,8 +176,8 @@ def main():
     n_epochs=8,               # only 4 passes over each batch (avoid over‐fitting to stale data)
 
     # ──────── On‐policy batch size ────────
-    n_steps=256,             # collect 1,024 env steps per update cycle
-    batch_size=64,           # 2,048 / 256 = 8 mini‐batches per epoch
+    n_steps=1024,             # collect 1,024 env steps per update cycle
+    batch_size=256,           # 2,048 / 256 = 4 mini‐batches per epoch
 
     # ──────── Discounting and GAE ────────
     gamma=0.95,
@@ -232,7 +232,13 @@ def main():
     model.set_logger(logger)
 
     logging.info("Starting training...")
-    model.learn(total_timesteps=args.total_timesteps)
+    try:
+        model.learn(total_timesteps=args.total_timesteps)
+    except KeyboardInterrupt:
+        logging.info("Training interrupted by user. Saving model...")
+        model.save(args.model_save_path)
+        logging.info(f"Model saved at: {args.model_save_path}.zip")
+        env.close()
     logging.info("Training complete.")
 
     model.save(args.model_save_path)
