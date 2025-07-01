@@ -167,8 +167,9 @@ docker-run:
 		-v /:/host \
 		--shm-size=4gb -it --rm \
 		-e DISPLAY=$(DISPLAY) \
-			-e QT_X11_NO_MITSHM=1 \
+		-e QT_X11_NO_MITSHM=1 \
 		-e XAUTHORITY=/tmp/.docker.xauth \
+		--gpus all \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
 		$(PROJECT_NAME):$(DOCKER_TAG) bash
@@ -185,6 +186,7 @@ docker-run-mac:
 		--shm-size=4gb -it --rm \
 		-e DISPLAY=host.docker.internal:0 \
 		-e QT_X11_NO_MITSHM=1 \
+		- gpus all \
 		-e XDG_RUNTIME_DIR=/tmp/runtime-dir \
 		-e LIBGL_ALWAYS_INDIRECT=1 \
 		-e MESA_GL_VERSION_OVERRIDE=3.3 \

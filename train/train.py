@@ -110,15 +110,16 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=128, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=1_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=60_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
 
 
 def main():
+    # Parse command-line arguments
     args = parse_args()
 
     # 1️⃣  Fresh run-folder so old logs stay intact
@@ -149,9 +150,23 @@ def main():
 
     # Use the adapter which will handle the action_space and observation_space conversion
     env = VecAdapter(env)
-    # env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
-    env = VecMonitor(env)  # Monitor for tracking episode stats
+    # Apply normalization
+    env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
 
+    # After training, make sure to save both the model and the normalization stats
+    # This happens in the main() function where we already have:
+    # model.save(args.model_save_path)
+    # We should also add:
+    # env.save(f"{args.model_save_path}_vecnormalize.pkl")
+    env = VecMonitor(env)  # Monitor for tracking episode stats
+    # Run the environment for 10k steps to gather statistics for VecNormalize
+    logging.info("Running environment for 10,000 steps to gather normalization statistics...")
+    obs = env.reset()
+    for _ in range(10000):
+        # Sample random actions
+        actions = np.array([env.action_space.sample() for _ in range(args.num_envs)])
+        obs, _, _, _ = env.step(actions)
+    logging.info("Finished gathering normalization statistics")
     # Configure PPO model with tuned hyperparameters.
     # model = PPO(
     #     "MlpPolicy",
@@ -165,39 +180,42 @@ def main():
     #     tensorboard_log=args.tb_log_dir,
     # )
     
-
     model = PPO(
-    "MlpPolicy",
-    env,
-    
-    # ──────── Learning rate and clipping ────────
-    learning_rate=2e-4,       # moderately high to push KL into ~0.01–0.03
-    clip_range=0.2,          # allow up to ±30% policy shift per update
-    n_epochs=8,               # only 4 passes over each batch (avoid over‐fitting to stale data)
+        "MlpPolicy",
+        env,
+        
+        # ──────── Learning rate and clipping ────────
+        learning_rate=1e-4,       # moderately high to push KL into ~0.01–0.03
+        clip_range=0.2,           # allow up to ±20% policy shift per update
+        n_epochs=8,               # only 8 passes over each batch (avoid over‐fitting to stale data)
 
-    # ──────── On‐policy batch size ────────
-    n_steps=1024,             # collect 1,024 env steps per update cycle
-    batch_size=256,           # 2,048 / 256 = 4 mini‐batches per epoch
+        # ──────── On‐policy batch size ────────
+        n_steps=1024,             # collect 1,024 env steps per update cycle
+        batch_size=256,           # 1,024 / 256 = 4 mini‐batches per epoch
 
-    # ──────── Discounting and GAE ────────
-    gamma=0.95,
-    gae_lambda=0.90,
+        # ──────── Discounting and GAE ────────
+        gamma=0.99,
+        gae_lambda=0.90,
 
-    # ──────── Entropy & value weighting ────────
-    ent_coef=0.1,            # keep entropy_loss around –10 to encourage exploration
-    vf_coef=0.25,             # balance value‐loss vs. policy‐loss
-    max_grad_norm=0.5,        # clip gradients at 0.5
+        # ──────── Entropy & value weighting ────────
+        ent_coef=0.01,            # keep entropy_loss around –10 to encourage exploration
+        vf_coef=0.25,             # balance value‐loss vs. policy‐loss
+        max_grad_norm=0.05,       # clip gradients at 0.05
 
-    # ──────── Network architecture ────────
-    policy_kwargs=dict(
-        net_arch=[
-            dict(pi=[64, 64],    # two hidden layers of 64 for the actor
-                 vf=[64, 64])    # and two of 64 for the critic
-        ]
-    ),
-
-    verbose=1,
-    tensorboard_log="runs/ppo_final",
+        # ──────── Network architecture ────────
+        policy_kwargs=dict(
+            log_std_init=-2.0,    # Moderate initial exploration
+            net_arch=[
+            dict(pi=[256],    # Single hidden layer of 256 for the actor
+                 vf=[256])    # Single hidden layer of 256 for the critic
+            ],
+            activation_fn=th.nn.ReLU,
+            ortho_init=True,      # Use orthogonal initialization for better training stability
+            squash_output=True    # Use tanh to bound policy outputs
+        ),
+        device="cuda" if th.cuda.is_available() else "cpu",  # Use GPU if available
+        verbose=1,
+        tensorboard_log="runs/ppo_final",
     )
 
     # the one above worked OK. I will try the following tomorrow. 
@@ -239,6 +257,12 @@ def main():
         model.save(args.model_save_path)
         logging.info(f"Model saved at: {args.model_save_path}.zip")
         env.close()
+    except:
+        logging.error("An error occurred during training. Saving model...")
+        model.save(args.model_save_path)
+        logging.info(f"Model saved at: {args.model_save_path}.zip")
+        env.close()
+        raise
     logging.info("Training complete.")
 
     model.save(args.model_save_path)
@@ -254,4 +278,9 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = datetime.now()
     main()
+    end_time = datetime.now()
+    elapsed_time = (end_time - start_time).total_seconds()
+    print(f"Function {main.__name__} took {elapsed_time:.2f} seconds to run.")
+    
