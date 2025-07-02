@@ -110,9 +110,9 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=128, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=1_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=100_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     return parser.parse_args()
@@ -166,38 +166,34 @@ def main():
     # )
     
 
-    model = PPO(
-    "MlpPolicy",
-    env,
     
-    # ──────── Learning rate and clipping ────────
-    learning_rate=2e-4,       # moderately high to push KL into ~0.01–0.03
-    clip_range=0.2,          # allow up to ±30% policy shift per update
-    n_epochs=8,               # only 4 passes over each batch (avoid over‐fitting to stale data)
+    policy_kwargs = dict(
+        # 1 hidden layer, 256 units, ReLU as in the paper
+        activation_fn=th.nn.ReLU,
+        net_arch=[dict(pi=[256], vf=[256])],
+        # initialise exploration noise to exp(–2.5) ≈ 0.082
+        log_std_init=-2.5
+    )
 
-    # ──────── On‐policy batch size ────────
-    n_steps=1024,             # collect 1,024 env steps per update cycle
-    batch_size=256,           # 2,048 / 256 = 4 mini‐batches per epoch
+    model = PPO(
+        policy="MlpPolicy",
+        env=env,
 
-    # ──────── Discounting and GAE ────────
-    gamma=0.95,
-    gae_lambda=0.90,
+        # ───── PPO hyper-parameters (Appendix, Table “Hyperparameters for Proximal Policy Gradient”) ─────
+        learning_rate=1e-3,      # “Adam stepsize” ≈ 1 × 10⁻³
+        n_steps=5_000,           # 5 000 samples/iteration (match 5 000 MuJoCo steps)
+        batch_size=1_024,        # “Minibatch size”
+        n_epochs=8,              # “Number epochs”
+        gamma=0.99,              # “Discount (γ)”
+        gae_lambda=0.95,         # standard value; paper does not override
+        clip_range=0.2,          # “Clipping parameter (ε)”
+        max_grad_norm=0.05,      # “Max gradient norm”
+        ent_coef=0.0,            # paper does not add entropy bonus
+        vf_coef=0.5,             # SB3 default; paper gives no separate weight
 
-    # ──────── Entropy & value weighting ────────
-    ent_coef=0.1,            # keep entropy_loss around –10 to encourage exploration
-    vf_coef=0.25,             # balance value‐loss vs. policy‐loss
-    max_grad_norm=0.5,        # clip gradients at 0.5
-
-    # ──────── Network architecture ────────
-    policy_kwargs=dict(
-        net_arch=[
-            dict(pi=[64, 64],    # two hidden layers of 64 for the actor
-                 vf=[64, 64])    # and two of 64 for the critic
-        ]
-    ),
-
-    verbose=1,
-    tensorboard_log="runs/ppo_final",
+        # ───── bookkeeping ─────
+        tensorboard_log="runs/ppo_taskspace",
+        verbose=1,
     )
 
     # the one above worked OK. I will try the following tomorrow. 

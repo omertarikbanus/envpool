@@ -165,7 +165,7 @@ class ModelBasedControllerInterface {
     
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[0] = 0; //act[0];
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[1] = 0; //act[1];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] += act[0] * 0.005;
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] += act[0] * 0.01;
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = std::clamp(_controller->_controlFSM->data.locomotionCtrlData.pBody_des[2], 0.2f, 0.40f);
   
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0; //act[3];

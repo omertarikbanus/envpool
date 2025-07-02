@@ -354,11 +354,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       reward -= fall_pen;                       // one-off? see below
       // optionally end the episode here
     }
-    if (h > 0.3 && h < 0.4 && healthy) {
+    // if (h > 0.3 && h < 0.4 && healthy) {
 
-      reward += 2.5;  // Bonus for being in the healthy range
-      // state["info:fall_pen"_] = 0.0;  // Debug: no fall
-    }
+    //   reward += 2.5;  // Bonus for being in the healthy range
+    //   // state["info:fall_pen"_] = 0.0;  // Debug: no fall
+    // }
     return reward;
   }
 
