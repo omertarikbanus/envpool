@@ -1,8 +1,10 @@
 import numpy as np
 import envpool
+import logging
 from gymnasium.spaces import Box
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import VecEnvWrapper, VecMonitor
+from stable_baselines3.common.vec_env import VecEnvWrapper, VecMonitor, VecNormalize
+from stable_baselines3.common.evaluation import evaluate_policy
 
 
 class VecAdapter(VecEnvWrapper):
@@ -43,21 +45,49 @@ class VecAdapter(VecEnvWrapper):
         return obs, rewards, dones, infos
 
 
-def main():
-    env = envpool.make("Humanoid-v4", env_type="gym", num_envs=1)
-    env.spec.id = "Humanoid-v4"
+def main(args):
+    # Create the EnvPool environment and wrap it.
+    env = envpool.make(args.env_name, env_type="gym", num_envs=1)
+    env.spec.id = args.env_name
     env = VecAdapter(env)
     env = VecMonitor(env)
+    # Wrap with VecNormalize and load normalization statistics.
+    env = VecNormalize(env, training=False)
+    env = VecNormalize.load(args.vecnormalize_path, env)
+    env.training = False
+    env.norm_reward = False
 
-    model = PPO.load("./quadruped_ppo_model.zip", env=env)  # ✅ correct loading method
+    # Load the model and pass the normalized environment.
+    model = PPO.load(args.model_save_path, env=env)
 
-    obs = env.reset()
-    for _ in range(1000):
-        action, _ = model.predict(obs, deterministic=True)
-        obs, _, _, _ = env.step(action)
+    logging.info("Starting training...")
+    # try:
+    #     model.learn(total_timesteps=args.total_timesteps)
+    # except KeyboardInterrupt:
+    #     logging.info("Training interrupted by user. Saving model...")
+    #     model.save(args.model_save_path)
+    #     logging.info(f"Model saved at: {args.model_save_path}.zip")
+    #     env.close()
+    #     return
+
+    logging.info("Training complete.")
+    # model.save(args.model_save_path)
+    # logging.info(f"Model saved at: {args.model_save_path}.zip")
+
+    # Evaluate the model on the normalized EnvPool environment.
+    mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=20)
+    print(f"EnvPool Evaluation - {args.env_name}")
+    print(f"Mean Reward: {mean_reward:.2f} +/- {std_reward:.2f}")
 
     env.close()
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env_name", type=str, default="Humanoid-v4")
+    parser.add_argument("--model_save_path", type=str, default="./quadruped_ppo_model.zip")
+    parser.add_argument("--vecnormalize_path", type=str, default="./vecnormalize.pkl")
+    parser.add_argument("--total_timesteps", type=int, default=1000000)
+    args = parser.parse_args()
+    main(args)

@@ -28,13 +28,13 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 def gym_sync_step() -> None:
   debug_prints = 0
   
-  num_envs = 32
+  num_envs = 1
   if debug_prints:
     print(f"num_envs set to {num_envs}")
   if debug_prints:
     print(f" envpool.list_all_envs() { envpool.list_all_envs()}")
   envpool.list_all_envs()
-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
+  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=False)
   if debug_prints:
     print(f"Environment created with {num_envs} environments")
   
@@ -60,7 +60,7 @@ def gym_sync_step() -> None:
     print(f"Observation shape: {env.observation_space.shape}")
   action= np.zeros((num_envs, action_num), dtype=np.float32)
   for env_id in range(num_envs):
-    action[env_id][0]=0.42
+    action[env_id][0]= 0.5
   for _ in range(1000):
     # autoreset is automatically enabled in envpool
     # action = np.random.randint(action_num, size=(num_envs, action_num))

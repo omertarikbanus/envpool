@@ -110,11 +110,12 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=128, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--total-timesteps", type=int, default=100_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
+    parser.add_argument("--render-mode", type=bool, default=False, help="Render mode")
     return parser.parse_args()
 
 
@@ -141,7 +142,7 @@ def main():
     np.random.seed(args.seed)
     
     # Create EnvPool environment using the gym interface.
-    env = envpool.make(args.env_name, env_type="gym", num_envs=args.num_envs, seed=args.seed)
+    env = envpool.make(args.env_name, env_type="gym", num_envs=args.num_envs, seed=args.seed, render_mode=args.render_mode)
     
     # Set environment ID without modifying action_space directly
     env.spec.id = args.env_name
@@ -172,7 +173,7 @@ def main():
         activation_fn=th.nn.ReLU,
         net_arch=[dict(pi=[256], vf=[256])],
         # initialise exploration noise to exp(–2.5) ≈ 0.082
-        log_std_init=-2.5
+        log_std_init=-10
     )
 
     model = PPO(
@@ -181,18 +182,19 @@ def main():
 
         # ───── PPO hyper-parameters (Appendix, Table “Hyperparameters for Proximal Policy Gradient”) ─────
         learning_rate=1e-3,      # “Adam stepsize” ≈ 1 × 10⁻³
-        n_steps=5_000,           # 5 000 samples/iteration (match 5 000 MuJoCo steps)
-        batch_size=1_024,        # “Minibatch size”
+        n_steps=1024,           # 5 000 samples/iteration (match 5 000 MuJoCo steps)
+        batch_size=256,        # “Minibatch size”
         n_epochs=8,              # “Number epochs”
         gamma=0.99,              # “Discount (γ)”
         gae_lambda=0.95,         # standard value; paper does not override
         clip_range=0.2,          # “Clipping parameter (ε)”
         max_grad_norm=0.05,      # “Max gradient norm”
-        ent_coef=0.0,            # paper does not add entropy bonus
+        ent_coef=0.01,            # paper does not add entropy bonus
         vf_coef=0.5,             # SB3 default; paper gives no separate weight
 
         # ───── bookkeeping ─────
         tensorboard_log="runs/ppo_taskspace",
+        policy_kwargs=policy_kwargs,
         verbose=1,
     )
 
@@ -234,7 +236,6 @@ def main():
         logging.info("Training interrupted by user. Saving model...")
         model.save(args.model_save_path)
         logging.info(f"Model saved at: {args.model_save_path}.zip")
-        env.close()
     logging.info("Training complete.")
 
     model.save(args.model_save_path)

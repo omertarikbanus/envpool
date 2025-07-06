@@ -35,6 +35,7 @@ class HumanoidEnvFns {
         "frame_skip"_.Bind(15), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1.25),
         "terminate_when_unhealthy"_.Bind(true),
+        "render_mode"_.Bind(false),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.45),
@@ -45,7 +46,7 @@ class HumanoidEnvFns {
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
-    return MakeDict("obs"_.Bind(Spec<mjtNum>({44}, {-inf, inf})),
+    return MakeDict("obs"_.Bind(Spec<mjtNum>({45}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -71,7 +72,7 @@ using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
 
 class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
  protected:
-  bool terminate_when_unhealthy_, no_pos_, use_contact_force_;
+  bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_;
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
   mjtNum healthy_z_min_, healthy_z_max_;
   mjtNum contact_cost_weight_, contact_cost_max_;
@@ -82,6 +83,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   std::ofstream outputFile;
   float lastReward = 0;
   float lastAction = 0;
+  float prev_action = 0.0;
   mjtNum desired_h;
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
@@ -98,6 +100,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                   spec.config["frame_skip"_], spec.config["post_constraint"_],
                   spec.config["max_episode_steps"_]),
         terminate_when_unhealthy_(spec.config["terminate_when_unhealthy"_]),
+        render_mode_(spec.config["render_mode"_]),
         no_pos_(spec.config["exclude_current_positions_from_observation"_]),
         use_contact_force_(spec.config["use_contact_force"_]),
         ctrl_cost_weight_(spec.config["ctrl_cost_weight"_]),
@@ -110,11 +113,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
     if (env_id_ == 0) {
-      // EnableRender(true);
 
       csv_logging_enabled_ = 1;
     }
 
+    if (render_mode_) {
+      EnableRender(true);
+
+    } else {
+      
+    }
     std::string fname;
     fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
 
@@ -152,8 +160,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //   writeDataToCSV(0);
     // }
     writeDataToCSV(2);
-    model_backup_ = mj_copyModel(nullptr, model_);
-    data_backup_ = mj_copyData(nullptr, model_, data_);
+    // model_backup_ = mj_copyModel(nullptr, model_);
+    // data_backup_ = mj_copyData(nullptr, model_, data_);
   }
 
   void MujocoResetModel() override {
@@ -170,7 +178,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   void Reset() override {
     writeDataToCSV(1);
-    std::cout << "Resetting the environment..." << std::endl;
+    if(render_mode_)
+      std::cout << "Resetting the environment..." << std::endl;
     done_ = false;
     elapsed_step_ = 0;
     static std::random_device rd;
@@ -218,9 +227,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     // Compute control cost.
     mjtNum ctrl_cost = 0.0;
-    for (int i = 0; i < model_->nu; ++i) {
-      ctrl_cost += ctrl_cost_weight_ * act[i] * act[i];
-    }
+    // print model nu
+    // std::cout << "Model nu: " << model_->nu << std::endl;
+    // for (int i = 0; i < model_->nu; ++i) {
+    //   ctrl_cost += ctrl_cost_weight_ * act[i] * act[i];
+    // }
     // Compute velocities.
     mjtNum dt = frame_skip_ * model_->opt.timestep;
     mjtNum xv = (after[0] - before[0]) / dt;
@@ -255,13 +266,13 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   bool IsHealthy() {
     if (mbc._controller->_controlFSM->data.controlParameters->control_mode ==
         0) {
-      std::cout << "[IsHealthy] Passive state detected." << std::endl;
+      // std::cout << "[IsHealthy] Passive state detected." << std::endl;
       return false;  // end if state is passive
     }
 
     bool healthy =
         (healthy_z_min_ < data_->qpos[2]) && (data_->qpos[2] < healthy_z_max_);
-    if (!healthy) {
+    if (!healthy && render_mode_) {
       std::cout << "[IsHealthy] Unhealthy state detected: "
                 << "z position = " << data_->qpos[2]
                 << ", healthy_z_min = " << healthy_z_min_
@@ -296,7 +307,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // ---------- Tunable constants ----------
     // Desired height generated every reset
     // static mjtNum desired_h = 0.35;  // Example value,
-    const mjtNum height_w  = 100.0;          // (= 4 / 0.01^2)
+    const mjtNum height_w  = 400.0;          // (= 4 / 0.01^2)
     const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
     const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
     const mjtNum fall_pen  = 500.0;          // one-off
@@ -310,8 +321,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum height_err = h - desired_h;
 
     // Orientation: quaternion → roll,pitch
-    Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4],
-                                data_->qpos[5], data_->qpos[6]);
+    Eigen::Quaternion<mjtNum> q(data_->qpos[6], data_->qpos[3],
+                                data_->qpos[4], data_->qpos[5]);
     Eigen::Vector3<mjtNum> eul = q.toRotationMatrix().eulerAngles(0, 1, 2);
     mjtNum roll  = eul[0];
     mjtNum pitch = eul[1];
@@ -328,6 +339,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum height_cost = height_w * height_err * height_err;
     mjtNum orient_cost = orient_w * (roll * roll + pitch * pitch);  // rad²
     mjtNum move_cost   = vel_w * (lin_v * lin_v + ang_v * ang_v);
+    mjtNum diff = lastAction - prev_action;
+    prev_action = lastAction;
+    mjtNum action_smooth = 3.0 * diff * diff;
 
     // state["info:height_cost"_] = height_cost;
     // state["info:orient_cost"_] = orient_cost;
@@ -337,7 +351,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //       << " orient_cost=" << orient_cost
     //       << " move_cost=" << move_cost << std::endl;
     // Alive bonus
-      mjtNum reward = 1.0 - height_cost - orient_cost - move_cost;
+      mjtNum reward = 5.0 - height_cost - orient_cost - move_cost - 0.05 * action_smooth;
       // std::cout << "[StandingReward] Initial reward: " << reward << std::endl;
     // Extra stillness bonus
     if (std::abs(height_err) < bonus_eps_h &&
@@ -450,18 +464,18 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     } else if (mode == 1) {
       // Write the data to CSV
       for (int i = 0; i < N_LOG; ++i) {
-        for (int i = 0; i < N_LOG; ++i) {
+        for (int j = 0; j < N_LOG; ++j) {
           outputFile << -0.01;
-          if (i < N_LOG) outputFile << ",";
+          if (j < N_LOG - 1) outputFile << ",";
         }
         outputFile << std::endl;
       }
     } else if (mode == 2) {
       // Write the data to CSV
       for (int i = 0; i < N_LOG; ++i) {
-        for (int i = 0; i < N_LOG; ++i) {
+        for (int j = 0; j < N_LOG; ++j) {
           outputFile << -0.05;
-          if (i < N_LOG) outputFile << ",";
+          if (j < N_LOG - 1) outputFile << ",";
         }
         outputFile << std::endl;
       }
