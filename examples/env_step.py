@@ -28,7 +28,7 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 def gym_sync_step() -> None:
   debug_prints = 0
   
-  num_envs = 1
+  num_envs =64
   if debug_prints:
     print(f"num_envs set to {num_envs}")
   if debug_prints:

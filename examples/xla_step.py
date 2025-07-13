@@ -15,6 +15,8 @@
 
 See https://envpool.readthedocs.io/en/latest/content/xla_interface.html
 """
+import os
+os.environ['JAX_ENABLE_X64'] = 'True'
 
 import gym
 import jax.numpy as jnp
@@ -22,17 +24,20 @@ from jax import jit, lax
 from packaging import version
 
 import envpool
+import time
 
 is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 
-def policy(states: jnp.ndarray) -> jnp.ndarray:
-  return jnp.zeros(states.shape[0], dtype=jnp.int32)
-
-
 def gym_sync_step() -> None:
-  num_envs = 4
-  env = envpool.make_gym("Pong-v5", num_envs=num_envs)
+  num_envs = 64
+  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
+  
+  # Get action space info
+  action_space_size = env.action_space.shape[0]
+  
+  def policy(states: jnp.ndarray) -> jnp.ndarray:
+    return jnp.zeros((states.shape[0], action_space_size), dtype=jnp.float64)
 
   handle, recv, send, step = env.xla()
 
@@ -53,7 +58,7 @@ def gym_sync_step() -> None:
     states = env.reset()
   else:
     states, _ = env.reset()
-  run_actor_loop(100, (handle, states))
+  run_actor_loop(1000, (handle, states))
 
 
 def dm_sync_step() -> None:
@@ -103,6 +108,9 @@ def async_step() -> None:
 
 
 if __name__ == "__main__":
+  start_time = time.time()
   gym_sync_step()
-  dm_sync_step()
-  async_step()
+  elapsed_time = time.time() - start_time
+  print(f"Gym sync step completed in {elapsed_time:.4f} seconds.")
+  # dm_sync_step()
+  # async_step()
