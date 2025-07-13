@@ -110,13 +110,87 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=16, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--total-timesteps", type=int, default=100_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     parser.add_argument("--render-mode", type=bool, default=False, help="Render mode")
+    parser.add_argument("--continue-training", action="store_true", help="Continue training from existing model if available")
+    parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
+    parser.add_argument("--use-vecnormalize", action="store_true", help="Use VecNormalize wrapper (normalize observations and rewards)")
     return parser.parse_args()
+
+
+def ask_continue_or_restart(model_path):
+    """Ask user whether to continue training or start fresh."""
+    while True:
+        print(f"\nFound existing model at: {model_path}.zip")
+        choice = input("Do you want to (c)ontinue training or start (n)ew? [c/n]: ").lower().strip()
+        if choice in ['c', 'continue']:
+            return True
+        elif choice in ['n', 'new']:
+            return False
+        else:
+            print("Please enter 'c' for continue or 'n' for new.")
+
+
+def create_or_load_model(args, env, policy_kwargs, use_vecnormalize=True):
+    """Create a new model or load existing one based on user choice."""
+    model_exists = os.path.exists(f"{args.model_save_path}.zip")
+    vecnorm_exists = os.path.exists(f"{args.model_save_path}_vecnormalize.pkl")
+    
+    # Determine whether to load existing model
+    should_continue = False
+    if model_exists:
+        if args.force_new:
+            print(f"Found existing model but --force-new specified. Starting fresh training.")
+            should_continue = False
+        elif args.continue_training:
+            print(f"Found existing model and --continue-training specified. Continuing training.")
+            should_continue = True
+        else:
+            # Interactive mode - ask user
+            should_continue = ask_continue_or_restart(args.model_save_path)
+    
+    if should_continue and model_exists:
+        print(f"Loading existing model from {args.model_save_path}.zip")
+        
+        # Load VecNormalize stats if they exist and we're using VecNormalize
+        if use_vecnormalize and vecnorm_exists:
+            print(f"Loading VecNormalize statistics from {args.model_save_path}_vecnormalize.pkl")
+            env = VecNormalize.load(f"{args.model_save_path}_vecnormalize.pkl", env)
+            # Important: set training=True to continue updating statistics
+            env.training = True
+        
+        model = PPO.load(f"{args.model_save_path}.zip", env=env)
+        print("Model loaded successfully. Continuing training...")
+    else:
+        print("Creating new model...")
+        model = PPO(
+            policy="MlpPolicy",
+            env=env,
+
+            # ───── PPO hyper-parameters (Appendix, Table "Hyperparameters for Proximal Policy Gradient") ─────
+            learning_rate=1e-4,      # "Adam stepsize" ≈ 1 × 10⁻³
+            n_steps=4096,           # 5 000 samples/iteration (match 5 000 MuJoCo steps)
+            batch_size=1024,        # "Minibatch size"
+            n_epochs=8,              # "Number epochs"
+            gamma=0.99,              # "Discount (γ)"
+            gae_lambda=0.95,         # standard value; paper does not override
+            clip_range=0.05,          # "Clipping parameter (ε)"
+            max_grad_norm=0.03,      # "Max gradient norm"
+            ent_coef=0.0,            # paper does not add entropy bonus
+            vf_coef=0.5,             # SB3 default; paper gives no separate weight
+
+            # ───── bookkeeping ─────
+            tensorboard_log="runs/ppo_taskspace",
+            policy_kwargs=policy_kwargs,
+            verbose=1,
+        )
+        print("New model created.")
+    
+    return model, env
 
 
 def main():
@@ -133,7 +207,6 @@ def main():
         format_strings=("stdout", "log", "tensorboard", "csv")  # same as SB3 default
     )
 
-
     logging.basicConfig(level=logging.INFO)
     logging.info("Experiment: quadruped_ppo_experiment")
     logging.info(f"Using EnvPool for environment {args.env_name} with {args.num_envs} envs. Seed: {args.seed}")
@@ -147,27 +220,18 @@ def main():
     # Set environment ID without modifying action_space directly
     env.spec.id = args.env_name
 
-
     # Use the adapter which will handle the action_space and observation_space conversion
     env = VecAdapter(env)
-    # env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
+    
+    # Apply VecNormalize if requested (BEFORE VecMonitor)
+    vecnormalize_wrapper = None
+    if args.use_vecnormalize:
+        print("Using VecNormalize wrapper...")
+        vecnormalize_wrapper = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
+        env = vecnormalize_wrapper
+    
     env = VecMonitor(env)  # Monitor for tracking episode stats
 
-    # Configure PPO model with tuned hyperparameters.
-    # model = PPO(
-    #     "MlpPolicy",
-    #     env,
-    #     n_steps=2048,
-    #     learning_rate=1e-3,
-    #     gamma=0.9,
-    #     gae_lambda=0.95,
-    #     verbose=1,
-    #     seed=args.seed,
-    #     tensorboard_log=args.tb_log_dir,
-    # )
-    
-
-    
     policy_kwargs = dict(
         # 1 hidden layer, 256 units, ReLU as in the paper
         activation_fn=th.nn.ReLU,
@@ -176,56 +240,16 @@ def main():
         log_std_init=-10
     )
 
-    model = PPO(
-        policy="MlpPolicy",
-        env=env,
-
-        # ───── PPO hyper-parameters (Appendix, Table “Hyperparameters for Proximal Policy Gradient”) ─────
-        learning_rate=1e-3,      # “Adam stepsize” ≈ 1 × 10⁻³
-        n_steps=1024,           # 5 000 samples/iteration (match 5 000 MuJoCo steps)
-        batch_size=256,        # “Minibatch size”
-        n_epochs=8,              # “Number epochs”
-        gamma=0.99,              # “Discount (γ)”
-        gae_lambda=0.95,         # standard value; paper does not override
-        clip_range=0.2,          # “Clipping parameter (ε)”
-        max_grad_norm=0.05,      # “Max gradient norm”
-        ent_coef=0.01,            # paper does not add entropy bonus
-        vf_coef=0.5,             # SB3 default; paper gives no separate weight
-
-        # ───── bookkeeping ─────
-        tensorboard_log="runs/ppo_taskspace",
-        policy_kwargs=policy_kwargs,
-        verbose=1,
-    )
-
-    # the one above worked OK. I will try the following tomorrow. 
-    # model = PPO(
-    #     "MlpPolicy",
-    #     env,
-
-    #     learning_rate=2e-4,
-    #     clip_range=0.30,           # slightly tighter to re‐enable policy updates
-    #     n_epochs=4,
-
-    #     n_steps=2048,
-    #     batch_size=256,
-
-    #     gamma=0.95,
-    #     gae_lambda=0.90,
-
-    #     ent_coef=0.005,
-    #     vf_coef=0.10,              # lower value‐loss weight
-    #     max_grad_norm=0.5,
-
-    #     policy_kwargs=dict(
-    #         log_std_init=-1.0,     # initialize log‐std to e^{-1} ≈ 0.37 and keep it bounded
-    #         net_arch=[dict(pi=[64, 64], vf=[64, 64])]
-    #     ),
-
-    #     verbose=1,
-    #     tensorboard_log="runs/ppo_stable",
-    # )
-
+    model, env = create_or_load_model(args, env, policy_kwargs, use_vecnormalize=args.use_vecnormalize)
+    
+    # Update vecnormalize_wrapper reference if it was modified in create_or_load_model
+    if args.use_vecnormalize and vecnormalize_wrapper is None:
+        # Find the VecNormalize wrapper in the environment stack
+        current_env = env
+        while hasattr(current_env, 'venv') and not isinstance(current_env, VecNormalize):
+            current_env = current_env.venv
+        if isinstance(current_env, VecNormalize):
+            vecnormalize_wrapper = current_env
 
     model.set_logger(logger)
 
@@ -235,17 +259,31 @@ def main():
     except KeyboardInterrupt:
         logging.info("Training interrupted by user. Saving model...")
         model.save(args.model_save_path)
+        # Save VecNormalize statistics if using VecNormalize
+        if args.use_vecnormalize and vecnormalize_wrapper is not None:
+            vecnormalize_wrapper.save(f"{args.model_save_path}_vecnormalize.pkl")
+            logging.info(f"VecNormalize statistics saved at: {args.model_save_path}_vecnormalize.pkl")
         logging.info(f"Model saved at: {args.model_save_path}.zip")
+        return
+    
     logging.info("Training complete.")
 
     model.save(args.model_save_path)
+    # Save VecNormalize statistics if using VecNormalize
+    if args.use_vecnormalize and vecnormalize_wrapper is not None:
+        vecnormalize_wrapper.save(f"{args.model_save_path}_vecnormalize.pkl")
+        logging.info(f"VecNormalize statistics saved at: {args.model_save_path}_vecnormalize.pkl")
     logging.info(f"Model saved at: {args.model_save_path}.zip")
-
+    
     # Evaluate the model on the EnvPool environment.
-    mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=20)
+    # For evaluation, we need to turn off VecNormalize training mode
+    if args.use_vecnormalize and vecnormalize_wrapper is not None:
+        vecnormalize_wrapper.training = False
+        vecnormalize_wrapper.norm_reward = False  # Don't normalize rewards during evaluation
+    
+    mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=100)
     print(f"EnvPool Evaluation - {args.env_name}")
     print(f"Mean Reward: {mean_reward:.2f} +/- {std_reward:.2f}")
-
 
     env.close()
 
