@@ -62,6 +62,7 @@ class ModelBasedControllerInterface {
     
   }
   void setModeLocomotion() {
+    _robot_runner->initializeStateEstimator();
     _controller->_controlFSM->data.controlParameters->control_mode = 4;
     while (_controller->_controlFSM->currentState->stateName !=
            FSM_StateName::LOCOMOTION) {

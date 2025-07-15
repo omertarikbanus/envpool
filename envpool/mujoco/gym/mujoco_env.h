@@ -171,8 +171,9 @@ inline void MujocoEnv::MujocoStep(const mjtNum* action) {
   if (post_constraint_) mj_rnePostConstraint(model_, data_);
 
   if (render_enabled_) {
-    int render_every = std::max(
-        1, static_cast<int>(1.0 / (fps_ * frame_skip_ * model_->opt.timestep)));
+    // Render every N simulation steps to achieve target fps
+    int render_every =
+        std::max(1, static_cast<int>(1.0 / (fps_ * model_->opt.timestep)));
     if (elapsed_step_ % render_every == 0) {
       RenderFrame();
     }

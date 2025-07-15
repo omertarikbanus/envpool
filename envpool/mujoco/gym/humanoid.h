@@ -36,9 +36,10 @@ class HumanoidEnvFns {
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1.25),
         "terminate_when_unhealthy"_.Bind(true),
         "render_mode"_.Bind(false),
+        "csv_logging_enabled"_.Bind(false), 
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
-        "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.45),
+        "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "reset_noise_scale"_.Bind(0));
   }
@@ -72,7 +73,7 @@ using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
 
 class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
  protected:
-  bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_;
+  bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_, csv_logging_enabled_;
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
   mjtNum healthy_z_min_, healthy_z_max_;
   mjtNum contact_cost_weight_, contact_cost_max_;
@@ -88,7 +89,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
-  int csv_logging_enabled_ = 0;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -101,6 +101,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                   spec.config["max_episode_steps"_]),
         terminate_when_unhealthy_(spec.config["terminate_when_unhealthy"_]),
         render_mode_(spec.config["render_mode"_]),
+        csv_logging_enabled_(spec.config["csv_logging_enabled"_]),
         no_pos_(spec.config["exclude_current_positions_from_observation"_]),
         use_contact_force_(spec.config["use_contact_force"_]),
         ctrl_cost_weight_(spec.config["ctrl_cost_weight"_]),
@@ -112,8 +113,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         contact_cost_max_(spec.config["contact_cost_max"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
-    if (env_id_ == 0) {
-
+    if (env_id_ == 0 ) {
       csv_logging_enabled_ = 1;
     }
 
