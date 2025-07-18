@@ -194,7 +194,7 @@ class ModelBasedControllerInterface {
     }
   }
 
-    void setObservation(double* obs) {
+    void setObservation(mjtNum* obs) {
     // sets the observation array with the current state of the robot
     // in the order of:
     // [position, velocity, acceleration, orientation, angular velocity,
@@ -203,7 +203,7 @@ class ModelBasedControllerInterface {
     auto& seResult = _controller->_controlFSM->data._stateEstimator->getResult();
     obs[0] = seResult.position[0];
     obs[1] = seResult.position[1];
-    obs[0] = seResult.position[2]; // Scale to [-1, 1] range
+    obs[2] = seResult.position[2]; // Scale to [-1, 1] range
 
     obs[3] = seResult.vBody[0];
     obs[4] = seResult.vBody[1];

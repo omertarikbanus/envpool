@@ -44,7 +44,18 @@ struct ArrayToNumpyHelper {
     auto capsule = py::capsule(ptr, [](void* ptr) {
       delete reinterpret_cast<std::shared_ptr<char>*>(ptr);
     });
-    return py::array(a.Shape(), reinterpret_cast<dtype*>(a.Data()), capsule);
+    
+    // Calculate strides explicitly to ensure correct memory layout
+    std::vector<py::ssize_t> strides(a.Shape().size());
+    if (!strides.empty()) {
+      strides[strides.size() - 1] = sizeof(dtype);
+      for (int i = strides.size() - 2; i >= 0; --i) {
+        strides[i] = strides[i + 1] * a.Shape()[i + 1];
+      }
+    }
+    
+    return py::array(py::dtype::of<dtype>(), a.Shape(), strides, 
+                     reinterpret_cast<dtype*>(a.Data()), capsule);
   }
 };
 
