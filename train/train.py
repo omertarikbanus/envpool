@@ -110,7 +110,7 @@ class VecAdapter(VecEnvWrapper):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=1024, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=64, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--total-timesteps", type=int, default=100_000_000, help="Total training timesteps")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
@@ -172,16 +172,17 @@ def create_or_load_model(args, env, policy_kwargs, use_vecnormalize=True):
             env=env,
 
             # ───── PPO hyper-parameters (Appendix, Table "Hyperparameters for Proximal Policy Gradient") ─────
-            learning_rate=1e-4,      # "Adam stepsize" ≈ 1 × 10⁻³
-            n_steps=4096,           # 5 000 samples/iteration (match 5 000 MuJoCo steps)
-            batch_size=1024,        # "Minibatch size"
+            learning_rate=5e-4,      # "Adam stepsize" ≈ 1 × 10⁻³
+            clip_range=0.2,            # tighten the trust‐region
+            target_kl=0.05,            # early stop if KL > 1%
+            n_steps=2048,           # 5 000 samples/iteration (match 5 000 MuJoCo steps)
+            batch_size=128,        # "Minibatch size"
             n_epochs=8,              # "Number epochs"
             gamma=0.99,              # "Discount (γ)"
             gae_lambda=0.95,         # standard value; paper does not override
-            clip_range=0.05,          # "Clipping parameter (ε)"
-            max_grad_norm=0.03,      # "Max gradient norm"
-            ent_coef=0.0,            # paper does not add entropy bonus
-            vf_coef=0.5,             # SB3 default; paper gives no separate weight
+            max_grad_norm=0.5,      # "Max gradient norm"
+            ent_coef=0.011,            # paper does not add entropy bonus
+            vf_coef=1.0,             # SB3 default; paper gives no separate weight
 
             # ───── bookkeeping ─────
             tensorboard_log="runs/ppo_taskspace",
@@ -235,9 +236,9 @@ def main():
     policy_kwargs = dict(
         # 1 hidden layer, 256 units, ReLU as in the paper
         activation_fn=th.nn.ReLU,
-        net_arch=[dict(pi=[256], vf=[256])],
+        net_arch=[dict(pi=[64], vf=[64])],
         # initialise exploration noise to exp(–2.5) ≈ 0.082
-        log_std_init=-10
+        log_std_init=-3.0,
     )
 
     model, env = create_or_load_model(args, env, policy_kwargs, use_vecnormalize=args.use_vecnormalize)

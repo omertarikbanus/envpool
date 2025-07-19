@@ -23,7 +23,7 @@ gym_mujoco_envs = [
   ("Hopper", "v3", False, 1000),
   ("Hopper", "v4", True, 1000),
   ("Humanoid", "v3", False, 1000),
-  ("Humanoid", "v4", True, 8000),
+  ("Humanoid", "v4", True, 4000),
   ("HumanoidStandup", "v2", False, 1000),
   ("HumanoidStandup", "v4", True, 100000),
   ("InvertedDoublePendulum", "v2", False, 1000),

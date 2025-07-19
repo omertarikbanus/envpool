@@ -115,7 +115,7 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=0, help="Random seed for evaluation")
     parser.add_argument("--render", action="store_true", help="Render the environment during evaluation")
     parser.add_argument("--deterministic", action="store_true", help="Use deterministic actions (no exploration)")
-    parser.add_argument("--auto-detect-vecnorm", action="store_true", default=True, help="Automatically detect and load VecNormalize statistics")
+    parser.add_argument("--auto-detect-vecnorm", action="store_true", default=False, help="Automatically detect and load VecNormalize statistics")
     parser.add_argument("--vecnormalize-path", type=str, default=None, help="Explicit path to VecNormalize statistics file")
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
     return parser.parse_args()

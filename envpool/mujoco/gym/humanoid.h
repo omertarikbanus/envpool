@@ -266,7 +266,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   bool IsHealthy() {
     if (mbc._controller->_controlFSM->data.controlParameters->control_mode ==
         0) {
-      // std::cout << "[IsHealthy] Passive state detected." << std::endl;
+      std::cout << "[IsHealthy] Passive state detected. env_id: " << env_id_ << std::endl;
       return false;  // end if state is passive
     }
 
@@ -351,7 +351,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //       << " orient_cost=" << orient_cost
     //       << " move_cost=" << move_cost << std::endl;
     // Alive bonus
-      mjtNum reward = 5.0 - height_cost - orient_cost - move_cost - 0.05 * action_smooth;
+      mjtNum reward = 1.0 - height_cost - orient_cost - move_cost - 0.05 * action_smooth;
       // std::cout << "[StandingReward] Initial reward: " << reward << std::endl;
     // Extra stillness bonus
     if (std::abs(height_err) < bonus_eps_h &&
