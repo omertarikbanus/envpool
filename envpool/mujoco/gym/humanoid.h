@@ -246,6 +246,15 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       contact_cost = std::min(contact_cost, contact_cost_max_);
     }
 
+    if(elapsed_step_ % frame_skip_ * 15 == 0){
+      static std::random_device rd;
+      static std::mt19937 gen(rd());
+      // normal distribution with 0 mean and 0.003 stddev
+      std::normal_distribution<mjtNum> dis( 0.00, 0.003);
+      desired_h += dis(gen);
+      //clamp desired_h to [0.25, 0.4]
+      desired_h = std::max(0.32, std::min(0.4, desired_h));
+    }
     // reward and done
     mjtNum healthy_reward =
         terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
@@ -351,7 +360,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //       << " orient_cost=" << orient_cost
     //       << " move_cost=" << move_cost << std::endl;
     // Alive bonus
-      mjtNum reward = 1.0 - height_cost - orient_cost - move_cost - 0.05 * action_smooth;
+      mjtNum reward = .3 - height_cost - orient_cost - move_cost - 0.05 * action_smooth;
       // std::cout << "[StandingReward] Initial reward: " << reward << std::endl;
     // Extra stillness bonus
     if (std::abs(height_err) < bonus_eps_h &&

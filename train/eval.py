@@ -129,7 +129,7 @@ def setup_environment(args):
         env_type="gym", 
         num_envs=args.num_envs, 
         seed=args.seed,
-        render_mode="human" if args.render else None
+        render_mode=True if args.render else None
     )
     
     # Set environment ID
@@ -202,7 +202,6 @@ def detailed_evaluation(model, env, args):
         env, 
         n_eval_episodes=args.n_eval_episodes,
         deterministic=args.deterministic,
-        render=args.render,
         return_episode_rewards=False
     )
     eval_time = time.time() - start_time
