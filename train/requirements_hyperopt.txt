@@ -1,0 +1,3 @@
+# Additional requirements for hyperparameter search
+optuna>=3.0.0
+plotly>=5.0.0  # For visualization of Optuna results

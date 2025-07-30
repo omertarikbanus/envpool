@@ -134,7 +134,7 @@ void MujocoEnv::setIC() {
     int kSideSign_[4] = {-1, 1, -1, 1};
 
     model_->opt.timestep = 0.002;
-    const double minHeight = 0.2;  // minimum height
+    const double minHeight = 0.25;  // minimum height
     const double maxHeight = 0.4;  // maximum height
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -146,8 +146,8 @@ void MujocoEnv::setIC() {
           0 * (M_PI / 180) *
           kSideSign_[leg];  // Add 7 to skip the first 7 dofs from body.
                             // (Position + Quaternion)
-      data_->qpos[(leg) * 3 + 1 + 7] = -50 * (M_PI / 180);  //*kDirSign_[leg];
-      data_->qpos[(leg) * 3 + 2 + 7] = 100 * (M_PI / 180);  
+      data_->qpos[(leg) * 3 + 1 + 7] = -80 * (M_PI / 180);  //*kDirSign_[leg];
+      data_->qpos[(leg) * 3 + 2 + 7] = 130 * (M_PI / 180);  
     }
     }
 inline void MujocoEnv::MujocoReset() {
@@ -171,8 +171,9 @@ inline void MujocoEnv::MujocoStep(const mjtNum* action) {
   if (post_constraint_) mj_rnePostConstraint(model_, data_);
 
   if (render_enabled_) {
-    int render_every = std::max(
-        1, static_cast<int>(1.0 / (fps_ * frame_skip_ * model_->opt.timestep)));
+    // Render every N simulation steps to achieve target fps
+    int render_every =
+        std::max(1, static_cast<int>(1.0 / (fps_ * model_->opt.timestep)));
     if (elapsed_step_ % render_every == 0) {
       RenderFrame();
     }

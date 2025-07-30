@@ -174,6 +174,20 @@ docker-run:
 		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
 		$(PROJECT_NAME):$(DOCKER_TAG) bash
 
+docker-run-gpu:
+		docker run --network=host \
+		-v $(shell pwd)/../:/app \
+		-v $(HOME)/.cache:/root/.cache \
+		-v /:/host \
+		--shm-size=4gb -it --rm \
+		-e DISPLAY=$(DISPLAY) \
+			-e QT_X11_NO_MITSHM=1 \
+		-e XAUTHORITY=/tmp/.docker.xauth \
+		-v /tmp/.X11-unix:/tmp/.X11-unix \
+		--gpus all \
+		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
+		$(PROJECT_NAME):$(DOCKER_TAG) bash
+
 docker-run-mac:
 	mkdir -p /tmp/runtime-dir-$(USER)
 	chmod 700 /tmp/runtime-dir-$(USER)

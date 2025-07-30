@@ -26,7 +26,7 @@ class ModelBasedControllerInterface {
     _actuator_data = new SpiData();
     _imu_data = new VectorNavData();
     _gamepad_command = new GamepadCommand();
-    _control_params = new RobotControlParameters();
+    // _control_params = new RobotControlParameters();
     _periodic_task_manager = new PeriodicTaskManager();
 
     _robot_runner = new RobotRunner(_controller, _periodic_task_manager, 0.002,
@@ -36,7 +36,7 @@ class ModelBasedControllerInterface {
     _robot_runner->_ImuData = _imu_data;
     _robot_runner->_Feedback = _actuator_data;
     _robot_runner->_Command = _actuator_command;
-    _robot_runner->controlParameters = _control_params;
+    // _robot_runner->controlParameters = _control_params;
     _robot_runner->initializeParameters();
     _robot_runner->init();
     // setModeStandUp();
@@ -62,6 +62,7 @@ class ModelBasedControllerInterface {
     
   }
   void setModeLocomotion() {
+    _robot_runner->initializeStateEstimator();
     _controller->_controlFSM->data.controlParameters->control_mode = 4;
     while (_controller->_controlFSM->currentState->stateName !=
            FSM_StateName::LOCOMOTION) {
@@ -165,7 +166,8 @@ class ModelBasedControllerInterface {
     
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[0] = 0; //act[0];
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[1] = 0; //act[1];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] += act[0] ;
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.3 + 0.1 * act[0];
+
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = std::clamp(_controller->_controlFSM->data.locomotionCtrlData.pBody_des[2], 0.2f, 0.40f);
   
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0; //act[3];
@@ -193,7 +195,7 @@ class ModelBasedControllerInterface {
     }
   }
 
-    void setObservation(double* obs) {
+    void setObservation(mjtNum* obs) {
     // sets the observation array with the current state of the robot
     // in the order of:
     // [position, velocity, acceleration, orientation, angular velocity,
@@ -202,7 +204,7 @@ class ModelBasedControllerInterface {
     auto& seResult = _controller->_controlFSM->data._stateEstimator->getResult();
     obs[0] = seResult.position[0];
     obs[1] = seResult.position[1];
-    obs[0] = seResult.position[2]; // Scale to [-1, 1] range
+    obs[2] = seResult.position[2]; // Scale to [-1, 1] range
 
     obs[3] = seResult.vBody[0];
     obs[4] = seResult.vBody[1];
@@ -259,7 +261,7 @@ class ModelBasedControllerInterface {
   SpiData* _actuator_data;
   VectorNavData* _imu_data;
   GamepadCommand* _gamepad_command;
-  RobotControlParameters* _control_params;
+  // RobotControlParameters* _control_params;
   PeriodicTaskManager* _periodic_task_manager;
   RobotRunner* _robot_runner;
   int data;
