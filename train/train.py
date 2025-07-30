@@ -113,6 +113,7 @@ def parse_args():
     parser.add_argument("--num-envs", type=int, default=64, help="Number of parallel environments")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--total-timesteps", type=int, default=100_000_000, help="Total training timesteps")
+
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     parser.add_argument("--render-mode", type=bool, default=False, help="Render mode")
@@ -195,6 +196,7 @@ def create_or_load_model(args, env, policy_kwargs, use_vecnormalize=True):
 
 
 def main():
+    # Parse command-line arguments
     args = parse_args()
 
     # 1️⃣  Fresh run-folder so old logs stay intact
@@ -239,6 +241,7 @@ def main():
         net_arch=[dict(pi=[64], vf=[64])],
         # initialise exploration noise to exp(–2.5) ≈ 0.082
         log_std_init=-2.0,
+
     )
 
     model, env = create_or_load_model(args, env, policy_kwargs, use_vecnormalize=args.use_vecnormalize)
@@ -267,6 +270,7 @@ def main():
         logging.info(f"Model saved at: {args.model_save_path}.zip")
         return
     
+
     logging.info("Training complete.")
 
     model.save(args.model_save_path)
@@ -290,4 +294,9 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = datetime.now()
     main()
+    end_time = datetime.now()
+    elapsed_time = (end_time - start_time).total_seconds()
+    print(f"Function {main.__name__} took {elapsed_time:.2f} seconds to run.")
+    

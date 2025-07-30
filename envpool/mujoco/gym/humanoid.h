@@ -317,10 +317,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // Desired height generated every reset
     // static mjtNum desired_h = 0.35;  // Example value,
     const mjtNum height_w  = 400.0;          // (= 4 / 0.01^2)
+
     const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
     const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
     const mjtNum fall_pen  = 500.0;          // one-off
-    const mjtNum bonus_eps_h = 0.01;         // m
+    const mjtNum bonus_eps_h = 0.03;         // m
     const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
     const mjtNum bonus_eps_v = 0.01;         // 
     // ---------------------------------------
@@ -382,6 +383,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //   reward += 2.5;  // Bonus for being in the healthy range
     //   // state["info:fall_pen"_] = 0.0;  // Debug: no fall
     // }
+
     return reward;
   }
 
