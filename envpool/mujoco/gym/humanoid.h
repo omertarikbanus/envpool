@@ -64,8 +64,7 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    // Fix action shape: change from 47 to 34 dimensions.
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 1}, {-1, 1})));
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 26}, {-1, 1})));
   }
 };
 
@@ -204,12 +203,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // step
     mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
     lastAction = act[0];
-    mbc.setAction(act);
     // repeat frameskip times
     const auto& before = GetMassCenter();
 
     for (int i = 0; i < frame_skip_; ++i) {
+      mbc.setAction(act);
       mbc.setFeedback(data_);
+      mbc.frame_skip_ = frame_skip_;
+      mbc.elapsed_step_ = elapsed_step_;
       mbc.run();
 
       mjtNum motor_commands[12];

@@ -8,7 +8,8 @@
 #include <Controllers/EmbeddedController.hpp>
 #include <eigen3/Eigen/Dense>
 #include <memory>
-
+#define N_FOOT_PARAM_ACT 7
+#define N_FOOT_PARAM 7
 class ModelBasedControllerInterface {
  public:
   ModelBasedControllerInterface() {
@@ -150,6 +151,13 @@ class ModelBasedControllerInterface {
     _imu_data->pos_y = data_->qpos[1];
     _imu_data->pos_z = data_->qpos[2];
   }
+  // function to map the input in range -1,1 to given limits
+  float mapToRange(float input, float in_min=-1, float in_max=1, float out_min=0,
+                   float out_max=1) {
+    return (input - in_min) * (out_max - out_min) / (in_max - in_min) +
+           out_min;
+  }
+
 
   void setAction(double* act) {
     // sets the action array with the desired state of the robot
@@ -163,35 +171,47 @@ class ModelBasedControllerInterface {
     // The action array is expected to have a size of 6 + 4 * 7 = 34
     // where the first 6 elements are for the body position and orientation,
     // and the next 28 elements are for the foot positions, forces, and contact states.
-    
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[0] = 0; //act[0];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[1] = 0; //act[1];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.3 + 0.1 * act[0];
 
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = std::clamp(_controller->_controlFSM->data.locomotionCtrlData.pBody_des[2], 0.2f, 0.40f);
-  
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0; //act[3];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[1] = 0; //act[4];
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[2] = 0; //act[5];
+    // simple trot gait. frame_skip_* 10 leg stance time.
+    // gait phase is (elapsed_step_% (frame_skip_ * 10 * 2)) / (frame_skip_ * 10 * 2)
 
     for (int leg = 0; leg < 4; leg++) {
+      // determine contact state based on gait phase
+    float gait_phase = float(elapsed_step_ % (frame_skip_ * 10 * 2)) /
+                       (float)(frame_skip_ * 10 * 2);
 
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] = 0 ;
-          // act[6 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] = 0; 
-          // act[7 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] = 0;
-          // act[1 + leg * 2];
+      // contact state based on gait phase only
+      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
+          ((leg == 0 || leg == 3) ? (gait_phase < 0.5)
+                                  : (gait_phase >= 0.5))
+              ? 1.0f
+              : 0.0f;
+    }
+    _controller->_controlFSM->data.locomotionCtrlData.vBody_des[0] = mapToRange(act[0], -1, 1, -0.5, 0.5);
+    _controller->_controlFSM->data.locomotionCtrlData.vBody_des[1] = mapToRange(act[1], -1, 1, -0.2, 0.2);
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.4f; //mapToRange(act[2], -1, 1, 0.2, 0.4);
 
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0;
-          // act[9 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = -5 * side_sign[leg];
-          // act[10 + leg * 7];
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 85;
-          // act[2 + leg * 2];
+  
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0; //mapToRange(act[3], -1, 1, -0.2, 0.2);
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[1] = 0; //mapToRange(act[4], -1, 1, -0.2, 0.2);
+    _controller->_controlFSM->data.locomotionCtrlData.vBody_Ori_des[2] = mapToRange(act[2], -1, 1, -0.5, 0.5);
 
-      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] = 1.0f;
-          // (act[12 + leg * 7] > 0.5);
+    for (int leg = 0; leg < 4; leg++) {
+      
+      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] = mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2, 0.2);
+      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] = mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.1, 0.1);
+      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2, 0.6);
+
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = mapToRange(act[6 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20);
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = mapToRange(act[7 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20) * side_sign[leg];
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = mapToRange(act[8 + leg * N_FOOT_PARAM_ACT], -1, 1, 0, 220);
+
+      // Enforce: if not in contact, commanded foot force must be zero
+      if (_controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] != 1.0f) {
+        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0.0f;
+        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = 0.0f;
+        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 0.0f;
+      }
     }
   }
 
@@ -224,21 +244,21 @@ class ModelBasedControllerInterface {
 
 
     for (int leg = 0; leg < 4; leg++) {
-      obs[15 + leg * 7 + 0] =
+      obs[15 + leg * N_FOOT_PARAM + 0] =
           (seResult.contactEstimate[leg]>0);
 
-      obs[15 + leg * 7 + 1] =
+      obs[15 + leg * N_FOOT_PARAM + 1] =
           _controller->_controlFSM->data._legController->datas[leg].p[0];
-      obs[15 + leg * 7 + 2] =
+      obs[15 + leg * N_FOOT_PARAM + 2] =
           _controller->_controlFSM->data._legController->datas[leg].p[1];
-      obs[15 + leg * 7 + 3] =
+      obs[15 + leg * N_FOOT_PARAM + 3] =
           _controller->_controlFSM->data._legController->datas[leg].p[2];
 
-      obs[15 + leg * 7 + 4] =
+      obs[15 + leg * N_FOOT_PARAM + 4] =
           _controller->_controlFSM->data._legController->datas[leg].v[0];
-      obs[15 + leg * 7 + 5] =
+      obs[15 + leg * N_FOOT_PARAM + 5] =
           _controller->_controlFSM->data._legController->datas[leg].v[1];
-      obs[15 + leg * 7 + 6] =
+      obs[15 + leg * N_FOOT_PARAM + 6] =
           _controller->_controlFSM->data._legController->datas[leg].v[2];
 
 
@@ -265,6 +285,8 @@ class ModelBasedControllerInterface {
   PeriodicTaskManager* _periodic_task_manager;
   RobotRunner* _robot_runner;
   int data;
+  int elapsed_step_ ;
+  int frame_skip_ ;
 };
 
 #endif  // MBC_INTERFACE_H
