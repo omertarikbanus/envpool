@@ -207,10 +207,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     const auto& before = GetMassCenter();
 
     for (int i = 0; i < frame_skip_; ++i) {
-      mbc.setAction(act);
-      mbc.setFeedback(data_);
       mbc.frame_skip_ = frame_skip_;
       mbc.elapsed_step_ = elapsed_step_;
+      mbc.setAction(act);
+      mbc.setFeedback(data_);
       mbc.run();
 
       mjtNum motor_commands[12];

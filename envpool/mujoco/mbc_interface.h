@@ -177,21 +177,19 @@ class ModelBasedControllerInterface {
 
     for (int leg = 0; leg < 4; leg++) {
       // determine contact state based on gait phase
-    float gait_phase = float(elapsed_step_ % (frame_skip_ * 10 * 2)) /
-                       (float)(frame_skip_ * 10 * 2);
+    int gait_cycle_steps = frame_skip_ * 10 * 2;
+    float gait_cycle_length = static_cast<float>(gait_cycle_steps);
+    int step_in_cycle = elapsed_step_ % gait_cycle_steps;
+    float gait_phase = static_cast<float>(step_in_cycle) / gait_cycle_length;
 
       // contact state based on gait phase only
-      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
-          ((leg == 0 || leg == 3) ? (gait_phase < 0.5)
-                                  : (gait_phase >= 0.5))
-              ? 1.0f
-              : 0.0f;
-    }
+      bool is_diagonal_leg = (leg == 0 || leg == 3);
+      bool should_be_in_contact = is_diagonal_leg ? (gait_phase < 0.5) : (gait_phase >= 0.5);
+      float contact_state = should_be_in_contact ? 1.0f : 0.0f;
+      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] = contact_state;
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[0] = mapToRange(act[0], -1, 1, -0.5, 0.5);
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[1] = mapToRange(act[1], -1, 1, -0.2, 0.2);
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.4f; //mapToRange(act[2], -1, 1, 0.2, 0.4);
-
-  
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0; //mapToRange(act[3], -1, 1, -0.2, 0.2);
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[1] = 0; //mapToRange(act[4], -1, 1, -0.2, 0.2);
     _controller->_controlFSM->data.locomotionCtrlData.vBody_Ori_des[2] = mapToRange(act[2], -1, 1, -0.5, 0.5);
@@ -202,9 +200,9 @@ class ModelBasedControllerInterface {
       _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] = mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.1, 0.1);
       _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2, 0.6);
 
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = mapToRange(act[6 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20);
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = mapToRange(act[7 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20) * side_sign[leg];
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = mapToRange(act[8 + leg * N_FOOT_PARAM_ACT], -1, 1, 0, 220);
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = mapToRange(act[6 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20)*0;
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = mapToRange(act[7 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20) * side_sign[leg]*0;
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = mapToRange(act[8 + leg * N_FOOT_PARAM_ACT], -1, 1, 0, 220)*0;
 
       // Enforce: if not in contact, commanded foot force must be zero
       if (_controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] != 1.0f) {

@@ -134,8 +134,8 @@ void MujocoEnv::setIC() {
     int kSideSign_[4] = {-1, 1, -1, 1};
 
     model_->opt.timestep = 0.002;
-    const double minHeight = 0.25;  // minimum height
-    const double maxHeight = 0.4;  // maximum height
+    const double minHeight = 0.35;  // minimum height
+    const double maxHeight = 0.45;  // maximum height
     static std::random_device rd;
     static std::mt19937 gen(rd());
     std::uniform_real_distribution<double> distribution(minHeight, maxHeight);
