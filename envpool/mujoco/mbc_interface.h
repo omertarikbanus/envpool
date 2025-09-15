@@ -1,13 +1,16 @@
 #ifndef MBC_INTERFACE_H
 #define MBC_INTERFACE_H
 
+#include <memory>
+
 #include <RobotController.h>
 #include <RobotRunner.h>
 #include <Utilities/RobotCommands.h>
 
 #include <Controllers/EmbeddedController.hpp>
 #include <eigen3/Eigen/Dense>
-#include <memory>
+
+
 #define N_FOOT_PARAM_ACT 7
 #define N_FOOT_PARAM 7
 class ModelBasedControllerInterface {
@@ -177,16 +180,20 @@ class ModelBasedControllerInterface {
 
     for (int leg = 0; leg < 4; leg++) {
       // determine contact state based on gait phase
-    int gait_cycle_steps = frame_skip_ * 10 * 2;
-    float gait_cycle_length = static_cast<float>(gait_cycle_steps);
-    int step_in_cycle = elapsed_step_ % gait_cycle_steps;
-    float gait_phase = static_cast<float>(step_in_cycle) / gait_cycle_length;
+      int gait_cycle_steps = frame_skip_ * 10 * 2;
+      float gait_cycle_length = static_cast<float>(gait_cycle_steps);
+      int step_in_cycle = elapsed_step_ % gait_cycle_steps;
+      float gait_phase = static_cast<float>(step_in_cycle) / gait_cycle_length;
 
       // contact state based on gait phase only
       bool is_diagonal_leg = (leg == 0 || leg == 3);
-      bool should_be_in_contact = is_diagonal_leg ? (gait_phase < 0.5) : (gait_phase >= 0.5);
+      bool should_be_in_contact =
+          is_diagonal_leg ? (gait_phase < 0.5) : (gait_phase >= 0.5);
       float contact_state = should_be_in_contact ? 1.0f : 0.0f;
-      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] = contact_state;
+
+      _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
+          contact_state;
+    }
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[0] = mapToRange(act[0], -1, 1, -0.5, 0.5);
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[1] = mapToRange(act[1], -1, 1, -0.2, 0.2);
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.4f; //mapToRange(act[2], -1, 1, 0.2, 0.4);

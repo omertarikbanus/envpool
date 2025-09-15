@@ -1,8 +1,6 @@
 #ifndef ENVPOOL_MUJOCO_GYM_HUMANOID_H_
 #define ENVPOOL_MUJOCO_GYM_HUMANOID_H_
 
-#include <RobotRunner.h>
-
 #include <algorithm>
 #include <cmath>  // For std::sqrt, std::abs
 #include <fstream>
@@ -14,17 +12,13 @@
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
 #include "envpool/mujoco/gym/mujoco_env.h"
-#include "mbc_interface.h"
-// #include <Utilities/Utilities_print.h>
-// #include <Math/orientation_tools.h>
-// #include <eigen3/Eigen/Dense>
-#include <RobotController.h>
-// #include <legged-sim/include/Controllers/EmbeddedController.hpp>
-#include <Controllers/EmbeddedController.hpp>
-// #include "Utilities/PeriodicTask.h"
-#include <Utilities/RobotCommands.h>
 
 #include <eigen3/Eigen/Dense>
+#include <RobotRunner.h>
+#include <RobotController.h>
+#include <Controllers/EmbeddedController.hpp>
+#include <Utilities/RobotCommands.h>
+#include "mbc_interface.h"
 
 namespace mujoco_gym {
 
@@ -64,7 +58,7 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 26}, {-1, 1})));
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 1}, {-1, 1})));
   }
 };
 

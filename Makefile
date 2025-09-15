@@ -173,33 +173,33 @@ docker-run:
 		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
 		$(PROJECT_NAME):$(DOCKER_TAG) bash
 
-docker-run-gpu:
-		docker run --network=host \
-		-v $(shell pwd)/../:/app \
-		-v $(HOME)/.cache:/root/.cache \
-		-v /:/host \
-		--shm-size=4gb -it --rm \
-		-e DISPLAY=$(DISPLAY) \
-			-e QT_X11_NO_MITSHM=1 \
-		-e XAUTHORITY=/tmp/.docker.xauth \
-		-v /tmp/.X11-unix:/tmp/.X11-unix \
-		--gpus all \
-		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
-		$(PROJECT_NAME):$(DOCKER_TAG) bash
+# docker-run-gpu:
+# 		docker run --network=host \
+# 		-v $(shell pwd)/../:/app \
+# 		-v $(HOME)/.cache:/root/.cache \
+# 		-v /:/host \
+# 		--shm-size=4gb -it --rm \
+# 		-e DISPLAY=$(DISPLAY) \
+# 			-e QT_X11_NO_MITSHM=1 \
+# 		-e XAUTHORITY=/tmp/.docker.xauth \
+# 		-v /tmp/.X11-unix:/tmp/.X11-unix \
+# 		--gpus all \
+# 		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
+# 		$(PROJECT_NAME):$(DOCKER_TAG) bash
 
-docker-run-gpu:
-		docker run --network=host \
-		-v $(shell pwd)/../:/app \
-		-v $(HOME)/.cache:/root/.cache \
-		-v /:/host \
-		--shm-size=4gb -it --rm \
-		-e DISPLAY=$(DISPLAY) \
-			-e QT_X11_NO_MITSHM=1 \
-		-e XAUTHORITY=/tmp/.docker.xauth \
-		-v /tmp/.X11-unix:/tmp/.X11-unix \
-		--gpus all \
-		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
-		$(PROJECT_NAME):$(DOCKER_TAG) bash
+# docker-run-gpu:
+# 		docker run --network=host \
+# 		-v $(shell pwd)/../:/app \
+# 		-v $(HOME)/.cache:/root/.cache \
+# 		-v /:/host \
+# 		--shm-size=4gb -it --rm \
+# 		-e DISPLAY=$(DISPLAY) \
+# 			-e QT_X11_NO_MITSHM=1 \
+# 		-e XAUTHORITY=/tmp/.docker.xauth \
+# 		-v /tmp/.X11-unix:/tmp/.X11-unix \
+# 		--gpus all \
+# 		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
+# 		$(PROJECT_NAME):$(DOCKER_TAG) bash
 
 docker-run-mac:
 	mkdir -p /tmp/runtime-dir-$(USER)
@@ -237,7 +237,7 @@ docker-run-mac:
 # 			-e XAUTHORITY=/tmp/.docker.xauth \
 # 			$(PROJECT_NAME):$(DOCKER_TAG) bash
 
-docker-dev: docker-ci docker-run-mac 
+docker-dev: docker-ci docker-run 
 #  	docker run --network=host -v /:/host -v $(shell pwd)/../:/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
 
 # for mainland China
