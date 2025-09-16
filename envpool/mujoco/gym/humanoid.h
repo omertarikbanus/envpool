@@ -58,7 +58,15 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 1}, {-1, 1})));
+    // Action layout (30 dims total, with 1 unused slot per leg to match current indexing):
+    // [0] vBody_des.x, [1] vBody_des.y, [2] yaw_rate_des,
+    // Per-leg (4 legs) stride of 7 each (N_FOOT_PARAM_ACT):
+    //   [3 + 7*leg + 0..2] pFoot_des[leg] (x, y, z)
+    //   [3 + 7*leg + 3..5] Fr_des[leg] (x, y, z)  -- currently zeroed in WBC
+    //   [3 + 7*leg + 6]    unused (reserved)
+    // Total reserved: 3 + 4 * 7 = 31 slots (0..30), but the highest index read is 29,
+    // so dimension 30 is sufficient for current access pattern.
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 30}, {-1, 1})));
   }
 };
 
@@ -253,11 +261,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // reward and done
     mjtNum healthy_reward =
         terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
-    // auto reward = static_cast<float>(xv * forward_reward_weight_ +
-    //                                  healthy_reward - ctrl_cost -
-    //                                  contact_cost);
-    // Use the standing reward function.
-    auto reward = ComputeStandingReward();
+    // Simple locomotion reward: track desired planar velocity and yaw rate from WBC
+    auto reward = ComputeLocomotionReward(xv, yv, healthy_reward);
 
     // ++elapsed_step_;
     done_ = (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
@@ -378,6 +383,42 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //   reward += 2.5;  // Bonus for being in the healthy range
     //   // state["info:fall_pen"_] = 0.0;  // Debug: no fall
     // }
+
+    return reward;
+  }
+
+  // ------------------------------------------------------------------------
+
+  // Simple locomotion reward that tracks WBC references.
+  // Components:
+  //  - Velocity tracking: (vx, vy) to vBody_des[0:2]
+  //  - Yaw rate tracking: qvel[5] to vBody_Ori_des[2]
+  //  - Alive bonus (healthy_reward) and fall penalty
+  mjtNum ComputeLocomotionReward(mjtNum xv, mjtNum yv, mjtNum healthy_reward) {
+    const mjtNum kv = 2.0;    // velocity tracking weight
+    const mjtNum ky = 0.2;    // yaw rate tracking weight
+    const mjtNum fall_pen = 500.0;
+
+    // Desired references from WBC (set via mbc_interface::setAction)
+    const mjtNum vx_des = mbc._controller->_controlFSM->data.locomotionCtrlData.vBody_des[0];
+    const mjtNum vy_des = mbc._controller->_controlFSM->data.locomotionCtrlData.vBody_des[1];
+    const mjtNum wz_des = mbc._controller->_controlFSM->data.locomotionCtrlData.vBody_Ori_des[2];
+
+    // Measure yaw rate from generalized velocity (z‑axis angular vel)
+    const mjtNum wz = data_->qvel[5];
+
+    // Quadratic tracking costs
+    const mjtNum vel_err = (xv - vx_des) * (xv - vx_des) +
+                           (yv - vy_des) * (yv - vy_des);
+    const mjtNum yaw_err = (wz - wz_des) * (wz - wz_des);
+
+    mjtNum reward = healthy_reward - (kv * vel_err + ky * yaw_err);
+
+    // Large penalty on fall/unhealthy
+    const bool healthy = IsHealthy();
+    if (!healthy) {
+      reward -= fall_pen;
+    }
 
     return reward;
   }

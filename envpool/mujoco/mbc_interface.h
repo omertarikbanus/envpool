@@ -1,6 +1,7 @@
 #ifndef MBC_INTERFACE_H
 #define MBC_INTERFACE_H
 
+#include <cstdio>
 #include <memory>
 
 #include <RobotController.h>
@@ -157,6 +158,8 @@ class ModelBasedControllerInterface {
   // function to map the input in range -1,1 to given limits
   float mapToRange(float input, float in_min=-1, float in_max=1, float out_min=0,
                    float out_max=1) {
+
+    
     return (input - in_min) * (out_max - out_min) / (in_max - in_min) +
            out_min;
   }
@@ -189,14 +192,14 @@ class ModelBasedControllerInterface {
       bool is_diagonal_leg = (leg == 0 || leg == 3);
       bool should_be_in_contact =
           is_diagonal_leg ? (gait_phase < 0.5) : (gait_phase >= 0.5);
-      float contact_state = should_be_in_contact ? 1.0f : 0.0f;
+      float contact_state = 1 ; //should_be_in_contact ? 1.0f : 0.0f;
 
       _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
           contact_state;
     }
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[0] = mapToRange(act[0], -1, 1, -0.5, 0.5);
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[1] = mapToRange(act[1], -1, 1, -0.2, 0.2);
-    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.4f; //mapToRange(act[2], -1, 1, 0.2, 0.4);
+    _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.3f; //mapToRange(act[2], -1, 1, 0.2, 0.4);
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0; //mapToRange(act[3], -1, 1, -0.2, 0.2);
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[1] = 0; //mapToRange(act[4], -1, 1, -0.2, 0.2);
     _controller->_controlFSM->data.locomotionCtrlData.vBody_Ori_des[2] = mapToRange(act[2], -1, 1, -0.5, 0.5);
@@ -205,7 +208,7 @@ class ModelBasedControllerInterface {
       
       _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] = mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2, 0.2);
       _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] = mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.1, 0.1);
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2, 0.6);
+      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] = 0; // mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2, 0.0);
 
       _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = mapToRange(act[6 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20)*0;
       _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = mapToRange(act[7 + leg * N_FOOT_PARAM_ACT], -1, 1, -20, 20) * side_sign[leg]*0;

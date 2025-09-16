@@ -34,7 +34,7 @@ def gym_sync_step() -> None:
   if debug_prints:
     print(f" envpool.list_all_envs() { envpool.list_all_envs()}")
   envpool.list_all_envs()
-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=False)
+  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=True)
   if debug_prints:
     print(f"Environment created with {num_envs} environments")
   
