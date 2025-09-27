@@ -66,7 +66,7 @@ class HumanoidEnvFns {
     //   [3 + 7*leg + 6]    unused (reserved)
     // Total reserved: 3 + 4 * 7 = 31 slots (0..30), but the highest index read is 29,
     // so dimension 30 is sufficient for current access pattern.
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 30}, {-1, 1})));
+    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 15}, {-1, 1})));
   }
 };
 
