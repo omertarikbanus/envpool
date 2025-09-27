@@ -16,7 +16,7 @@ from datetime import datetime
 from .vec_adapter import VecAdapter
 
 
-def setup_environment(env_name, num_envs, seed, render_mode=None):
+def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1):
     """Set up the environment with proper wrappers."""
     # Create EnvPool environment
     env = envpool.make(
@@ -31,7 +31,7 @@ def setup_environment(env_name, num_envs, seed, render_mode=None):
     env.spec.id = env_name
     
     # Apply VecAdapter
-    env = VecAdapter(env)
+    env = VecAdapter(env, stack_frames=stack_frames)
     
     return env
 
@@ -42,6 +42,7 @@ def create_policy_kwargs():
         activation_fn=th.nn.Tanh,
         net_arch=[dict(pi=[64, 64, 64], vf=[64, 64, 64])],
         log_std_init=-3.0,
+        ortho_init=False,
     )
 
 
@@ -51,17 +52,18 @@ def create_ppo_model(env, policy_kwargs):
         policy="MlpPolicy",
         env=env,
         # PPO hyper-parameters
-        learning_rate=5e-5,
-        clip_range=0.1,
-        target_kl=0.02,
-        n_steps=4096*2,
-        batch_size=2048,
-        n_epochs=8,
+        learning_rate=2.5e-4,
+        clip_range=0.2,
+        target_kl=0.01,
+        n_steps=2048,
+        batch_size=1024,
+        n_epochs=5,
         gamma=0.99,
         gae_lambda=0.95,
-        max_grad_norm=0.3,
-        ent_coef=0.005,
+        max_grad_norm=0.4,
+        ent_coef=0.01,
         vf_coef=1.0,
+        clip_range_vf=0.2,
         tensorboard_log="runs/ppo_taskspace",
         policy_kwargs=policy_kwargs,
         verbose=1,
@@ -132,18 +134,21 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         print(f"Model hyperparameters: {model.policy_kwargs}")
         
         # Update hyperparameters for continued training
-        model.clip_range = 0.2
-        model.target_kl = 0.03
-        
+        model.clip_range = 0.15
+        model.target_kl = 0.01
+        model.n_steps = 2048
+        model.batch_size = 1024
+        model.n_epochs = 5
+
         # Update learning rate for actor
         for g in model.policy.optimizer.param_groups:
-            g['lr'] = 1e-4
-        
-        model.ent_coef = 2e-4
-        
+            g['lr'] = 1.5e-4
+
+        model.ent_coef = 0.0075
+
         # Update log_std bounds
         with th.no_grad():
-            model.policy.log_std.clamp_(min=np.log(0.05), max=np.log(0.20))
+            model.policy.log_std.clamp_(min=np.log(0.05), max=np.log(0.30))
     else:
         print("Creating new model...")
         model = create_ppo_model(env, policy_kwargs)

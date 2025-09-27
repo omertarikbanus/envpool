@@ -36,16 +36,19 @@ th.set_num_threads(1)
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=128, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
+    parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack per environment step")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=10_000_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=8_000_000, help="Total training timesteps")
 
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
     parser.add_argument("--render-mode", type=bool, default=False, help="Render mode")
     parser.add_argument("--continue-training", action="store_true", help="Continue training from existing model if available")
     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
-    parser.add_argument("--use-vecnormalize", action="store_true", help="Use VecNormalize wrapper (normalize observations and rewards)")
+    parser.add_argument("--use-vecnormalize", dest="use_vecnormalize", action="store_true", help="Enable VecNormalize wrapper (normalize observations and rewards)")
+    parser.add_argument("--no-vecnormalize", dest="use_vecnormalize", action="store_false", help="Disable VecNormalize wrapper")
+    parser.set_defaults(use_vecnormalize=True)
     return parser.parse_args()
 
 
@@ -71,7 +74,8 @@ def main():
         env_name=args.env_name,
         num_envs=args.num_envs,
         seed=args.seed,
-        render_mode=args.render_mode
+        render_mode=args.render_mode,
+        stack_frames=args.stack_frames
     )
     
     # Apply VecNormalize if requested (BEFORE VecMonitor)

@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument("--model-path", type=str, required=True, help="Path to the saved model (without .zip extension)")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
     parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel evaluation environments")
+    parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack during evaluation")
     parser.add_argument("--n-eval-episodes", type=int, default=20, help="Number of episodes for evaluation")
     parser.add_argument("--seed", type=int, default=0, help="Random seed for evaluation")
     parser.add_argument("--render", action="store_true", help="Render the environment during evaluation")
@@ -43,7 +44,8 @@ def setup_evaluation_environment(args):
         env_name=args.env_name,
         num_envs=args.num_envs,
         seed=args.seed,
-        render_mode=True if args.render else None
+        render_mode=True if args.render else None,
+        stack_frames=args.stack_frames
     )
 
 

@@ -8,6 +8,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
@@ -32,9 +33,14 @@ class HumanoidEnvFns {
         "render_mode"_.Bind(false),
         "csv_logging_enabled"_.Bind(false), 
         "exclude_current_positions_from_observation"_.Bind(true),
-        "ctrl_cost_weight"_.Bind(0.0), "healthy_reward"_.Bind(5.0),
+        "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(5.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
+        "velocity_tracking_weight"_.Bind(2.0),
+        "yaw_tracking_weight"_.Bind(0.2),
+        "orientation_penalty_weight"_.Bind(5.0),
+        "height_penalty_weight"_.Bind(10.0),
+        "foot_slip_penalty_weight"_.Bind(0.5),
         "reset_noise_scale"_.Bind(0));
   }
   template <typename Config>
@@ -87,6 +93,27 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   float lastAction = 0;
   float prev_action = 0.0;
   mjtNum desired_h;
+  mjtNum velocity_tracking_weight_;
+  mjtNum yaw_tracking_weight_;
+  mjtNum orientation_penalty_weight_;
+  mjtNum height_penalty_weight_;
+  mjtNum foot_slip_penalty_weight_;
+  std::vector<mjtNum> last_action_vector_;
+  std::vector<mjtNum> last_observation_;
+  mjtNum last_ctrl_cost_{0.0};
+  mjtNum last_contact_cost_{0.0};
+  mjtNum last_velocity_tracking_cost_{0.0};
+  mjtNum last_yaw_rate_tracking_cost_{0.0};
+  mjtNum last_healthy_reward_{0.0};
+  mjtNum last_x_velocity_{0.0};
+  mjtNum last_y_velocity_{0.0};
+  mjtNum last_x_position_{0.0};
+  mjtNum last_y_position_{0.0};
+  mjtNum last_orientation_penalty_{0.0};
+  mjtNum last_height_penalty_{0.0};
+  mjtNum last_foot_slip_penalty_{0.0};
+  bool last_is_healthy_{true};
+  bool pending_reset_marker_{true};
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
@@ -112,6 +139,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         healthy_z_max_(spec.config["healthy_z_max"_]),
         contact_cost_weight_(spec.config["contact_cost_weight"_]),
         contact_cost_max_(spec.config["contact_cost_max"_]),
+        velocity_tracking_weight_(spec.config["velocity_tracking_weight"_]),
+        yaw_tracking_weight_(spec.config["yaw_tracking_weight"_]),
+        orientation_penalty_weight_(spec.config["orientation_penalty_weight"_]),
+        height_penalty_weight_(spec.config["height_penalty_weight"_]),
+        foot_slip_penalty_weight_(spec.config["foot_slip_penalty_weight"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]) {
     if (env_id_ == 0 ) {
@@ -133,6 +165,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mbc.setModeLocomotion();
 
     desired_h = 0.35;  // Set the desired height to 0.35
+    mbc.setBaseHeight(static_cast<float>(desired_h));
 
     // Save the initial controller configuration to backup
     // while (mbc.getMode() != 6) {
@@ -179,6 +212,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   void Reset() override {
     writeDataToCSV(1);
+    last_action_vector_.clear();
+    last_observation_.clear();
     if(render_mode_)
       std::cout << "Resetting the environment..." << std::endl;
     done_ = false;
@@ -187,6 +222,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     static std::mt19937 gen(rd());
     std::uniform_real_distribution<mjtNum> dis( 0.32, 0.4);
     desired_h = dis(gen);
+    mbc.setBaseHeight(static_cast<float>(desired_h));
     // MujocoReset();
     // mj_deleteData(data_);
     // mj_deleteModel(model_);
@@ -197,15 +233,20 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     mbc.setFeedback(data_);
     mbc.setModeLocomotion();
-    mbc. _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = 0.35;  // Set the height to 0.35
+    mbc. _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] =
+        static_cast<float>(desired_h);
 
   }
 
   void Step(const Action& action) override {
     // step
-    mjtNum* act = static_cast<mjtNum*>(action["action"_].Data());
-    lastAction = act[0];
+    auto action_array = action["action"_];
+    auto* act = static_cast<mjtNum*>(action_array.Data());
+    std::size_t action_count = action_array.size;
+    lastAction = action_count > 0 ? static_cast<float>(act[0]) : 0.0f;
+    last_action_vector_.assign(act, act + action_count);
     // repeat frameskip times
+    mjtNum ctrl_cost = 0.0;
     const auto& before = GetMassCenter();
 
     for (int i = 0; i < frame_skip_; ++i) {
@@ -217,20 +258,19 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
       mjtNum motor_commands[12];
       std::array<double, 12> mc = mbc.getMotorCommands();
-      for (int i = 0; i < 12; ++i) {
+      for (int j = 0; j < 12; ++j) {
         // Clamp motor commands to torque bounds.
-        motor_commands[i] =
-            std::max(std::min(static_cast<mjtNum>(mc[i]), torque_limit_),
+        motor_commands[j] =
+            std::max(std::min(static_cast<mjtNum>(mc[j]), torque_limit_),
                      -torque_limit_);
+        ctrl_cost += ctrl_cost_weight_ * motor_commands[j] * motor_commands[j];
       }
       MujocoStep(motor_commands);
     }
 
     const auto& after = GetMassCenter();
 
-    // Compute control cost.
-    mjtNum ctrl_cost = 0.0;
-    // print model nu
+    // Compute velocities.
     // std::cout << "Model nu: " << model_->nu << std::endl;
     // for (int i = 0; i < model_->nu; ++i) {
     //   ctrl_cost += ctrl_cost_weight_ * act[i] * act[i];
@@ -262,13 +302,39 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum healthy_reward =
         terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
     // Simple locomotion reward: track desired planar velocity and yaw rate from WBC
-    auto reward = ComputeLocomotionReward(xv, yv, healthy_reward);
+    mjtNum velocity_cost = 0.0;
+    mjtNum yaw_rate_cost = 0.0;
+    bool is_healthy = true;
+    auto reward =
+        ComputeLocomotionReward(xv, yv, healthy_reward, velocity_cost,
+                                yaw_rate_cost, is_healthy);
+
+    mjtNum orientation_penalty = ComputeOrientationPenalty();
+    mjtNum height_penalty = ComputeHeightPenalty();
+    mjtNum foot_slip_penalty = ComputeFootSlipPenalty();
+
+    reward -= (ctrl_cost + contact_cost + orientation_penalty + height_penalty +
+               foot_slip_penalty);
+
+    last_ctrl_cost_ = ctrl_cost;
+    last_contact_cost_ = contact_cost;
+    last_orientation_penalty_ = orientation_penalty;
+    last_height_penalty_ = height_penalty;
+    last_foot_slip_penalty_ = foot_slip_penalty;
+    last_velocity_tracking_cost_ = velocity_cost;
+    last_yaw_rate_tracking_cost_ = yaw_rate_cost;
+    last_healthy_reward_ = healthy_reward;
+    last_x_velocity_ = xv;
+    last_y_velocity_ = yv;
+    last_x_position_ = after[0];
+    last_y_position_ = after[1];
+    last_is_healthy_ = is_healthy;
 
     // ++elapsed_step_;
     done_ = (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
             (elapsed_step_ >= max_episode_steps_);
     WriteState(reward, xv, yv, ctrl_cost, contact_cost, after[0], after[1],
-               healthy_reward_);
+               healthy_reward);
   }
 
  private:
@@ -394,9 +460,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   //  - Velocity tracking: (vx, vy) to vBody_des[0:2]
   //  - Yaw rate tracking: qvel[5] to vBody_Ori_des[2]
   //  - Alive bonus (healthy_reward) and fall penalty
-  mjtNum ComputeLocomotionReward(mjtNum xv, mjtNum yv, mjtNum healthy_reward) {
-    const mjtNum kv = 2.0;    // velocity tracking weight
-    const mjtNum ky = 0.2;    // yaw rate tracking weight
+  mjtNum ComputeLocomotionReward(mjtNum xv, mjtNum yv,
+                                 mjtNum healthy_reward,
+                                 mjtNum& velocity_cost,
+                                 mjtNum& yaw_rate_cost, bool& is_healthy) {
     const mjtNum fall_pen = 500.0;
 
     // Desired references from WBC (set via mbc_interface::setAction)
@@ -404,23 +471,64 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     const mjtNum vy_des = mbc._controller->_controlFSM->data.locomotionCtrlData.vBody_des[1];
     const mjtNum wz_des = mbc._controller->_controlFSM->data.locomotionCtrlData.vBody_Ori_des[2];
 
-    // Measure yaw rate from generalized velocity (z‑axis angular vel)
+    // Measure yaw rate from generalized velocity (z-axis angular vel)
     const mjtNum wz = data_->qvel[5];
 
-    // Quadratic tracking costs
-    const mjtNum vel_err = (xv - vx_des) * (xv - vx_des) +
-                           (yv - vy_des) * (yv - vy_des);
-    const mjtNum yaw_err = (wz - wz_des) * (wz - wz_des);
+    const mjtNum vx_scale = std::max(std::abs(vx_des), static_cast<mjtNum>(0.2));
+    const mjtNum vy_scale = std::max(std::abs(vy_des), static_cast<mjtNum>(0.2));
+    const mjtNum wz_scale = std::max(std::abs(wz_des), static_cast<mjtNum>(0.3));
 
-    mjtNum reward = healthy_reward - (kv * vel_err + ky * yaw_err);
+    const mjtNum norm_vx = (xv - vx_des) / vx_scale;
+    const mjtNum norm_vy = (yv - vy_des) / vy_scale;
+    const mjtNum norm_wz = (wz - wz_des) / wz_scale;
+
+    velocity_cost = velocity_tracking_weight_ * (norm_vx * norm_vx + norm_vy * norm_vy);
+    yaw_rate_cost = yaw_tracking_weight_ * (norm_wz * norm_wz);
+
+    mjtNum reward = healthy_reward - (velocity_cost + yaw_rate_cost);
+
+    // Mild forward incentive to avoid standing still when healthy.
+    reward += forward_reward_weight_ * xv;
 
     // Large penalty on fall/unhealthy
-    const bool healthy = IsHealthy();
-    if (!healthy) {
+    is_healthy = IsHealthy();
+    if (!is_healthy) {
       reward -= fall_pen;
     }
 
     return reward;
+  }
+
+  mjtNum ComputeOrientationPenalty() const {
+    Eigen::Quaternion<mjtNum> q(data_->qpos[6], data_->qpos[3], data_->qpos[4],
+                                data_->qpos[5]);
+    Eigen::Vector3<mjtNum> eul = q.toRotationMatrix().eulerAngles(0, 1, 2);
+    mjtNum roll = eul[0];
+    mjtNum pitch = eul[1];
+    return orientation_penalty_weight_ * (roll * roll + pitch * pitch);
+  }
+
+  mjtNum ComputeHeightPenalty() const {
+    const mjtNum height = data_->qpos[2];
+    const mjtNum desired =
+        static_cast<mjtNum>(mbc._controller->_controlFSM->data.locomotionCtrlData.pBody_des[2]);
+    const mjtNum err = height - desired;
+    return height_penalty_weight_ * err * err;
+  }
+
+  mjtNum ComputeFootSlipPenalty() const {
+    mjtNum slip_cost = 0.0;
+    for (int leg = 0; leg < 4; ++leg) {
+      if (mbc._controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] > 0.5f) {
+        const auto& leg_data =
+            mbc._controller->_controlFSM->data._legController->datas[leg];
+        const mjtNum vx = static_cast<mjtNum>(leg_data.v[0]);
+        const mjtNum vy = static_cast<mjtNum>(leg_data.v[1]);
+        const mjtNum vz = static_cast<mjtNum>(leg_data.v[2]);
+        slip_cost += vx * vx + vy * vy + vz * vz;
+      }
+    }
+    return foot_slip_penalty_weight_ * slip_cost;
   }
 
   // ------------------------------------------------------------------------
@@ -433,12 +541,18 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     // Debug the state allocation - check if it's properly created
     // std::cout << "State obs buffer size: "
     // << state["obs"_].Shape()[0]  << state["obs"_].Shape()[1] << std::endl;
-    mjtNum* obs = static_cast<mjtNum*>(state["obs"_].Data());
+    auto obs_array = state["obs"_];
+    auto* obs = static_cast<mjtNum*>(obs_array.Data());
     mjtNum* obs_start = obs;  // Save the starting pointer for debugging
 
     mbc.setObservation(obs);
-    obs[44] = desired_h;                 
-    state["obs"_].Assign(obs, 1);
+    obs[44] = desired_h;
+    if (obs_array.size > 0) {
+      last_observation_.assign(obs_start, obs_start + obs_array.size);
+    } else {
+      last_observation_.clear();
+    }
+    obs_array.Assign(obs, 1);
 
     // Print confirmation
     // std::cout << "Filled " << 42 << " elements in observation array" << std::endl;
@@ -476,57 +590,80 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     state["info:qvel0"_].Assign(qvel0_, model_->nv);
 #endif
   }
-#define N_LOG 22
   void writeDataToCSV(int mode = 0) {
     if (csv_logging_enabled_ == 0) {
       return;  // Skip writing if logging is disabled
     }
-    // Check if the file is open
     if (!outputFile.is_open()) {
       std::cerr << "Error: Unable to open CSV file for writing." << std::endl;
       return;
     }
-    // Write the header only once
+
+    if (mode == 1 || mode == 2) {
+      pending_reset_marker_ = true;
+      return;
+    }
+    if (mode != 0) {
+      return;
+    }
+
+    if (last_observation_.empty() || last_action_vector_.empty()) {
+      return;  // Skip until we have both action and observation data
+    }
+
     if (outputFile.tellp() == 0) {
-      outputFile << "body_x,body_y,body_z,"
+      outputFile << "elapsed_step,reset_marker,body_x,body_y,body_z,"
                  << "quat_w,quat_x,quat_y,quat_z,"
                  << "FR_abad,FR_hip,FR_knee,"
                  << "FL_abad,FL_hip,FL_knee,"
                  << "HR_abad,HR_hip,HR_knee,"
-                 << "HL_abad,HL_hip,HL_knee, reward, action, height, des_h " << std::endl;
-    }
-    // Write the data to CSV
-    if (mode == 0) {
-      // Write the data to CSV
-      for (int i = 0; i < 19; ++i) {
-        outputFile << double(data_->qpos[i]);
-        outputFile << ",";
+                 << "HL_abad,HL_hip,HL_knee,"
+                 << "reward_total,healthy_reward,velocity_tracking_penalty,"
+                 << "yaw_rate_tracking_penalty,orientation_penalty,height_penalty,foot_slip_penalty,"
+                 << "ctrl_cost,contact_cost,is_healthy,"
+                 << "x_position,y_position,x_velocity,y_velocity,"
+                 << "pBody_des_z,desired_h";
+      for (std::size_t i = 0; i < last_action_vector_.size(); ++i) {
+        outputFile << ",action_" << i;
       }
-      outputFile << lastReward << ","; 
-      outputFile << lastAction << ","; 
-      outputFile << mbc._controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] << ",";  // Height
-      outputFile << desired_h;  // Desired height
-      // Write the joint angles
+      for (std::size_t i = 0; i < last_observation_.size(); ++i) {
+        outputFile << ",obs_" << i;
+      }
       outputFile << std::endl;
-    } else if (mode == 1) {
-      // Write the data to CSV
-      for (int i = 0; i < N_LOG; ++i) {
-        for (int j = 0; j < N_LOG; ++j) {
-          outputFile << -0.01;
-          if (j < N_LOG - 1) outputFile << ",";
-        }
-        outputFile << std::endl;
-      }
-    } else if (mode == 2) {
-      // Write the data to CSV
-      for (int i = 0; i < N_LOG; ++i) {
-        for (int j = 0; j < N_LOG; ++j) {
-          outputFile << -0.05;
-          if (j < N_LOG - 1) outputFile << ",";
-        }
-        outputFile << std::endl;
-      }
     }
+
+    const bool reset_marker = pending_reset_marker_;
+    pending_reset_marker_ = false;
+
+    outputFile << elapsed_step_ << ',' << (reset_marker ? 1 : 0);
+    for (int i = 0; i < 19; ++i) {
+      outputFile << ',' << static_cast<double>(data_->qpos[i]);
+    }
+    outputFile << ',' << static_cast<double>(lastReward)
+               << ',' << static_cast<double>(last_healthy_reward_)
+               << ',' << static_cast<double>(last_velocity_tracking_cost_)
+               << ',' << static_cast<double>(last_yaw_rate_tracking_cost_)
+               << ',' << static_cast<double>(last_orientation_penalty_)
+               << ',' << static_cast<double>(last_height_penalty_)
+               << ',' << static_cast<double>(last_foot_slip_penalty_)
+               << ',' << static_cast<double>(last_ctrl_cost_)
+               << ',' << static_cast<double>(last_contact_cost_)
+               << ',' << (last_is_healthy_ ? 1 : 0)
+               << ',' << static_cast<double>(last_x_position_)
+               << ',' << static_cast<double>(last_y_position_)
+               << ',' << static_cast<double>(last_x_velocity_)
+               << ',' << static_cast<double>(last_y_velocity_)
+               << ','
+               << static_cast<double>(mbc._controller->_controlFSM->data.locomotionCtrlData.pBody_des[2])
+               << ',' << static_cast<double>(desired_h);
+
+    for (std::size_t i = 0; i < last_action_vector_.size(); ++i) {
+      outputFile << ',' << static_cast<double>(last_action_vector_[i]);
+    }
+    for (std::size_t i = 0; i < last_observation_.size(); ++i) {
+      outputFile << ',' << static_cast<double>(last_observation_[i]);
+    }
+    outputFile << std::endl;
   }
 };
 
