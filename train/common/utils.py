@@ -31,7 +31,7 @@ def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1
     env.spec.id = env_name
     
     # Apply VecAdapter
-    env = VecAdapter(env, stack_frames=stack_frames)
+    env = VecAdapter(env)
     
     return env
 

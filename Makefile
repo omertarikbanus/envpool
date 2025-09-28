@@ -169,6 +169,7 @@ docker-run:
 		-e DISPLAY=$(DISPLAY) \
 		-e QT_X11_NO_MITSHM=1 \
 		-e XAUTHORITY=/tmp/.docker.xauth \
+		--gpus all \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
 		$(PROJECT_NAME):$(DOCKER_TAG) bash

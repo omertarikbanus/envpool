@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>  // For std::sqrt, std::abs
+#include <cstdio>
 #include <fstream>
 #include <iostream>
 #include <limits>
@@ -117,6 +118,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // Added: Torque bound constant (example value; adjust as needed)
   const mjtNum torque_limit_ = 65.0;
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
+  std::string csv_filename_;
+  std::string wbc_csv_filename_;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -156,13 +159,15 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     } else {
       
     }
-    std::string fname;
-    fname = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
-
-    outputFile.open(fname.c_str());
+  csv_filename_ = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
+  wbc_csv_filename_ = "/app/envpool/logs/" + std::to_string(env_id_) + "_wbc.csv";
+  ClearCsvLogs();
 
     MujocoReset();
     mbc.setModeLocomotion();
+    if (csv_logging_enabled_) {
+      mbc.writeWBCLogCSV(wbc_csv_filename_, /*write_header_if_new=*/true);
+    }
 
     desired_h = 0.35;  // Set the desired height to 0.35
     mbc.setBaseHeight(static_cast<float>(desired_h));
@@ -235,7 +240,31 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mbc.setModeLocomotion();
     mbc. _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] =
         static_cast<float>(desired_h);
+    if (csv_logging_enabled_) {
+      mbc.writeWBCLogCSV(wbc_csv_filename_, /*write_header_if_new=*/true);
+    }
 
+  }
+
+  void ClearCsvLogs() {
+    if (csv_logging_enabled_) {
+      if (outputFile.is_open()) {
+        outputFile.close();
+      }
+      if (!csv_filename_.empty()) {
+        std::remove(csv_filename_.c_str());
+      }
+      outputFile.open(csv_filename_.c_str(), std::ios::out | std::ios::trunc);
+      if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to recreate CSV log file at " << csv_filename_ << std::endl;
+      }
+      pending_reset_marker_ = true;
+    }
+
+    mbc.clearWBCLogFile(wbc_csv_filename_);
+    if (csv_logging_enabled_) {
+      mbc.writeWBCLogCSV(wbc_csv_filename_, /*write_header_if_new=*/true);
+    }
   }
 
   void Step(const Action& action) override {
@@ -266,6 +295,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         ctrl_cost += ctrl_cost_weight_ * motor_commands[j] * motor_commands[j];
       }
       MujocoStep(motor_commands);
+    }
+
+    if (csv_logging_enabled_) {
+      mbc.writeWBCLogCSV(wbc_csv_filename_, /*write_header_if_new=*/true);
     }
 
     const auto& after = GetMassCenter();

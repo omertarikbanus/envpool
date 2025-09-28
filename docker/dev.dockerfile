@@ -9,12 +9,14 @@ WORKDIR /app
 # COPY envpool/docker/certs/AselsanRootCA.crt /usr/local/share/ca-certificates/
 # COPY docker/certs/AselsanRootCA.crt /usr/local/share/ca-certificates/
 # ARG PATH=$PATH:$HOME/go/bin
+RUN apt update 
 RUN apt update && apt upgrade -y && \
     apt install -y \
     # Build essentials
     build-essential \
     ca-certificates \
     cmake \
+    htop \
     g++ \
     git \
     sudo \
@@ -64,7 +66,7 @@ RUN apt update && apt upgrade -y && \
     libx11-xcb1 \
     libxcb1
 
-RUN pip3 install mujoco gym numpy matplotlib  jax==0.5.3  flax optax stable-baselines3  tensorboard "shimmy>=2.0"
+RUN pip3 install mujoco gym numpy matplotlib  jax==0.5.3  flax optax stable-baselines3 tensorboard "shimmy>=2.0"
 # XLA Extensions
 # RUN pip3 install mujoco gym matplotlib  jax==0.4.13 jaxlib==0.4.13 "numpy<2.0"  flax optax stable-baselines3  tensorboard "shimmy>=2.0"  optuna>=3.0.0  plotly>=5.0.0  
 
