@@ -10,6 +10,7 @@ from .utils import (
     setup_logging,
     ask_continue_or_restart,
     create_or_load_model,
+    warm_start_environment,
     save_model_and_stats,
     setup_vecnormalize,
     find_vecnormalize_wrapper
@@ -29,6 +30,7 @@ __all__ = [
     'setup_logging',
     'ask_continue_or_restart',
     'create_or_load_model',
+    'warm_start_environment',
     'save_model_and_stats',
     'setup_vecnormalize',
     'find_vecnormalize_wrapper',

@@ -60,8 +60,8 @@ def create_ppo_model(env, policy_kwargs):
         n_epochs=5,
         gamma=0.99,
         gae_lambda=0.95,
-        max_grad_norm=0.4,
-        ent_coef=0.01,
+        max_grad_norm=0.3,
+        ent_coef=0.005,
         vf_coef=1.0,
         clip_range_vf=0.2,
         tensorboard_log="runs/ppo_taskspace",
@@ -144,7 +144,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         for g in model.policy.optimizer.param_groups:
             g['lr'] = 1.5e-4
 
-        model.ent_coef = 0.0075
+        model.ent_coef = 0.2e-4
 
         # Update log_std bounds
         with th.no_grad():
@@ -177,6 +177,34 @@ def setup_vecnormalize(env, use_vecnormalize=True):
         env = vecnormalize_wrapper
     return env, vecnormalize_wrapper
 
+
+
+def warm_start_environment(env, num_steps, base_action=None, noise_std=0.0):
+    """Run safe actions before training to stabilise normalisation stats."""
+    if num_steps <= 0:
+        return
+    logging.info("Warm start: running %d steps before optimisation.", num_steps)
+    env.reset()
+    action_space = env.action_space
+    dtype = getattr(action_space, "dtype", None) or np.float32
+    if base_action is None:
+        base_action = np.zeros(action_space.shape, dtype=dtype)
+    else:
+        base_action = np.asarray(base_action, dtype=dtype)
+    base_action = np.clip(base_action, action_space.low, action_space.high).astype(dtype, copy=False)
+    if base_action.shape != action_space.shape:
+        raise ValueError("base_action shape does not match action space shape")
+    num_envs = getattr(env, "num_envs", 1)
+    actions = np.repeat(base_action[np.newaxis, :], num_envs, axis=0).astype(dtype, copy=False)
+    for _ in range(num_steps):
+        if noise_std > 0.0:
+            noise = np.random.normal(loc=0.0, scale=noise_std, size=actions.shape).astype(dtype, copy=False)
+            step_actions = actions + noise
+            step_actions = np.clip(step_actions, action_space.low, action_space.high).astype(dtype, copy=False)
+        else:
+            step_actions = actions
+        _, _, _, _ = env.step(step_actions)
+    env.reset()
 
 def find_vecnormalize_wrapper(env):
     """Find VecNormalize wrapper in the environment stack."""

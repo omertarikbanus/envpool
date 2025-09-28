@@ -60,7 +60,7 @@ def gym_sync_step() -> None:
     print(f"Observation shape: {env.observation_space.shape}")
   action= np.zeros((num_envs, action_num), dtype=np.float32)
   for env_id in range(num_envs):
-    action[env_id][0]= 0
+    action[env_id][0]= 0.4
   for _ in range(1000):
     # autoreset is automatically enabled in envpool
     # action = np.random.randint(action_num, size=(num_envs, action_num))

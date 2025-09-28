@@ -23,6 +23,7 @@ from common import (
     create_or_load_model,
     save_model_and_stats,
     setup_vecnormalize,
+    warm_start_environment,
     find_vecnormalize_wrapper
 )
 
@@ -40,6 +41,8 @@ def parse_args():
     parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack per environment step")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--total-timesteps", type=int, default=8_000_000, help="Total training timesteps")
+
+    parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
 
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
@@ -98,6 +101,11 @@ def main():
     # Update vecnormalize_wrapper reference if it was modified in create_or_load_model
     if args.use_vecnormalize and vecnormalize_wrapper is None:
         vecnormalize_wrapper = find_vecnormalize_wrapper(env)
+
+    if args.warm_start_steps > 0 and getattr(model, "num_timesteps", 0) == 0:
+        logging.info("Executing warm start for %d steps", args.warm_start_steps)
+        warm_start_environment(env, args.warm_start_steps)
+        logging.info("Warm start complete; proceeding to training.")
 
     model.set_logger(logger)
 
