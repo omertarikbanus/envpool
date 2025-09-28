@@ -37,7 +37,7 @@ th.set_num_threads(1)
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=32, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
     parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack per environment step")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--total-timesteps", type=int, default=8_000_000, help="Total training timesteps")

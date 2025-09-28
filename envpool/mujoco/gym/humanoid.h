@@ -29,15 +29,15 @@ class HumanoidEnvFns {
   static decltype(auto) DefaultConfig() {
     return MakeDict(
         "frame_skip"_.Bind(15), "post_constraint"_.Bind(true),
-        "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1.25),
+        "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(30.25),
         "terminate_when_unhealthy"_.Bind(true),
         "render_mode"_.Bind(false),
         "csv_logging_enabled"_.Bind(false), 
         "exclude_current_positions_from_observation"_.Bind(true),
-        "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(5.0),
+        "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(30.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
-        "velocity_tracking_weight"_.Bind(2.0),
+        "velocity_tracking_weight"_.Bind(5.0),
         "yaw_tracking_weight"_.Bind(0.2),
         "orientation_penalty_weight"_.Bind(5.0),
         "height_penalty_weight"_.Bind(10.0),
