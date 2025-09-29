@@ -272,6 +272,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     auto action_array = action["action"_];
     auto* act = static_cast<mjtNum*>(action_array.Data());
     std::size_t action_count = action_array.size;
+    bool invalid_action = false;
+    for (std::size_t idx = 0; idx < action_count; ++idx) {
+      if (!std::isfinite(static_cast<double>(act[idx]))) {
+        act[idx] = 0.0;
+        invalid_action = true;
+      }
+    }
+    if (invalid_action && env_id_ == 0) {
+      std::cerr << "[HumanoidEnv] Non-finite action detected; replaced with zeros." << std::endl;
+    }
     lastAction = action_count > 0 ? static_cast<float>(act[0]) : 0.0f;
     last_action_vector_.assign(act, act + action_count);
     // repeat frameskip times
@@ -287,12 +297,19 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
       mjtNum motor_commands[12];
       std::array<double, 12> mc = mbc.getMotorCommands();
+      bool invalid_motor_command = false;
       for (int j = 0; j < 12; ++j) {
-        // Clamp motor commands to torque bounds.
-        motor_commands[j] =
-            std::max(std::min(static_cast<mjtNum>(mc[j]), torque_limit_),
-                     -torque_limit_);
+        mjtNum candidate = static_cast<mjtNum>(mc[j]);
+        if (!std::isfinite(static_cast<double>(candidate))) {
+          candidate = 0.0;
+          invalid_motor_command = true;
+        }
+        candidate = std::clamp(candidate, -torque_limit_, torque_limit_);
+        motor_commands[j] = candidate;
         ctrl_cost += ctrl_cost_weight_ * motor_commands[j] * motor_commands[j];
+      }
+      if (invalid_motor_command && env_id_ == 0) {
+        std::cerr << "[HumanoidEnv] Non-finite motor command detected; clamped to zero." << std::endl;
       }
       MujocoStep(motor_commands);
     }
@@ -349,6 +366,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     reward -= (ctrl_cost + contact_cost + orientation_penalty + height_penalty +
                foot_slip_penalty);
 
+    if (!std::isfinite(static_cast<double>(reward))) {
+      if (env_id_ == 0) {
+        std::cerr << "[HumanoidEnv] Non-finite reward detected; forcing termination." << std::endl;
+      }
+      reward = -1000.0;
+      done_ = true;
+    }
+
     last_ctrl_cost_ = ctrl_cost;
     last_contact_cost_ = contact_cost;
     last_orientation_penalty_ = orientation_penalty;
@@ -364,7 +389,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     last_is_healthy_ = is_healthy;
 
     // ++elapsed_step_;
-    done_ = (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
+    done_ = done_ || (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
             (elapsed_step_ >= max_episode_steps_);
     WriteState(reward, xv, yv, ctrl_cost, contact_cost, after[0], after[1],
                healthy_reward);
@@ -580,6 +605,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     mbc.setObservation(obs);
     obs[44] = desired_h;
+    bool invalid_obs = false;
+    for (std::size_t idx = 0; idx < obs_array.size; ++idx) {
+      if (!std::isfinite(static_cast<double>(obs[idx]))) {
+        obs[idx] = 0.0;
+        invalid_obs = true;
+      }
+    }
+    if (invalid_obs && env_id_ == 0) {
+      std::cerr << "[HumanoidEnv] Non-finite observation detected; replaced with zeros." << std::endl;
+    }
     if (obs_array.size > 0) {
       last_observation_.assign(obs_start, obs_start + obs_array.size);
     } else {
