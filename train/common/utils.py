@@ -41,7 +41,7 @@ def create_policy_kwargs():
     return dict(
         activation_fn=th.nn.Tanh,
         net_arch=[dict(pi=[256, 256, 128], vf=[256, 256, 128])],
-        log_std_init=-5.0,
+        log_std_init=-1.0,
         ortho_init=False,
     )
 
@@ -52,7 +52,7 @@ def create_ppo_model(env, policy_kwargs):
         policy="MlpPolicy",
         env=env,
         # PPO hyper-parameters
-        learning_rate=5e-5,
+        learning_rate=50e-5,
         clip_range=0.2,
         target_kl=0.01,
         n_steps=2048,
@@ -60,10 +60,10 @@ def create_ppo_model(env, policy_kwargs):
         n_epochs=5,
         gamma=0.99,
         gae_lambda=0.95,
-        max_grad_norm=0.3,
-        ent_coef=0.005,
+        max_grad_norm=0.1,
+        ent_coef=0.01,
         vf_coef=0.5,
-        clip_range_vf=0.2,
+        clip_range_vf=0.1,
         tensorboard_log="runs/ppo_taskspace",
         policy_kwargs=policy_kwargs,
         verbose=1,

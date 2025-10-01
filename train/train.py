@@ -40,9 +40,9 @@ def parse_args():
     parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
     parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack per environment step")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=8_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=800_000_000, help="Total training timesteps")
 
-    parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
+    parser.add_argument("--warm-start-steps", type=int, default=100_000, help="Warm start steps to run before optimisation")
 
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")

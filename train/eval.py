@@ -24,7 +24,7 @@ from common import (
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate trained PPO models with EnvPool.")
-    parser.add_argument("--model-path", type=str, required=True, help="Path to the saved model (without .zip extension)")
+    parser.add_argument("--model-path", type=str, default="quadruped_ppo_model.zip", help="Path to the saved model (without .zip extension)")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
     parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel evaluation environments")
     parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack during evaluation")
@@ -33,7 +33,7 @@ def parse_args():
     parser.add_argument("--render", action="store_true", help="Render the environment during evaluation")
     parser.add_argument("--deterministic", action="store_true", help="Use deterministic actions (no exploration)")
     parser.add_argument("--auto-detect-vecnorm", action="store_true", default=False, help="Automatically detect and load VecNormalize statistics")
-    parser.add_argument("--vecnormalize-path", type=str, default=None, help="Explicit path to VecNormalize statistics file")
+    parser.add_argument("--vecnormalize-path", type=str, default="quadruped_ppo_model_vecnormalize.pkl", help="Explicit path to VecNormalize statistics file")
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
     return parser.parse_args()
 
