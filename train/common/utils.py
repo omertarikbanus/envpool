@@ -52,11 +52,11 @@ def create_ppo_model(env, policy_kwargs):
         policy="MlpPolicy",
         env=env,
         # PPO hyper-parameters
-        learning_rate=50e-5,
+        learning_rate=1e-4,
         clip_range=0.2,
         target_kl=0.01,
         n_steps=2048,
-        batch_size=1024,
+        batch_size=64,
         n_epochs=5,
         gamma=0.99,
         gae_lambda=0.95,

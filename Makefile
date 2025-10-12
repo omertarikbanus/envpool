@@ -11,6 +11,7 @@ DATE           = $(shell date "+%Y-%m-%d")
 # DOCKER_TAG     = $(DATE)-$(COMMIT_HASH)
 DOCKER_TAG     = may
 DOCKER_USER    = trinkle23897
+CONTAINER_NAME = $(PROJECT_NAME)-dev
 PATH           := $(HOME)/go/bin:$(PATH)
 
 # installation
@@ -160,6 +161,9 @@ docker-ci-push: docker-ci
 docker-ci-launch: docker-ci
 	docker run --network=host -v /home/ubuntu:/home/github-action --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
 
+docker-exec:
+	docker exec -it $(CONTAINER_NAME) /bin/bash
+
 docker-run:
 		docker run --network=host \
 		-v $(shell pwd)/../:/app \
@@ -171,7 +175,7 @@ docker-run:
 		-e XAUTHORITY=/tmp/.docker.xauth \
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
-		$(PROJECT_NAME):$(DOCKER_TAG) bash
+		$(PROJECT_NAME):$(DOCKER_TAG) zsh
 
 # docker-run-gpu:
 # 		docker run --network=host \

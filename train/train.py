@@ -37,12 +37,11 @@ th.set_num_threads(1)
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
+    parser.add_argument("--num-envs", type=int, default=64, help="Number of parallel environments")
     parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack per environment step")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=800_000_000, help="Total training timesteps")
-
-    parser.add_argument("--warm-start-steps", type=int, default=100_000, help="Warm start steps to run before optimisation")
+    parser.add_argument("--total-timesteps", type=int, default=2_500_000*15, help="Total training timesteps")
+    parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
 
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")

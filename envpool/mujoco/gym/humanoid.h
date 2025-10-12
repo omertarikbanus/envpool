@@ -29,12 +29,12 @@ class HumanoidEnvFns {
   static decltype(auto) DefaultConfig() {
     return MakeDict(
         "frame_skip"_.Bind(15), "post_constraint"_.Bind(true),
-        "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(30.25),
+        "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1),
         "terminate_when_unhealthy"_.Bind(true),
         "render_mode"_.Bind(false),
         "csv_logging_enabled"_.Bind(false), 
         "exclude_current_positions_from_observation"_.Bind(true),
-        "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(30.0),
+        "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "velocity_tracking_weight"_.Bind(5.0),
@@ -363,14 +363,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum height_penalty = ComputeHeightPenalty();
     mjtNum foot_slip_penalty = ComputeFootSlipPenalty();
 
-    reward -= (ctrl_cost + contact_cost + orientation_penalty + height_penalty +
-               foot_slip_penalty);
+    // reward -= (ctrl_cost + contact_cost + orientation_penalty + height_penalty +
+    //            foot_slip_penalty);
 
     if (!std::isfinite(static_cast<double>(reward))) {
       if (env_id_ == 0) {
         std::cerr << "[HumanoidEnv] Non-finite reward detected; forcing termination." << std::endl;
       }
-      reward = -1000.0;
+      reward = -5.0;
       done_ = true;
     }
 
@@ -522,7 +522,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                                  mjtNum healthy_reward,
                                  mjtNum& velocity_cost,
                                  mjtNum& yaw_rate_cost, bool& is_healthy) {
-    const mjtNum fall_pen = 500.0;
+    const mjtNum fall_pen = 10.0;
 
     // Desired references from WBC (set via mbc_interface::setAction)
     const mjtNum vx_des = mbc._controller->_controlFSM->data.locomotionCtrlData.vBody_des[0];
@@ -543,10 +543,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     velocity_cost = velocity_tracking_weight_ * (norm_vx * norm_vx + norm_vy * norm_vy);
     yaw_rate_cost = yaw_tracking_weight_ * (norm_wz * norm_wz);
 
-    mjtNum reward = healthy_reward - (velocity_cost + yaw_rate_cost);
+    mjtNum reward = healthy_reward ;// - (velocity_cost + yaw_rate_cost);
 
     // Mild forward incentive to avoid standing still when healthy.
-    reward += forward_reward_weight_ * xv;
+    // reward += forward_reward_weight_ * xv;
 
     // Large penalty on fall/unhealthy
     is_healthy = IsHealthy();
