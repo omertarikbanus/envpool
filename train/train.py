@@ -96,10 +96,11 @@ def main():
         force_new=args.force_new,
         continue_training=args.continue_training
     )
-    
-    # Update vecnormalize_wrapper reference if it was modified in create_or_load_model
-    if args.use_vecnormalize and vecnormalize_wrapper is None:
+
+    if args.use_vecnormalize:
         vecnormalize_wrapper = find_vecnormalize_wrapper(env)
+    else:
+        vecnormalize_wrapper = None
 
     if args.warm_start_steps > 0 and getattr(model, "num_timesteps", 0) == 0:
         logging.info("Executing warm start for %d steps", args.warm_start_steps)

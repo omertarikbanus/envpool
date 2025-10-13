@@ -212,7 +212,7 @@ class ModelBasedControllerInterface {
       bool is_diagonal_leg = (leg == 0 || leg == 3);
       bool should_be_in_contact =
           is_diagonal_leg ? (gait_phase < 0.5) : (gait_phase >= 0.5);
-      float contact_state = should_be_in_contact ? 1.0f : 0.0f;
+      float contact_state = 1; // should_be_in_contact ? 1.0f : 0.0f;
 
       _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
           contact_state;

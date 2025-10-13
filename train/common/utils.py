@@ -124,9 +124,30 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         # Load VecNormalize stats if they exist and we're using VecNormalize
         if use_vecnormalize and vecnorm_exists:
             print(f"Loading VecNormalize statistics from {model_save_path}_vecnormalize.pkl")
-            env = VecNormalize.load(f"{model_save_path}_vecnormalize.pkl", env)
-            # Important: set training=True to continue updating statistics
-            env.training = True
+            monitor_wrapper = env if isinstance(env, VecMonitor) else None
+            inner_env = monitor_wrapper.venv if monitor_wrapper is not None else env
+
+            # unwrap existing VecNormalize to avoid double normalisation
+            if isinstance(inner_env, VecNormalize):
+                base_env = inner_env.venv
+            else:
+                base_env = inner_env
+
+            vecnormalize_wrapper = VecNormalize.load(f"{model_save_path}_vecnormalize.pkl", base_env)
+            # continue updating normalisation statistics during training
+            vecnormalize_wrapper.training = True
+
+            if monitor_wrapper is not None:
+                monitor_wrapper.venv = vecnormalize_wrapper
+                env = monitor_wrapper
+            else:
+                env = vecnormalize_wrapper
+        elif use_vecnormalize and not vecnorm_exists:
+            logging.warning(
+                "VecNormalize statistics file %s_vecnormalize.pkl not found; "
+                "continuing without loading normalization state.",
+                model_save_path,
+            )
         
         model = PPO.load(f"{model_save_path}.zip", env=env)
         
@@ -134,17 +155,17 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         print(f"Model hyperparameters: {model.policy_kwargs}")
         
         # Update hyperparameters for continued training
-        model.clip_range = 0.15
-        model.target_kl = 0.01
-        model.n_steps = 2048
-        model.batch_size = 1024
-        model.n_epochs = 5
+        # model.clip_range = 0.15
+        # model.target_kl = 0.01
+        # model.n_steps = 2048
+        # model.batch_size = 1024
+        # model.n_epochs = 5
 
         # Update learning rate for actor
         for g in model.policy.optimizer.param_groups:
-            g['lr'] = 1.5e-4
+            g['lr'] = 0.1e-4
 
-        model.ent_coef = 0.2e-4
+        # model.ent_coef = 0.2e-4
 
         # Update log_std bounds
         with th.no_grad():
