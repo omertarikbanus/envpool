@@ -10,6 +10,7 @@ import torch as th
 import envpool
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import VecMonitor, VecNormalize
+from stable_baselines3.common.utils import get_schedule_fn
 from stable_baselines3.common.logger import configure
 from datetime import datetime
 
@@ -52,7 +53,7 @@ def create_ppo_model(env, policy_kwargs):
         policy="MlpPolicy",
         env=env,
         # PPO hyper-parameters
-        learning_rate=1e-4,
+        learning_rate=3e-4,
         clip_range=0.2,
         target_kl=0.01,
         n_steps=2048,
@@ -161,9 +162,12 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         # model.batch_size = 1024
         # model.n_epochs = 5
 
-        # Update learning rate for actor
-        for g in model.policy.optimizer.param_groups:
-            g['lr'] = 0.1e-4
+        # Update learning rate; also refresh PPO's lr schedule so it is not overwritten
+        new_learning_rate = 0.1e-5
+        model.learning_rate = new_learning_rate
+        model.lr_schedule = get_schedule_fn(new_learning_rate)
+        for param_group in model.policy.optimizer.param_groups:
+            param_group['lr'] = new_learning_rate
 
         # model.ent_coef = 0.2e-4
 
