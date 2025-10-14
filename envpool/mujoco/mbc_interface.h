@@ -17,6 +17,7 @@
 #include <Controllers/EmbeddedController.hpp>
 #include <Controllers/WBC_Ctrl/WBC_Ctrl.hpp>
 #include <eigen3/Eigen/Dense>
+#include <eigen3/Eigen/Geometry>
 
 
 #define N_FOOT_PARAM_ACT 3
@@ -30,12 +31,14 @@ class ModelBasedControllerInterface {
     float side_sign[4] = {-1, 1, -1, 1};
     float reset_body_height_{0.35f};
     float filtered_body_height_{0.35f};
+    int cheater_mode{1};
 
   ~ModelBasedControllerInterface() = default;
 
   void reset() {
     reset_body_height_ = 0.35f;
     filtered_body_height_ = reset_body_height_;
+    last_feedback_data_ = nullptr;
     _controller = new EmbeddedController();
     _actuator_command = new SpiCommand();
     _actuator_data = new SpiData();
@@ -136,6 +139,7 @@ class ModelBasedControllerInterface {
   }
 
   void setFeedback(mjData* data_) {
+    last_feedback_data_ = data_;
     for (int leg = 0; leg < 4; leg++) {
       _actuator_data->q_abad[leg] =
           data_->qpos[(leg) * 3 + 0 + 7];  // Add 7 to skip the first 7 dofs
@@ -277,25 +281,58 @@ class ModelBasedControllerInterface {
     // contact state, foot position, foot velocity]
 
     auto& seResult = _controller->_controlFSM->data._stateEstimator->getResult();
-    obs[0] = seResult.position[0];
-    obs[1] = seResult.position[1];
-    obs[2] = seResult.position[2]; // Scale to [-1, 1] range
+    const bool use_cheater = (cheater_mode == 1) && (last_feedback_data_ != nullptr);
+    if (use_cheater) {
+      const mjData* data = last_feedback_data_;
+      obs[0] = data->qpos[0];
+      obs[1] = data->qpos[1];
+      obs[2] = data->qpos[2];
 
-    obs[3] = seResult.vBody[0];
-    obs[4] = seResult.vBody[1];
-    obs[5] = seResult.vBody[2];
+      obs[3] = data->qvel[0];
+      obs[4] = data->qvel[1];
+      obs[5] = data->qvel[2];
 
-    obs[6] = seResult.aBody[0];
-    obs[7] = seResult.aBody[1];
-    obs[8] = seResult.aBody[2];
+      if (data->qacc) {
+        obs[6] = data->qacc[0];
+        obs[7] = data->qacc[1];
+        obs[8] = data->qacc[2];
+      } else {
+        obs[6] = 0.0;
+        obs[7] = 0.0;
+        obs[8] = 0.0;
+      }
 
-    obs[9] = seResult.rpy[0];
-    obs[10] = seResult.rpy[1];
-    obs[11] = seResult.rpy[2];
+      Eigen::Quaternion<mjtNum> quat(data->qpos[6], data->qpos[3], data->qpos[4],
+                                     data->qpos[5]);
+      const auto euler = quat.toRotationMatrix().eulerAngles(0, 1, 2);
+      obs[9] = euler[0];
+      obs[10] = euler[1];
+      obs[11] = euler[2];
 
-    obs[12] = seResult.omegaBody[0];
-    obs[13] = seResult.omegaBody[1];
-    obs[14] = seResult.omegaBody[2];
+      obs[12] = data->qvel[3];
+      obs[13] = data->qvel[4];
+      obs[14] = data->qvel[5];
+    } else {
+      obs[0] = seResult.position[0];
+      obs[1] = seResult.position[1];
+      obs[2] = seResult.position[2];
+
+      obs[3] = seResult.vBody[0];
+      obs[4] = seResult.vBody[1];
+      obs[5] = seResult.vBody[2];
+
+      obs[6] = seResult.aBody[0];
+      obs[7] = seResult.aBody[1];
+      obs[8] = seResult.aBody[2];
+
+      obs[9] = seResult.rpy[0];
+      obs[10] = seResult.rpy[1];
+      obs[11] = seResult.rpy[2];
+
+      obs[12] = seResult.omegaBody[0];
+      obs[13] = seResult.omegaBody[1];
+      obs[14] = seResult.omegaBody[2];
+    }
 
 
     for (int leg = 0; leg < 4; leg++) {
@@ -483,6 +520,7 @@ class ModelBasedControllerInterface {
   int elapsed_step_ ;
   int frame_skip_ ;
  private:
+  mjData* last_feedback_data_{nullptr};
   void writeHeader_() {
     if (!wbc_log_stream_) return;
     // contact_est[4]
