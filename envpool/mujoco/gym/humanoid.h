@@ -91,8 +91,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   std::ofstream outputFile;
   float lastReward = 0;
-  float lastAction = 0;
-  float prev_action = 0.0;
   mjtNum desired_h;
   mjtNum velocity_tracking_weight_;
   mjtNum yaw_tracking_weight_;
@@ -282,7 +280,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     if (invalid_action && env_id_ == 0) {
       std::cerr << "[HumanoidEnv] Non-finite action detected; replaced with zeros." << std::endl;
     }
-    lastAction = action_count > 0 ? static_cast<float>(act[0]) : 0.0f;
     last_action_vector_.assign(act, act + action_count);
     // repeat frameskip times
     mjtNum ctrl_cost = 0.0;
@@ -348,40 +345,27 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //   //clamp desired_h to [0.25, 0.4]
     //   desired_h = std::max(0.32, std::min(0.4, desired_h));
     // }
-    // reward and done
-    mjtNum healthy_reward =
-        terminate_when_unhealthy_ || IsHealthy() ? healthy_reward_ : 0.0;
-    // Simple locomotion reward: track desired planar velocity and yaw rate from WBC
-    mjtNum velocity_cost = 0.0;
-    mjtNum yaw_rate_cost = 0.0;
-    bool is_healthy = true;
-    auto reward =
-        ComputeLocomotionReward(xv, yv, healthy_reward, velocity_cost,
-                                yaw_rate_cost, is_healthy);
-
-    mjtNum orientation_penalty = ComputeOrientationPenalty();
-    mjtNum height_penalty = ComputeHeightPenalty();
-    mjtNum foot_slip_penalty = ComputeFootSlipPenalty();
-
-    // reward -= (ctrl_cost + contact_cost + orientation_penalty + height_penalty +
-    //            foot_slip_penalty);
+    const mjtNum reward = ComputeStandingReward();
+    const bool is_healthy = IsHealthy();
 
     if (!std::isfinite(static_cast<double>(reward))) {
       if (env_id_ == 0) {
         std::cerr << "[HumanoidEnv] Non-finite reward detected; forcing termination." << std::endl;
       }
-      reward = -5.0;
       done_ = true;
+      last_is_healthy_ = false;
+      WriteState(-5.0, xv, yv, ctrl_cost, contact_cost, after[0], after[1], 0.0);
+      return;
     }
 
     last_ctrl_cost_ = ctrl_cost;
     last_contact_cost_ = contact_cost;
-    last_orientation_penalty_ = orientation_penalty;
-    last_height_penalty_ = height_penalty;
-    last_foot_slip_penalty_ = foot_slip_penalty;
-    last_velocity_tracking_cost_ = velocity_cost;
-    last_yaw_rate_tracking_cost_ = yaw_rate_cost;
-    last_healthy_reward_ = healthy_reward;
+    last_orientation_penalty_ = 0.0;
+    last_height_penalty_ = 0.0;
+    last_foot_slip_penalty_ = 0.0;
+    last_velocity_tracking_cost_ = 0.0;
+    last_yaw_rate_tracking_cost_ = 0.0;
+    last_healthy_reward_ = 0.0;
     last_x_velocity_ = xv;
     last_y_velocity_ = yv;
     last_x_position_ = after[0];
@@ -389,10 +373,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     last_is_healthy_ = is_healthy;
 
     // ++elapsed_step_;
-    done_ = done_ || (terminate_when_unhealthy_ ? !IsHealthy() : false) ||
+    done_ = done_ || (terminate_when_unhealthy_ ? !is_healthy : false) ||
             (elapsed_step_ >= max_episode_steps_);
     WriteState(reward, xv, yv, ctrl_cost, contact_cost, after[0], after[1],
-               healthy_reward);
+               0.0);
   }
 
  private:
@@ -428,87 +412,53 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   }
 
   // ------------------------------------------------------------------------
-  // Additional reward function for encouraging a stable standing posture.
-  // This function computes a reward based on:
-  //   - The error between the current torso height and a desired height.
-  //   - The sum of the absolute roll and pitch (from the base orientation).
-  //   - A penalty on the magnitude of linear and angular velocities.
-  // A bonus is applied if the height and orientation errors are small, and a
-  // large penalty is applied if the robot is considered to have fallen.
-  // ------------------------------------------------------------------------
+  // Standing reward that keeps the base rooted at (0, 0, desired_h) with
+  // negligible velocity across all DoFs and neutral orientation.
+  // A weighted, normalised squared error is mapped through an exponential so
+  // the reward smoothly peaks at 1 when the target pose is perfectly matched.
   mjtNum ComputeStandingReward() {
-    // ---------- Tunable constants ----------
-    // Desired height generated every reset
-    // static mjtNum desired_h = 0.35;  // Example value,
-    const mjtNum height_w  = 400.0;          // (= 4 / 0.01^2)
+    const auto wrap_to_pi = [](mjtNum angle) -> mjtNum {
+      return std::atan2(std::sin(angle), std::cos(angle));
+    };
 
-    const mjtNum orient_w  = 0.0;            // cost per deg^2 * 0.01
-    const mjtNum vel_w     =  0.00;           // per (m/s)^2 or (rad/s)^2
-    const mjtNum fall_pen  = 500.0;          // one-off
-    const mjtNum bonus_eps_h = 0.03;         // m
-    const mjtNum bonus_eps_o = 1.0* M_PI/180;// rad
-    const mjtNum bonus_eps_v = 0.01;         // 
-    // ---------------------------------------
+    const mjtNum raw_w_pos = 4.0;
+    const mjtNum raw_w_lin_vel = 2.0;
+    const mjtNum raw_w_ori = 3.0;
+    const mjtNum raw_w_ang_vel = 1.0;
+    const mjtNum weight_sum = raw_w_pos + raw_w_lin_vel + raw_w_ori + raw_w_ang_vel;
+    const mjtNum w_pos = raw_w_pos / weight_sum;
+    const mjtNum w_lin_vel = raw_w_lin_vel / weight_sum;
+    const mjtNum w_ori = raw_w_ori / weight_sum;
+    const mjtNum w_ang_vel = raw_w_ang_vel / weight_sum;
 
-    // Height
-    mjtNum h = data_->qpos[2];
-    mjtNum height_err = h - desired_h;
+    const Eigen::Vector3<mjtNum> base_pos(data_->qpos[0], data_->qpos[1],
+                                          data_->qpos[2]);
+    const Eigen::Vector3<mjtNum> target_pos(0.0, 0.0, desired_h);
+    const mjtNum position_error_sq = (base_pos - target_pos).squaredNorm();
 
-    // Orientation: quaternion → roll,pitch
-    Eigen::Quaternion<mjtNum> q(data_->qpos[6], data_->qpos[3],
-                                data_->qpos[4], data_->qpos[5]);
-    Eigen::Vector3<mjtNum> eul = q.toRotationMatrix().eulerAngles(0, 1, 2);
-    mjtNum roll  = eul[0];
-    mjtNum pitch = eul[1];
+    const Eigen::Vector3<mjtNum> linear_velocity(data_->qvel[0], data_->qvel[1],
+                                                 data_->qvel[2]);
+    const mjtNum linear_velocity_error_sq = linear_velocity.squaredNorm();
 
-    // Velocities
-    mjtNum lin_v = std::sqrt(data_->qvel[0] * data_->qvel[0] +
-                             data_->qvel[1] * data_->qvel[1] +
-                             data_->qvel[2] * data_->qvel[2]);
-    mjtNum ang_v = std::sqrt(data_->qvel[3] * data_->qvel[3] +
-                             data_->qvel[4] * data_->qvel[4] +
-                             data_->qvel[5] * data_->qvel[5]);
+    Eigen::Quaternion<mjtNum> q(data_->qpos[6], data_->qpos[3], data_->qpos[4],
+                                data_->qpos[5]);
+    const Eigen::Vector3<mjtNum> euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
+    const Eigen::Vector3<mjtNum> orientation_error(wrap_to_pi(euler[0]),
+                                                   wrap_to_pi(euler[1]),
+                                                   wrap_to_pi(euler[2]));
+    const mjtNum orientation_error_sq = orientation_error.squaredNorm();
 
-    // Costs (squared errors)
-    mjtNum height_cost = height_w * height_err * height_err;
-    mjtNum orient_cost = orient_w * (roll * roll + pitch * pitch);  // rad²
-    mjtNum move_cost   = vel_w * (lin_v * lin_v + ang_v * ang_v);
-    mjtNum diff = lastAction - prev_action;
-    prev_action = lastAction;
-    mjtNum action_smooth = 3.0 * diff * diff;
+    const Eigen::Vector3<mjtNum> angular_velocity(data_->qvel[3], data_->qvel[4],
+                                                  data_->qvel[5]);
+    const mjtNum angular_velocity_error_sq = angular_velocity.squaredNorm();
 
-    // state["info:height_cost"_] = height_cost;
-    // state["info:orient_cost"_] = orient_cost;
-    // state["info:move_cost"_] = move_cost;
-    // Debug: print individual costs
-    // std::cout << "[StandingReward] height_cost=" << height_cost
-    //       << " orient_cost=" << orient_cost
-    //       << " move_cost=" << move_cost << std::endl;
-    // Alive bonus
-      mjtNum reward = .3 - height_cost - orient_cost - move_cost - 0.05 * action_smooth;
-      // std::cout << "[StandingReward] Initial reward: " << reward << std::endl;
-    // Extra stillness bonus
-    if (std::abs(height_err) < bonus_eps_h &&
-        std::abs(roll)       < bonus_eps_o &&
-        std::abs(pitch)      < bonus_eps_o &&
-        lin_v                < bonus_eps_v &&
-        ang_v                < bonus_eps_v)
-      reward += 1.0;
-    // Penalty for falling
-    bool healthy = IsHealthy();                 // your existing function
-    if (h < 0.20 || h > 0.45 || !healthy) {                 // ← single '!'
-      // std::cout << "[StandingReward] Penalty for falling!" << std::endl;
-      // state["info:fall_pen"_] = 1.0;  // Debug: indicate a fall
-      reward -= fall_pen;                       // one-off? see below
-      // optionally end the episode here
-    }
-    // if (h > 0.3 && h < 0.4 && healthy) {
+    const mjtNum weighted_error = w_pos * position_error_sq +
+                                  w_lin_vel * linear_velocity_error_sq +
+                                  w_ori * orientation_error_sq +
+                                  w_ang_vel * angular_velocity_error_sq;
 
-    //   reward += 2.5;  // Bonus for being in the healthy range
-    //   // state["info:fall_pen"_] = 0.0;  // Debug: no fall
-    // }
-
-    return reward;
+    const mjtNum gain = 1.0;  // Sharpen reward around the goal pose.
+    return std::exp(-gain * weighted_error);
   }
 
   // ------------------------------------------------------------------------

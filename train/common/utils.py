@@ -42,7 +42,7 @@ def create_policy_kwargs():
     return dict(
         activation_fn=th.nn.Tanh,
         net_arch=[dict(pi=[256, 256, 128], vf=[256, 256, 128])],
-        log_std_init=-1.0,
+        log_std_init=-5.0,
         ortho_init=False,
     )
 

@@ -232,26 +232,26 @@ class ModelBasedControllerInterface {
 
     float accum_foot_des_z = 0.0f;
     for (int leg = 0; leg < 4; leg++) {
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] =
-          mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2f, 0.2f);
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] =
-          mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.1f, 0.1f);
-      float foot_des_z = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2f, 0.0f);
-      accum_foot_des_z += foot_des_z;
-      _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] =
-          foot_des_z;
+    //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] =
+    //       mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2f, 0.2f);
+    //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] =
+    //       mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.1f, 0.1f);
+    //   float foot_des_z = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2f, 0.0f);
+    //   accum_foot_des_z += foot_des_z;
+    //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] =
+    //       foot_des_z;
 
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0.0f;
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = 0.0f;
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 100.0f;
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] =   mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
 
       // Enforce: if not in contact, commanded foot force must be zero
-      if (_controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] !=
-          1.0f) {
-        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0.0f;
-        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = 0.0f;
-        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 0.0f;
-      }
+      // if (_controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] !=
+      //     1.0f) {
+      //   _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0.0f;
+      //   _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = 0.0f;
+      //   _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 0.0f;
+      // }
     }
 
     float avg_foot_des_z = accum_foot_des_z / 4.0f;
