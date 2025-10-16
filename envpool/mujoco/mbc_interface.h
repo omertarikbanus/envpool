@@ -243,7 +243,7 @@ class ModelBasedControllerInterface {
 
       _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
       _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] =   mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1,0.f, 100.0f);
 
       // Enforce: if not in contact, commanded foot force must be zero
       // if (_controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] !=
