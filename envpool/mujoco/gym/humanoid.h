@@ -422,9 +422,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     };
 
     const mjtNum raw_w_pos = 4.0;
-    const mjtNum raw_w_lin_vel = 2.0;
+    const mjtNum raw_w_lin_vel = 0.1;
     const mjtNum raw_w_ori = 3.0;
-    const mjtNum raw_w_ang_vel = 1.0;
+    const mjtNum raw_w_ang_vel = 0.1;
     const mjtNum weight_sum = raw_w_pos + raw_w_lin_vel + raw_w_ori + raw_w_ang_vel;
     const mjtNum w_pos = raw_w_pos / weight_sum;
     const mjtNum w_lin_vel = raw_w_lin_vel / weight_sum;
@@ -457,7 +457,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                                   w_ori * orientation_error_sq +
                                   w_ang_vel * angular_velocity_error_sq;
 
-    const mjtNum gain = 1.0;  // Sharpen reward around the goal pose.
+    const mjtNum gain = 2.0;  // Sharpen reward around the goal pose.
     return std::exp(-gain * weighted_error);
   }
 
