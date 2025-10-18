@@ -28,7 +28,7 @@ class HumanoidEnvFns {
  public:
   static decltype(auto) DefaultConfig() {
     return MakeDict(
-        "frame_skip"_.Bind(15), "post_constraint"_.Bind(true),
+        "frame_skip"_.Bind(5), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1),
         "terminate_when_unhealthy"_.Bind(true),
         "render_mode"_.Bind(false),
@@ -48,7 +48,9 @@ class HumanoidEnvFns {
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
     bool no_pos = conf["exclude_current_positions_from_observation"_];
-    return MakeDict("obs"_.Bind(Spec<mjtNum>({45}, {-inf, inf})),
+    return MakeDict("obs"_.Bind(
+                        Spec<mjtNum>({ModelBasedControllerInterface::kObservationDim},
+                                     {-inf, inf})),
 #ifdef ENVPOOL_TEST
                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -73,7 +75,8 @@ class HumanoidEnvFns {
     //   [3 + 7*leg + 6]    unused (reserved)
     // Total reserved: 3 + 4 * 7 = 31 slots (0..30), but the highest index read is 29,
     // so dimension 30 is sufficient for current access pattern.
-    return MakeDict("action"_.Bind(Spec<mjtNum>({-1, 15}, {-1, 1})));
+    return MakeDict("action"_.Bind(
+        Spec<mjtNum>({-1, ModelBasedControllerInterface::kActionDim}, {-1, 1})));
   }
 };
 
@@ -144,9 +147,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         yaw_tracking_weight_(spec.config["yaw_tracking_weight"_]),
         orientation_penalty_weight_(spec.config["orientation_penalty_weight"_]),
         height_penalty_weight_(spec.config["height_penalty_weight"_]),
-        foot_slip_penalty_weight_(spec.config["foot_slip_penalty_weight"_]),
-        dist_(-spec.config["reset_noise_scale"_],
-              spec.config["reset_noise_scale"_]) {
+      foot_slip_penalty_weight_(spec.config["foot_slip_penalty_weight"_]),
+      dist_(-spec.config["reset_noise_scale"_],
+            spec.config["reset_noise_scale"_]) {
+    mbc.setModel(model_);
     if (env_id_ == 0 ) {
       csv_logging_enabled_ = 1;
     }
@@ -179,7 +183,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //   }
     //   mjtNum* act = dummy_action;
     //   mbc.setFeedback(data_);
-    //   mbc.setAction(act);
+    //   mbc.setAction(act, action_count);
     //   mbc.run();
 
     //   mjtNum motor_commands[12];
@@ -217,6 +221,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     writeDataToCSV(1);
     last_action_vector_.clear();
     last_observation_.clear();
+    mbc.clearObservationHistory();
     if(render_mode_)
       std::cout << "Resetting the environment..." << std::endl;
     done_ = false;
@@ -288,7 +293,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     for (int i = 0; i < frame_skip_; ++i) {
       mbc.frame_skip_ = frame_skip_;
       mbc.elapsed_step_ = elapsed_step_;
-      mbc.setAction(act);
+      mbc.setAction(act, action_count);
       mbc.setFeedback(data_);
       mbc.run();
 
@@ -345,8 +350,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //   //clamp desired_h to [0.25, 0.4]
     //   desired_h = std::max(0.32, std::min(0.4, desired_h));
     // }
-    const mjtNum reward = ComputeStandingReward();
+    mjtNum reward = ComputeStandingReward();
     const bool is_healthy = IsHealthy();
+    // fall penalty
+    if (!is_healthy) {
+      reward += -1.0;
+    } else {
+      // reward += healthy_reward_;
+    }
 
     if (!std::isfinite(static_cast<double>(reward))) {
       if (env_id_ == 0) {
@@ -421,10 +432,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       return std::atan2(std::sin(angle), std::cos(angle));
     };
 
-    const mjtNum raw_w_pos = 4.0;
-    const mjtNum raw_w_lin_vel = 0.1;
-    const mjtNum raw_w_ori = 3.0;
-    const mjtNum raw_w_ang_vel = 0.1;
+    const mjtNum raw_w_pos = 0.05;
+    const mjtNum raw_w_lin_vel = 0.01;
+    const mjtNum raw_w_ori = 0.05;
+    const mjtNum raw_w_ang_vel = 0.005;
     const mjtNum weight_sum = raw_w_pos + raw_w_lin_vel + raw_w_ori + raw_w_ang_vel;
     const mjtNum w_pos = raw_w_pos / weight_sum;
     const mjtNum w_lin_vel = raw_w_lin_vel / weight_sum;
@@ -457,7 +468,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                                   w_ori * orientation_error_sq +
                                   w_ang_vel * angular_velocity_error_sq;
 
-    const mjtNum gain = 2.0;  // Sharpen reward around the goal pose.
+    const mjtNum gain = 1.0;  // Sharpen reward around the goal pose.
     return std::exp(-gain * weighted_error);
   }
 
@@ -553,8 +564,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     auto* obs = static_cast<mjtNum*>(obs_array.Data());
     mjtNum* obs_start = obs;  // Save the starting pointer for debugging
 
-    mbc.setObservation(obs);
-    obs[44] = desired_h;
+    mjtNum* obs_end = mbc.setObservation(obs, desired_h);
     bool invalid_obs = false;
     for (std::size_t idx = 0; idx < obs_array.size; ++idx) {
       if (!std::isfinite(static_cast<double>(obs[idx]))) {
@@ -570,7 +580,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     } else {
       last_observation_.clear();
     }
-    obs_array.Assign(obs, 1);
+    obs_array.Assign(obs, obs_array.size);
 
     // Print confirmation
     // std::cout << "Filled " << 42 << " elements in observation array" << std::endl;
@@ -586,7 +596,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     //   std::cout << std::endl;
 
     // Add this to WriteState() after filling all observations
-    int filled_elements = obs - obs_start;
+    int filled_elements = static_cast<int>(obs_end - obs_start);
     // std::cout << "Filled " << filled_elements << " elements in observation
     // array" << std::endl;
     // state["info:reward_linvel"_] = xv * forward_reward_weight_;

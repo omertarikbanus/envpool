@@ -42,8 +42,8 @@ def create_policy_kwargs():
     return dict(
         activation_fn=th.nn.Tanh,
         net_arch=[dict(pi=[256, 256, 128], vf=[256, 256, 128])],
-        log_std_init=-5.0,
-        ortho_init=False,
+        log_std_init=-2.0,
+        # ortho_init=False,
     )
 
 
@@ -53,18 +53,18 @@ def create_ppo_model(env, policy_kwargs):
         policy="MlpPolicy",
         env=env,
         # PPO hyper-parameters
-        learning_rate=3e-4,
-        clip_range=0.2,
+        learning_rate=1e-4,
+        clip_range=0.3,
         target_kl=0.01,
-        n_steps=2048,
-        batch_size=64,
-        n_epochs=5,
-        gamma=0.99,
-        gae_lambda=0.95,
+        n_steps=4096,
+        batch_size=128,
+        n_epochs=10,
+        gamma=0.995,
+        gae_lambda=0.97,
         max_grad_norm=0.1,
         ent_coef=0.01,
-        vf_coef=0.5,
-        clip_range_vf=0.1,
+        vf_coef=1.0,
+        clip_range_vf=0.3,
         tensorboard_log="runs/ppo_taskspace",
         policy_kwargs=policy_kwargs,
         verbose=1,
@@ -163,7 +163,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         # model.n_epochs = 5
 
         # Update learning rate; also refresh PPO's lr schedule so it is not overwritten
-        new_learning_rate = 0.1e-5
+        new_learning_rate =1e-4
         model.learning_rate = new_learning_rate
         model.lr_schedule = get_schedule_fn(new_learning_rate)
         for param_group in model.policy.optimizer.param_groups:

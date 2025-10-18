@@ -1,15 +1,20 @@
 #ifndef MBC_INTERFACE_H
 #define MBC_INTERFACE_H
 
-#include <cstdio>
-#include <memory>
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstdio>
+#include <deque>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cmath>
 
+#include <mujoco/mujoco.h>
+
+#include <iostream>
 #include <RobotController.h>
 #include <RobotRunner.h>
 #include <Utilities/RobotCommands.h>
@@ -20,10 +25,23 @@
 #include <eigen3/Eigen/Geometry>
 
 
-#define N_FOOT_PARAM_ACT 3
-#define N_FOOT_PARAM 7
 class ModelBasedControllerInterface {
  public:
+  static constexpr int kNumLegs = 4;
+  static constexpr int kFootActionDim = 3;
+  static constexpr int kActionDim = 15;
+  static constexpr int kHistoryLength = 4;
+  static constexpr int kBodyCoreDim = 15;
+  static constexpr int kHeightDim = 2;
+  static constexpr int kBodyHistoryDim = 6;  // linear velocity (3) + angular velocity (3)
+  static constexpr int kFootCtrlStateDim = 6;      // commanded foot position (3) + velocity (3)
+  static constexpr int kFootMeasuredStateDim = 9;  // measured position (3) + velocity (3) + GRF (3)
+  static constexpr int kFootObsPerLeg =
+      1 + kFootCtrlStateDim + kFootMeasuredStateDim;  // contact + ctrl state + measured state
+  static constexpr int kObservationDim =
+      kBodyCoreDim + kHeightDim + kNumLegs * kFootObsPerLeg +
+      kActionDim * (1 + kHistoryLength) + kBodyHistoryDim * kHistoryLength;
+
   ModelBasedControllerInterface() {
     reset();
     // Constructor implementation
@@ -32,6 +50,12 @@ class ModelBasedControllerInterface {
     float reset_body_height_{0.35f};
     float filtered_body_height_{0.35f};
     int cheater_mode{1};
+    const mjModel* model_{nullptr};
+    std::array<int, kNumLegs> foot_body_ids_{-1, -1, -1, -1};
+    std::array<int, kNumLegs> foot_geom_ids_{-1, -1, -1, -1};
+    std::vector<mjtNum> current_action_;
+    std::deque<std::vector<mjtNum>> action_history_;
+    std::deque<std::array<mjtNum, kBodyHistoryDim>> body_history_;
 
   ~ModelBasedControllerInterface() = default;
 
@@ -39,6 +63,7 @@ class ModelBasedControllerInterface {
     reset_body_height_ = 0.35f;
     filtered_body_height_ = reset_body_height_;
     last_feedback_data_ = nullptr;
+    clearObservationHistory();
     _controller = new EmbeddedController();
     _actuator_command = new SpiCommand();
     _actuator_data = new SpiData();
@@ -96,6 +121,35 @@ class ModelBasedControllerInterface {
     if (_controller && _controller->_controlFSM) {
       _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = filtered_body_height_;
     }
+  }
+
+  void setModel(const mjModel* model) {
+    model_ = model;
+    static constexpr std::array<const char*, kNumLegs> kFootBodyNames = {
+        "opy_v05/knee_1", "opy_v05/knee_2", "opy_v05/knee_3",
+        "opy_v05/knee_4"};
+    static constexpr std::array<const char*, kNumLegs> kFootGeomNames = {
+        "ROBOT_FOOT_1", "ROBOT_FOOT_2", "ROBOT_FOOT_3", "ROBOT_FOOT_4"};
+    if (!model_) {
+      foot_body_ids_.fill(-1);
+      foot_geom_ids_.fill(-1);
+      return;
+    }
+    for (int i = 0; i < kNumLegs; ++i) {
+      foot_body_ids_[i] = mj_name2id(model_, mjOBJ_BODY, kFootBodyNames[i]);
+      foot_geom_ids_[i] = mj_name2id(model_, mjOBJ_GEOM, kFootGeomNames[i]);
+      if (foot_body_ids_[i] < 0 || foot_geom_ids_[i] < 0) {
+        std::cerr << "[ModelBasedControllerInterface] Failed to locate foot "
+                     "body or geom for leg "
+                  << i << std::endl;
+      }
+    }
+  }
+
+  void clearObservationHistory() {
+    action_history_.clear();
+    body_history_.clear();
+    current_action_.assign(kActionDim, 0.0);
   }
 
   int getMode(){
@@ -189,23 +243,23 @@ class ModelBasedControllerInterface {
   }
 
 
-  void setAction(double* act) {
-    // sets the action array with the desired state of the robot
-    // in the order of:
-    // [body position x, body position y, body position z,
-    // body orientation roll, body orientation pitch, body orientation yaw,
-    // foot position x, foot position y, foot position z,
-    // foot force x, foot force y, foot force z,
-    // contact state (0 or 1) for each foot]
-    // 
-    // The action array is expected to have a size of 6 + 4 * 7 = 34
-    // where the first 6 elements are for the body position and orientation,
-    // and the next 28 elements are for the foot positions, forces, and contact states.
+  void setAction(const mjtNum* act, std::size_t dim) {
+    // Cache the latest action for observation stacking and command mapping.
+    if (act == nullptr) {
+      current_action_.assign(kActionDim, 0.0);
+    } else {
+      current_action_.assign(kActionDim, 0.0);
+      const std::size_t copy_dim =
+          std::min(dim, static_cast<std::size_t>(kActionDim));
+      for (std::size_t i = 0; i < copy_dim; ++i) {
+        current_action_[i] = act[i];
+      }
+    }
 
     // simple trot gait. frame_skip_* 10 leg stance time.
     // gait phase is (elapsed_step_% (frame_skip_ * 10 * 2)) / (frame_skip_ * 10 * 2)
 
-    for (int leg = 0; leg < 4; leg++) {
+    for (int leg = 0; leg < kNumLegs; leg++) {
       // determine contact state based on gait phase
       int gait_cycle_steps = frame_skip_ * 5 * 2;
       float gait_cycle_length = static_cast<float>(gait_cycle_steps);
@@ -222,28 +276,35 @@ class ModelBasedControllerInterface {
           contact_state;
     }
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[0] =
-        mapToRange(act[0], -1, 1, -0.5f, 0.5f);
+        mapToRange(current_action_[0], -1, 1, -0.5f, 0.5f);
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[1] =
-        mapToRange(act[1], -1, 1, -0.2f, 0.2f);
+        mapToRange(current_action_[1], -1, 1, -0.2f, 0.2f);
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[0] = 0.0f;
     _controller->_controlFSM->data.locomotionCtrlData.pBody_RPY_des[1] = 0.0f;
     _controller->_controlFSM->data.locomotionCtrlData.vBody_Ori_des[2] =
-        mapToRange(act[2], -1, 1, -0.5f, 0.5f);
+        mapToRange(current_action_[2], -1, 1, -0.5f, 0.5f);
 
     float accum_foot_des_z = 0.0f;
-    for (int leg = 0; leg < 4; leg++) {
+    for (int leg = 0; leg < kNumLegs; leg++) {
     //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] =
-    //       mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2f, 0.2f);
+    //       mapToRange(act[3 + leg * kFootActionDim], -1, 1, -0.2f, 0.2f);
     //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] =
-    //       mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.1f, 0.1f);
-    //   float foot_des_z = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1, -0.2f, 0.0f);
+    //       mapToRange(act[4 + leg * kFootActionDim], -1, 1, -0.1f, 0.1f);
+    //   float foot_des_z = mapToRange(act[5 + leg * kFootActionDim], -1, 1, -0.2f, 0.0f);
     //   accum_foot_des_z += foot_des_z;
     //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] =
     //       foot_des_z;
 
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = mapToRange(act[3 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] =   mapToRange(act[4 + leg * N_FOOT_PARAM_ACT], -1, 1, -50.f, 50.0f);
-      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = mapToRange(act[5 + leg * N_FOOT_PARAM_ACT], -1, 1,0.f, 100.0f);
+      const int base = 3 + leg * kFootActionDim;
+      const mjtNum fx = current_action_[base + 0];
+      const mjtNum fy = current_action_[base + 1];
+      const mjtNum fz = current_action_[base + 2];
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] =
+          mapToRange(static_cast<float>(fx), -1, 1, -50.f, 50.0f);
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] =
+          mapToRange(static_cast<float>(fy), -1, 1, -50.f, 50.0f);
+      _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] =
+          mapToRange(static_cast<float>(fz), -1, 1, 0.f, 100.0f);
 
       // Enforce: if not in contact, commanded foot force must be zero
       // if (_controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] !=
@@ -274,90 +335,185 @@ class ModelBasedControllerInterface {
         filtered_body_height_;
   }
 
-    void setObservation(mjtNum* obs) {
-    // sets the observation array with the current state of the robot
-    // in the order of:
-    // [position, velocity, acceleration, orientation, angular velocity,
-    // contact state, foot position, foot velocity]
-
+  mjtNum* setObservation(mjtNum* obs, mjtNum desired_body_height) {
+    if (obs == nullptr) {
+      return obs;
+    }
     auto& seResult = _controller->_controlFSM->data._stateEstimator->getResult();
-    const bool use_cheater = (cheater_mode == 1) && (last_feedback_data_ != nullptr);
-    if (use_cheater) {
-      const mjData* data = last_feedback_data_;
-      obs[0] = data->qpos[0];
-      obs[1] = data->qpos[1];
-      obs[2] = data->qpos[2];
+    const bool have_feedback = (last_feedback_data_ != nullptr);
+    const bool use_cheater =
+        (cheater_mode == 1) && have_feedback;
+    const mjData* data = last_feedback_data_;
 
-      obs[3] = data->qvel[0];
-      obs[4] = data->qvel[1];
-      obs[5] = data->qvel[2];
+    mjtNum base_pos[3] = {0, 0, 0};
+    mjtNum base_lin_vel[3] = {0, 0, 0};
+    mjtNum base_lin_acc[3] = {0, 0, 0};
+    mjtNum base_rpy[3] = {0, 0, 0};
+    mjtNum base_omega[3] = {0, 0, 0};
+
+    if (use_cheater && data) {
+      base_pos[0] = data->qpos[0];
+      base_pos[1] = data->qpos[1];
+      base_pos[2] = data->qpos[2];
+
+      base_lin_vel[0] = data->qvel[0];
+      base_lin_vel[1] = data->qvel[1];
+      base_lin_vel[2] = data->qvel[2];
 
       if (data->qacc) {
-        obs[6] = data->qacc[0];
-        obs[7] = data->qacc[1];
-        obs[8] = data->qacc[2];
-      } else {
-        obs[6] = 0.0;
-        obs[7] = 0.0;
-        obs[8] = 0.0;
+        base_lin_acc[0] = data->qacc[0];
+        base_lin_acc[1] = data->qacc[1];
+        base_lin_acc[2] = data->qacc[2];
       }
 
       Eigen::Quaternion<mjtNum> quat(data->qpos[6], data->qpos[3], data->qpos[4],
                                      data->qpos[5]);
       const auto euler = quat.toRotationMatrix().eulerAngles(0, 1, 2);
-      obs[9] = euler[0];
-      obs[10] = euler[1];
-      obs[11] = euler[2];
+      base_rpy[0] = euler[0];
+      base_rpy[1] = euler[1];
+      base_rpy[2] = euler[2];
 
-      obs[12] = data->qvel[3];
-      obs[13] = data->qvel[4];
-      obs[14] = data->qvel[5];
+      base_omega[0] = data->qvel[3];
+      base_omega[1] = data->qvel[4];
+      base_omega[2] = data->qvel[5];
     } else {
-      obs[0] = seResult.position[0];
-      obs[1] = seResult.position[1];
-      obs[2] = seResult.position[2];
+      base_pos[0] = seResult.position[0];
+      base_pos[1] = seResult.position[1];
+      base_pos[2] = seResult.position[2];
 
-      obs[3] = seResult.vBody[0];
-      obs[4] = seResult.vBody[1];
-      obs[5] = seResult.vBody[2];
+      base_lin_vel[0] = seResult.vBody[0];
+      base_lin_vel[1] = seResult.vBody[1];
+      base_lin_vel[2] = seResult.vBody[2];
 
-      obs[6] = seResult.aBody[0];
-      obs[7] = seResult.aBody[1];
-      obs[8] = seResult.aBody[2];
+      base_lin_acc[0] = seResult.aBody[0];
+      base_lin_acc[1] = seResult.aBody[1];
+      base_lin_acc[2] = seResult.aBody[2];
 
-      obs[9] = seResult.rpy[0];
-      obs[10] = seResult.rpy[1];
-      obs[11] = seResult.rpy[2];
+      base_rpy[0] = seResult.rpy[0];
+      base_rpy[1] = seResult.rpy[1];
+      base_rpy[2] = seResult.rpy[2];
 
-      obs[12] = seResult.omegaBody[0];
-      obs[13] = seResult.omegaBody[1];
-      obs[14] = seResult.omegaBody[2];
+      base_omega[0] = seResult.omegaBody[0];
+      base_omega[1] = seResult.omegaBody[1];
+      base_omega[2] = seResult.omegaBody[2];
     }
 
-
-    for (int leg = 0; leg < 4; leg++) {
-      obs[15 + leg * N_FOOT_PARAM + 0] =
-          (seResult.contactEstimate[leg]>0);
-
-      obs[15 + leg * N_FOOT_PARAM + 1] =
-          _controller->_controlFSM->data._legController->datas[leg].p[0];
-      obs[15 + leg * N_FOOT_PARAM + 2] =
-          _controller->_controlFSM->data._legController->datas[leg].p[1];
-      obs[15 + leg * N_FOOT_PARAM + 3] =
-          _controller->_controlFSM->data._legController->datas[leg].p[2];
-
-      obs[15 + leg * N_FOOT_PARAM + 4] =
-          _controller->_controlFSM->data._legController->datas[leg].v[0];
-      obs[15 + leg * N_FOOT_PARAM + 5] =
-          _controller->_controlFSM->data._legController->datas[leg].v[1];
-      obs[15 + leg * N_FOOT_PARAM + 6] =
-          _controller->_controlFSM->data._legController->datas[leg].v[2];
-
-
-      
+    mjtNum* ptr = obs;
+    for (int i = 0; i < 3; ++i) {
+      *ptr++ = base_pos[i];
     }
-   obs[43] = filtered_body_height_;
-  
+    for (int i = 0; i < 3; ++i) {
+      *ptr++ = base_lin_vel[i];
+    }
+    for (int i = 0; i < 3; ++i) {
+      *ptr++ = base_lin_acc[i];
+    }
+    for (int i = 0; i < 3; ++i) {
+      *ptr++ = base_rpy[i];
+    }
+    for (int i = 0; i < 3; ++i) {
+      *ptr++ = base_omega[i];
+    }
+
+    *ptr++ = static_cast<mjtNum>(filtered_body_height_);
+    *ptr++ = desired_body_height;
+
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      const auto& leg_data =
+          _controller->_controlFSM->data._legController->datas[leg];
+      *ptr++ = (seResult.contactEstimate[leg] > 0) ? 1.0 : 0.0;
+      *ptr++ = static_cast<mjtNum>(leg_data.p[0]);
+      *ptr++ = static_cast<mjtNum>(leg_data.p[1]);
+      *ptr++ = static_cast<mjtNum>(leg_data.p[2]);
+      *ptr++ = static_cast<mjtNum>(leg_data.v[0]);
+      *ptr++ = static_cast<mjtNum>(leg_data.v[1]);
+      *ptr++ = static_cast<mjtNum>(leg_data.v[2]);
+
+      std::array<mjtNum, 3> measured_pos{0.0, 0.0, 0.0};
+      std::array<mjtNum, 3> measured_vel{0.0, 0.0, 0.0};
+      std::array<mjtNum, 3> measured_force{0.0, 0.0, 0.0};
+
+      if (model_ && data && foot_geom_ids_[leg] >= 0) {
+        const int geom_id = foot_geom_ids_[leg];
+        measured_pos[0] = data->geom_xpos[3 * geom_id + 0];
+        measured_pos[1] = data->geom_xpos[3 * geom_id + 1];
+        measured_pos[2] = data->geom_xpos[3 * geom_id + 2];
+
+        mjtNum vel6[6] = {0, 0, 0, 0, 0, 0};
+        mj_objectVelocity(model_, data, mjOBJ_GEOM, geom_id, vel6, 0);
+        measured_vel[0] = vel6[0];
+        measured_vel[1] = vel6[1];
+        measured_vel[2] = vel6[2];
+      }
+
+      if (data && foot_body_ids_[leg] >= 0) {
+        const int body_id = foot_body_ids_[leg];
+        measured_force[0] = data->cfrc_ext[6 * body_id + 0];
+        measured_force[1] = data->cfrc_ext[6 * body_id + 1];
+        measured_force[2] = data->cfrc_ext[6 * body_id + 2];
+      }
+
+      for (int i = 0; i < 3; ++i) {
+        *ptr++ = measured_pos[i];
+      }
+      for (int i = 0; i < 3; ++i) {
+        *ptr++ = measured_vel[i];
+      }
+      for (int i = 0; i < 3; ++i) {
+        *ptr++ = measured_force[i];
+      }
+    }
+
+    const int emitted_action_dim =
+        std::min(static_cast<int>(current_action_.size()), kActionDim);
+    for (int i = 0; i < kActionDim; ++i) {
+      const mjtNum value =
+          (i < emitted_action_dim) ? current_action_[i] : static_cast<mjtNum>(0);
+      *ptr++ = value;
+    }
+
+    for (const auto& past_action : action_history_) {
+      for (int i = 0; i < kActionDim; ++i) {
+        *ptr++ = past_action[i];
+      }
+    }
+    for (std::size_t i = action_history_.size(); i < kHistoryLength; ++i) {
+      for (int j = 0; j < kActionDim; ++j) {
+        *ptr++ = 0.0;
+      }
+    }
+
+    for (const auto& past_body : body_history_) {
+      for (int i = 0; i < kBodyHistoryDim; ++i) {
+        *ptr++ = past_body[i];
+      }
+    }
+    for (std::size_t i = body_history_.size(); i < kHistoryLength; ++i) {
+      for (int j = 0; j < kBodyHistoryDim; ++j) {
+        *ptr++ = 0.0;
+      }
+    }
+
+    std::array<mjtNum, kBodyHistoryDim> latest_body_state{};
+    latest_body_state[0] = base_lin_vel[0];
+    latest_body_state[1] = base_lin_vel[1];
+    latest_body_state[2] = base_lin_vel[2];
+    latest_body_state[3] = base_omega[0];
+    latest_body_state[4] = base_omega[1];
+    latest_body_state[5] = base_omega[2];
+
+    if (!current_action_.empty()) {
+      action_history_.push_back(current_action_);
+      if (action_history_.size() > kHistoryLength) {
+        action_history_.pop_front();
+      }
+    }
+    body_history_.push_back(latest_body_state);
+    if (body_history_.size() > kHistoryLength) {
+      body_history_.pop_front();
+    }
+
+    return ptr;
   }
 
   void clearWBCLogFile(const std::string& filepath = "") {
