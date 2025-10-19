@@ -43,7 +43,7 @@ def parse_args():
     parser.add_argument("--total-timesteps", type=int, default=2_500_000*15, help="Total training timesteps")
     parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
-    parser.add_argument("--model-save-path", type=str, default="./quadruped_ppo_model", help="Model save path")
+    parser.add_argument("--model-save-path", type=str, default="./data/current/quadruped_ppo_model", help="Model save path")
     parser.add_argument("--render-mode", type=bool, default=False, help="Render mode")
     parser.add_argument("--continue-training", action="store_true", help="Continue training from existing model if available")
     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")

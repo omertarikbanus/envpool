@@ -155,12 +155,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       csv_logging_enabled_ = 1;
     }
 
-    if (render_mode_) {
+    if (render_mode_)
       EnableRender(true);
-
-    } else {
-      
-    }
+  
   csv_filename_ = "/app/envpool/data/current/" + std::to_string(env_id_) + "_log.csv";
   wbc_csv_filename_ = "/app/envpool/data/current/" + std::to_string(env_id_) + "_wbc.csv";
   ClearCsvLogs();

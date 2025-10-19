@@ -74,7 +74,7 @@ def create_ppo_model(env, policy_kwargs):
 def setup_logging(run_dir=None):
     """Set up logging configuration."""
     if run_dir is None:
-        run_dir = os.path.join("data/tb-logs", datetime.now().strftime("%Y%m%d_%H%M%S"))
+        run_dir = os.path.join("data/tb_logs", datetime.now().strftime("%Y%m%d_%H%M%S"))
     
     os.makedirs(run_dir, exist_ok=True)
     
