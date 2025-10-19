@@ -161,8 +161,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     } else {
       
     }
-  csv_filename_ = "/app/envpool/logs/" + std::to_string(env_id_) + "_log.csv";
-  wbc_csv_filename_ = "/app/envpool/logs/" + std::to_string(env_id_) + "_wbc.csv";
+  csv_filename_ = "/app/envpool/data/current/" + std::to_string(env_id_) + "_log.csv";
+  wbc_csv_filename_ = "/app/envpool/data/current/" + std::to_string(env_id_) + "_wbc.csv";
   ClearCsvLogs();
 
     MujocoReset();

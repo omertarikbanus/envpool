@@ -1,6 +1,0 @@
-Evaluation Results for quadruped_ppo_model.zip
-Environment: Humanoid-v4
-Episodes: 20
-Mean reward: 0.25 ± 0.06
-Episode rewards: [np.float32(0.1417592), np.float32(0.28659058), np.float32(0.18571225), np.float32(0.28886953), np.float32(0.16843982), np.float32(0.28215092), np.float32(0.09054081), np.float32(0.27991438), np.float32(0.079726614), np.float32(0.2859408), np.float32(0.11481731), np.float32(0.2818836), np.float32(0.21755753), np.float32(0.2847429), np.float32(0.10898847), np.float32(0.28539228), np.float32(0.26465327), np.float32(0.28968695), np.float32(0.21386832), np.float32(0.28972876)]
-Episode lengths: [495, 1000, 635, 1000, 583, 1000, 323, 1000, 297, 1000, 405, 1000, 755, 1000, 393, 1000, 924, 1000, 734, 1000]

@@ -143,16 +143,16 @@ pyflakes*
 .DS_Store
 .idea/
 *.swp
-train_dir
-log
 _vizdoom*
+
+#LOGS
+data/current/
+data/tb_logs/
 MUJOCO_LOG.TXT
-.vscode/
-envpool/mujoco/legged-sim/
-logs/**
+*_log.csv
+
+#symlink to another repo
 /envpool/mujoco/legged-sim
-train/logs/
-train/quadruped_ppo_model.zip
-runs_csv/
-runs/
-log.txt
+
+#vscode settings
+.vscode
