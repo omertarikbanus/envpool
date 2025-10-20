@@ -325,7 +325,7 @@ class ModelBasedControllerInterface {
       _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] =
           mapToRange(static_cast<float>(fy), -1, 1, -50.f, 50.0f);
       _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] =
-          mapToRange(static_cast<float>(fz), -1, 1, 0.f, 100.0f);
+          mapToRange(static_cast<float>(fz), -1, 1, 0.f, 250.0f);
 
       // Enforce: if not in contact, commanded foot force must be zero
       if (!leg_in_contact) {
@@ -354,11 +354,11 @@ class ModelBasedControllerInterface {
         // Raibert-inspired foot placement taken from ConvexMPCLocomotion.cpp.
         // Keep the tuning terms in sync with that reference implementation.
         float pfx_rel = v_world[0] * (0.5f + cmpc_bonus) * stance_duration +
-                        0.13f * (v_world[0] - v_des_world[0]) +
+                        0.03f * (v_world[0] - v_des_world[0]) +
                         (0.5f * base_pos[2] / kGravity) *
                             (v_world[1] * yaw_rate_des);
         float pfy_rel = v_world[1] * 0.5f * stance_duration +
-                        0.13f * (v_world[1] - v_des_world[1]) +
+                        0.03f * (v_world[1] - v_des_world[1]) +
                         (0.5f * base_pos[2] / kGravity) *
                             (-v_world[0] * yaw_rate_des);
         pfx_rel = std::clamp(pfx_rel, -0.35f, 0.35f);
@@ -690,6 +690,41 @@ class ModelBasedControllerInterface {
       }
     };
 
+    auto to_vec3d = [](const auto& vec) {
+      return Eigen::Vector3d(static_cast<double>(vec[0]),
+                             static_cast<double>(vec[1]),
+                             static_cast<double>(vec[2]));
+    };
+
+    Eigen::Matrix3d R_body;
+    for (int r = 0; r < 3; ++r) {
+      for (int c = 0; c < 3; ++c) {
+        R_body(r, c) = static_cast<double>(se.rBody(r, c));
+      }
+    }
+    const Eigen::Vector3d body_pos = to_vec3d(se.position);
+    const Eigen::Vector3d v_world = to_vec3d(se.vWorld);
+    const Eigen::Vector3d omega_body = to_vec3d(se.omegaBody);
+
+    std::array<Eigen::Vector3d, 4> foot_pos_world;
+    std::array<Eigen::Vector3d, 4> foot_vel_world;
+    std::array<Eigen::Vector3d, 4> foot_pos_local;
+    std::array<Eigen::Vector3d, 4> foot_vel_local;
+
+    for (int leg = 0; leg < 4; ++leg) {
+      foot_pos_local[leg] = to_vec3d(legDat[leg].p);
+      foot_vel_local[leg] = to_vec3d(legDat[leg].v);
+      Eigen::Vector3d hip = Eigen::Vector3d::Zero();
+      if (legDat[leg].quadruped) {
+        hip = to_vec3d(legDat[leg].quadruped->getHipLocation(leg));
+      }
+      const Eigen::Vector3d foot_body = hip + foot_pos_local[leg];
+      const Eigen::Vector3d vel_body =
+          foot_vel_local[leg] + omega_body.cross(foot_body);
+      foot_pos_world[leg] = body_pos + R_body * foot_body;
+      foot_vel_world[leg] = v_world + R_body * vel_body;
+    }
+
     std::ostringstream oss;
     oss.setf(std::ios::fixed); oss.precision(6);
 
@@ -718,11 +753,12 @@ class ModelBasedControllerInterface {
     append_3x4_flat(oss, [&](int leg){ return loco.aFoot_des[leg]; });
     // foot_acc_numeric[12] -> zeros
     for (int i = 0; i < 12; ++i) oss << 0.0 << ",";
-    // foot_pos[12], foot_vel[12] from leg data (leg frame)
-    for (int leg = 0; leg < 4; ++leg) append_vec(oss, legDat[leg].p, 3);
-    for (int leg = 0; leg < 4; ++leg) append_vec(oss, legDat[leg].v, 3);
-    // foot_local_pos[12], foot_local_vel[12] -> zeros
-    for (int i = 0; i < 24; ++i) oss << 0.0 << ",";
+    // foot_pos[12] (world), foot_vel[12] (world)
+    append_3x4_flat(oss, [&](int leg){ return foot_pos_world[leg]; });
+    append_3x4_flat(oss, [&](int leg){ return foot_vel_world[leg]; });
+    // foot_local_pos[12], foot_local_vel[12] (leg frame)
+    append_3x4_flat(oss, [&](int leg){ return foot_pos_local[leg]; });
+    append_3x4_flat(oss, [&](int leg){ return foot_vel_local[leg]; });
     // jpos_cmd[12], jvel_cmd[12]
     for (int leg = 0; leg < 4; ++leg) append_vec(oss, legCmd[leg].qDes, 3);
     for (int leg = 0; leg < 4; ++leg) append_vec(oss, legCmd[leg].qdDes, 3);
@@ -785,7 +821,7 @@ class ModelBasedControllerInterface {
     // foot state
     for (int i = 0; i < 4; ++i) wbc_log_stream_ << "foot_pos_" << i << "_x,foot_pos_" << i << "_y,foot_pos_" << i << "_z,";
     for (int i = 0; i < 4; ++i) wbc_log_stream_ << "foot_vel_" << i << "_x,foot_vel_" << i << "_y,foot_vel_" << i << "_z,";
-    // foot local (unused)
+    // foot local (leg frame)
     for (int i = 0; i < 4; ++i) wbc_log_stream_ << "foot_local_pos_" << i << "_x,foot_local_pos_" << i << "_y,foot_local_pos_" << i << "_z,";
     for (int i = 0; i < 4; ++i) wbc_log_stream_ << "foot_local_vel_" << i << "_x,foot_local_vel_" << i << "_y,foot_local_vel_" << i << "_z,";
     // joint cmd
