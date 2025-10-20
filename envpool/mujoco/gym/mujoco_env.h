@@ -200,7 +200,8 @@ inline void MujocoEnv::RenderInit() {
   mjr_makeContext(model_, &con_, mjFONTSCALE_150);
 
   rgb_.resize(static_cast<size_t>(render_w_ * render_h_ * 3));
-
+  // Launch ffmpeg process to pipe frames into a video file
+  // video file is named data/current/mujoco_env<env_id>_<timestamp>.mp4
   std::string cmd =
       "ffmpeg -loglevel warning -y -f rawvideo -vcodec rawvideo "
       "-pix_fmt rgb24 -s " +
@@ -208,7 +209,7 @@ inline void MujocoEnv::RenderInit() {
       std::to_string(fps_) +
       " -i - -an -vcodec libx264 -preset ultrafast -tune zerolatency "
       "-crf 18 -pix_fmt yuv420p "
-      "/app/mujoco_record_init.mp4";
+      "data/current/mujoco_env" + ".mp4";
   ffmpeg_pipe_ = popen(cmd.c_str(), "w");
   if (!ffmpeg_pipe_) throw std::runtime_error("Cannot open ffmpeg pipe");
 }

@@ -136,6 +136,7 @@ cc_library(
         ]),
     srcs = glob([  
     "mbc_interface.h",
+    "rl_gait.h",
     "legged-sim/src/**/*.cpp",
     "legged-sim/src/FSM/*.cpp",
     "legged-sim/src/*.cpp",

@@ -24,6 +24,7 @@
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Geometry>
 
+#include "rl_gait.h"
 
 class ModelBasedControllerInterface {
  public:
@@ -56,6 +57,8 @@ class ModelBasedControllerInterface {
     std::vector<mjtNum> current_action_;
     std::deque<std::vector<mjtNum>> action_history_;
     std::deque<std::array<mjtNum, kBodyHistoryDim>> body_history_;
+    RLGait gait_scheduler_;
+    std::array<float, kNumLegs> last_contact_schedule_{{1.0f, 1.0f, 1.0f, 1.0f}};
 
   ~ModelBasedControllerInterface() = default;
 
@@ -64,6 +67,8 @@ class ModelBasedControllerInterface {
     filtered_body_height_ = reset_body_height_;
     last_feedback_data_ = nullptr;
     clearObservationHistory();
+    gait_scheduler_.reset();
+    last_contact_schedule_.fill(1.0f);
     _controller = new EmbeddedController();
     _actuator_command = new SpiCommand();
     _actuator_data = new SpiData();
@@ -113,6 +118,8 @@ class ModelBasedControllerInterface {
     }
     filtered_body_height_ = reset_body_height_;
     _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] = filtered_body_height_;
+    gait_scheduler_.reset();
+    last_contact_schedule_.fill(1.0f);
   }
 
   void setBaseHeight(float height) {
@@ -256,25 +263,35 @@ class ModelBasedControllerInterface {
       }
     }
 
-    // simple trot gait. frame_skip_* 10 leg stance time.
-    // gait phase is (elapsed_step_% (frame_skip_ * 10 * 2)) / (frame_skip_ * 10 * 2)
-
-    for (int leg = 0; leg < kNumLegs; leg++) {
-      // determine contact state based on gait phase
-      int gait_cycle_steps = frame_skip_ * 5 * 2;
-      float gait_cycle_length = static_cast<float>(gait_cycle_steps);
-      int step_in_cycle = elapsed_step_ % gait_cycle_steps;
-      float gait_phase = static_cast<float>(step_in_cycle) / gait_cycle_length;
-
-      // contact state based on gait phase only
-      bool is_diagonal_leg = (leg == 0 || leg == 3);
-      bool should_be_in_contact =
-          is_diagonal_leg ? (gait_phase < 0.5) : (gait_phase >= 0.5);
-      float contact_state = 1; // should_be_in_contact ? 1.0f : 0.0f;
-
+    gait_scheduler_.update(std::max(frame_skip_, 1), elapsed_step_);
+    const auto& contact_schedule = gait_scheduler_.contactState();
+    const auto& swing_phase = gait_scheduler_.swingPhase();
+    // NOTE: LocomotionCtrl (legged-sim/src/Controllers/WBC_Ctrl/LocomotionCtrl.cpp)
+    // treats any value > 0 as a stance constraint. Write back only 1.0 or 0.0
+    // so swing legs clear the contact set and the WBC actually lifts them.
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      const bool leg_should_contact = contact_schedule[leg] > 0.5f;
       _controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] =
-          contact_state;
+          leg_should_contact ? 1.0f : 0.0f;
     }
+    constexpr float kControlDt = 0.002f;
+    const auto& seResult =
+        _controller->_controlFSM->data._stateEstimator->getResult();
+    const Eigen::Matrix3f Rwb = seResult.rBody.transpose();
+    const Eigen::Vector3f base_pos = seResult.position;
+    const Eigen::Vector3f v_world = seResult.vWorld;
+    const Eigen::Vector3f v_body_des_vec(
+        _controller->_controlFSM->data.locomotionCtrlData.vBody_des[0],
+        _controller->_controlFSM->data.locomotionCtrlData.vBody_des[1], 0.0f);
+    const Eigen::Vector3f v_des_world = Rwb * v_body_des_vec;
+    const float yaw_rate_des = static_cast<float>(
+        _controller->_controlFSM->data.locomotionCtrlData.vBody_Ori_des[2]);
+    const float ground_height = base_pos[2] - reset_body_height_;
+    const auto* user_params =
+        _controller->_controlFSM->data.userParameters;
+    const float cmpc_bonus =
+        user_params ? static_cast<float>(user_params->cmpc_bonus_swing) : 0.0f;
+    constexpr float kGravity = 9.81f;
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[0] =
         mapToRange(current_action_[0], -1, 1, -0.5f, 0.5f);
     _controller->_controlFSM->data.locomotionCtrlData.vBody_des[1] =
@@ -285,16 +302,20 @@ class ModelBasedControllerInterface {
         mapToRange(current_action_[2], -1, 1, -0.5f, 0.5f);
 
     float accum_foot_des_z = 0.0f;
-    for (int leg = 0; leg < kNumLegs; leg++) {
-    //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][0] =
-    //       mapToRange(act[3 + leg * kFootActionDim], -1, 1, -0.2f, 0.2f);
-    //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][1] =
-    //       mapToRange(act[4 + leg * kFootActionDim], -1, 1, -0.1f, 0.1f);
-    //   float foot_des_z = mapToRange(act[5 + leg * kFootActionDim], -1, 1, -0.2f, 0.0f);
-    //   accum_foot_des_z += foot_des_z;
-    //   _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][2] =
-    //       foot_des_z;
-
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      const bool was_in_contact = last_contact_schedule_[leg] > 0.5f;
+      const bool leg_in_contact = contact_schedule[leg] > 0.5f;
+      const auto& leg_data =
+          _controller->_controlFSM->data._legController->datas[leg];
+      Eigen::Vector3f foot_body(static_cast<float>(leg_data.p[0]),
+                                static_cast<float>(leg_data.p[1]),
+                                static_cast<float>(leg_data.p[2]));
+      const Eigen::Vector3f foot_world = base_pos + Rwb * foot_body;
+      if (was_in_contact && !leg_in_contact) {
+        auto& swing_traj = gait_scheduler_.swingTrajectory(leg);
+        swing_traj.setInitialPosition(foot_world);
+        swing_traj.setHeight(0.10f);
+      }
       const int base = 3 + leg * kFootActionDim;
       const mjtNum fx = current_action_[base + 0];
       const mjtNum fy = current_action_[base + 1];
@@ -307,12 +328,73 @@ class ModelBasedControllerInterface {
           mapToRange(static_cast<float>(fz), -1, 1, 0.f, 100.0f);
 
       // Enforce: if not in contact, commanded foot force must be zero
-      // if (_controller->_controlFSM->data.locomotionCtrlData.contact_state[leg] !=
-      //     1.0f) {
-      //   _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0.0f;
-      //   _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = 0.0f;
-      //   _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 0.0f;
-      // }
+      if (!leg_in_contact) {
+        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][0] = 0.0f;
+        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][1] = 0.0f;
+        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 0.0f;
+      } else if (last_contact_schedule_[leg] <= 0.5f &&
+                 _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] <
+                     10.0f) {
+        // Ensure a minimum normal force when transitioning into stance so the
+        // feet settle quickly.
+        _controller->_controlFSM->data.locomotionCtrlData.Fr_des[leg][2] = 10.0f;
+      }
+
+      if (!leg_in_contact) {
+        auto& swing_traj = gait_scheduler_.swingTrajectory(leg);
+        const float stance_duration =
+            gait_scheduler_.stanceDurationSeconds(leg, kControlDt);
+        const float swing_duration =
+            std::max(gait_scheduler_.swingDurationSeconds(leg, kControlDt),
+                     1e-3f);
+        const float clamped_phase = std::clamp(swing_phase[leg], 0.0f, 1.0f);
+        const float swing_remaining = swing_duration * (1.0f - clamped_phase);
+        Eigen::Vector3f foot_target_world =
+            foot_world + v_des_world * swing_remaining;
+        // Raibert-inspired foot placement taken from ConvexMPCLocomotion.cpp.
+        // Keep the tuning terms in sync with that reference implementation.
+        float pfx_rel = v_world[0] * (0.5f + cmpc_bonus) * stance_duration +
+                        0.13f * (v_world[0] - v_des_world[0]) +
+                        (0.5f * base_pos[2] / kGravity) *
+                            (v_world[1] * yaw_rate_des);
+        float pfy_rel = v_world[1] * 0.5f * stance_duration +
+                        0.13f * (v_world[1] - v_des_world[1]) +
+                        (0.5f * base_pos[2] / kGravity) *
+                            (-v_world[0] * yaw_rate_des);
+        pfx_rel = std::clamp(pfx_rel, -0.35f, 0.35f);
+        pfy_rel = std::clamp(pfy_rel, -0.25f, 0.25f);
+        foot_target_world[0] += pfx_rel;
+        foot_target_world[1] += pfy_rel;
+        foot_target_world[2] = ground_height;
+        swing_traj.setFinalPosition(foot_target_world);
+        swing_traj.setHeight(0.10f);
+        swing_traj.compute(clamped_phase, swing_duration);
+        const auto& pos = swing_traj.position();
+        const auto& vel = swing_traj.velocity();
+        const auto& acc = swing_traj.acceleration();
+        for (int axis = 0; axis < 3; ++axis) {
+          _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][axis] =
+              pos[axis];
+          _controller->_controlFSM->data.locomotionCtrlData.vFoot_des[leg][axis] =
+              vel[axis];
+          _controller->_controlFSM->data.locomotionCtrlData.aFoot_des[leg][axis] =
+              acc[axis];
+        }
+        accum_foot_des_z += pos[2];
+      } else {
+        for (int axis = 0; axis < 3; ++axis) {
+          _controller->_controlFSM->data.locomotionCtrlData.pFoot_des[leg][axis] =
+              foot_world[axis];
+          _controller->_controlFSM->data.locomotionCtrlData.vFoot_des[leg][axis] =
+              0.0f;
+          _controller->_controlFSM->data.locomotionCtrlData.aFoot_des[leg][axis] =
+              0.0f;
+        }
+        accum_foot_des_z += foot_world[2];
+      }
+    }
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      last_contact_schedule_[leg] = contact_schedule[leg];
     }
 
     float avg_foot_des_z = accum_foot_des_z / 4.0f;
