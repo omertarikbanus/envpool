@@ -56,7 +56,7 @@ def create_ppo_model(env, policy_kwargs):
         learning_rate=1e-4,
         clip_range=0.3,
         target_kl=0.01,
-        n_steps=4096,
+        n_steps=1024,
         batch_size=128,
         n_epochs=10,
         gamma=0.995,
