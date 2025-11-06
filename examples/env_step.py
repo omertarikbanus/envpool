@@ -47,10 +47,11 @@ def gym_sync_step() -> None:
     print(f"Observation shape: {env.observation_space.shape}")
   action= np.zeros((num_envs, action_num), dtype=np.float32)
   for env_id in range(num_envs):
-    action[env_id][5]= 1
-    action[env_id][8]= 1
-    action[env_id][11]= 1
-    action[env_id][14]= 1
+    action[env_id][0]= .0
+    action[env_id][5]= 0.1
+    action[env_id][8]= 0.1
+    action[env_id][11]= 0.1
+    action[env_id][14]= 0.1
   for _ in range(1000):
 
     if debug_prints:
@@ -64,7 +65,7 @@ def gym_sync_step() -> None:
         print(f"Step result (legacy) - obs: {obs}, rew: {rew}, done: {done}, info: {info}")
     else:
       obs, rew, term, trunc, info = env.step(action)
-
+      input("Press Enter to continue...")
       if debug_prints:
         print(f"Step result - obs: \n\n {obs} \n\n rew: \n\n {rew} \n\n term: \n\n {term} \n\n trunc: \n\n {trunc} \n\n info: \n\n {info}")
 

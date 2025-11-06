@@ -143,7 +143,7 @@ void MujocoEnv::setIC() {
 
     for (int leg = 0; leg < 4; leg++) {
       data_->qpos[(leg) * 3 + 0 + 7] =
-          0 * (M_PI / 180) *
+          10 * (M_PI / 180) *
           kSideSign_[leg];  // Add 7 to skip the first 7 dofs from body.
                             // (Position + Quaternion)
       data_->qpos[(leg) * 3 + 1 + 7] = -80 * (M_PI / 180);  //*kDirSign_[leg];

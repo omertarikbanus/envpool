@@ -14,39 +14,40 @@ inline float clamp01(float value) {
   return std::clamp(value, 0.0f, 1.0f);
 }
 
-inline float cubicHermite(float y0, float yf, float phase) {
+inline float cubicBezier(float y0, float yf, float phase) {
   const float s = clamp01(phase);
-  return y0 + (yf - y0) * (3.0f * s * s - 2.0f * s * s * s);
+  const float blend = s * s * s + 3.0f * s * s * (1.0f - s);
+  return y0 + (yf - y0) * blend;
 }
 
-inline float cubicHermiteFirstDerivative(float y0, float yf, float phase) {
+inline float cubicBezierFirstDerivative(float y0, float yf, float phase) {
   const float s = clamp01(phase);
-  return (yf - y0) * (6.0f * s - 6.0f * s * s);
+  return (yf - y0) * (6.0f * s * (1.0f - s));
 }
 
-inline float cubicHermiteSecondDerivative(float y0, float yf, float phase) {
+inline float cubicBezierSecondDerivative(float y0, float yf, float phase) {
   const float s = clamp01(phase);
   return (yf - y0) * (6.0f - 12.0f * s);
 }
 
-inline Eigen::Vector3f cubicHermite(const Eigen::Vector3f& y0,
-                                    const Eigen::Vector3f& yf,
-                                    float phase) {
+inline Eigen::Vector3f cubicBezier(const Eigen::Vector3f& y0,
+                                   const Eigen::Vector3f& yf,
+                                   float phase) {
   const float s = clamp01(phase);
   const Eigen::Vector3f delta = yf - y0;
-  const float blend = 3.0f * s * s - 2.0f * s * s * s;
+  const float blend = s * s * s + 3.0f * s * s * (1.0f - s);
   return y0 + delta * blend;
 }
 
-inline Eigen::Vector3f cubicHermiteFirstDerivative(
+inline Eigen::Vector3f cubicBezierFirstDerivative(
     const Eigen::Vector3f& y0, const Eigen::Vector3f& yf, float phase) {
   const float s = clamp01(phase);
   const Eigen::Vector3f delta = yf - y0;
-  const float blend = 6.0f * s - 6.0f * s * s;
+  const float blend = 6.0f * s * (1.0f - s);
   return delta * blend;
 }
 
-inline Eigen::Vector3f cubicHermiteSecondDerivative(
+inline Eigen::Vector3f cubicBezierSecondDerivative(
     const Eigen::Vector3f& y0, const Eigen::Vector3f& yf, float phase) {
   const float s = clamp01(phase);
   const Eigen::Vector3f delta = yf - y0;
@@ -78,31 +79,36 @@ class RLGait {
       const float clamped_phase = rl_gait::clamp01(phase);
       const float clamped_time = std::max(swing_time, 1e-3f);
 
-      position_ = rl_gait::cubicHermite(p0_, pf_, clamped_phase);
-      velocity_ = rl_gait::cubicHermiteFirstDerivative(p0_, pf_, clamped_phase) /
+      position_ = rl_gait::cubicBezier(p0_, pf_, clamped_phase);
+      velocity_ = rl_gait::cubicBezierFirstDerivative(p0_, pf_, clamped_phase) /
                   clamped_time;
       acceleration_ =
-          rl_gait::cubicHermiteSecondDerivative(p0_, pf_, clamped_phase) /
+          rl_gait::cubicBezierSecondDerivative(p0_, pf_, clamped_phase) /
           (clamped_time * clamped_time);
 
-      const float half_phase =
-          (clamped_phase < 0.5f) ? clamped_phase * 2.0f
-                                 : (clamped_phase - 0.5f) * 2.0f;
-      const float phase_scale = (clamped_phase < 0.5f) ? 2.0f : 2.0f;
+      float z_pos = position_[2];
+      float z_vel = velocity_[2];
+      float z_acc = acceleration_[2];
 
-      const float start_z =
-          (clamped_phase < 0.5f) ? p0_[2] : p0_[2] + height_;
-      const float end_z =
-          (clamped_phase < 0.5f) ? p0_[2] + height_ : pf_[2];
-
-      const float z_pos =
-          rl_gait::cubicHermite(start_z, end_z, half_phase);
-      const float z_vel = rl_gait::cubicHermiteFirstDerivative(start_z, end_z,
-                                                               half_phase) *
-                          phase_scale / clamped_time;
-      const float z_acc =
-          rl_gait::cubicHermiteSecondDerivative(start_z, end_z, half_phase) *
-          (phase_scale * phase_scale) / (clamped_time * clamped_time);
+      if (clamped_phase < 0.5f) {
+        const float inner_phase = clamped_phase * 2.0f;
+        z_pos = rl_gait::cubicBezier(p0_[2], p0_[2] + height_, inner_phase);
+        z_vel = rl_gait::cubicBezierFirstDerivative(p0_[2], p0_[2] + height_,
+                                                    inner_phase) *
+                2.0f / clamped_time;
+        z_acc = rl_gait::cubicBezierSecondDerivative(p0_[2], p0_[2] + height_,
+                                                     inner_phase) *
+                4.0f / (clamped_time * clamped_time);
+      } else {
+        const float inner_phase = (clamped_phase - 0.5f) * 2.0f;
+        z_pos = rl_gait::cubicBezier(p0_[2] + height_, pf_[2], inner_phase);
+        z_vel = rl_gait::cubicBezierFirstDerivative(p0_[2] + height_, pf_[2],
+                                                    inner_phase) *
+                2.0f / clamped_time;
+        z_acc = rl_gait::cubicBezierSecondDerivative(p0_[2] + height_, pf_[2],
+                                                     inner_phase) *
+                4.0f / (clamped_time * clamped_time);
+      }
 
       position_[2] = z_pos;
       velocity_[2] = z_vel;
@@ -229,7 +235,7 @@ class RLGait {
 
       if (stance_progress < duration && duration > 1e-3f) {
         contact_state_[leg] = 1.0f;
-        stance_phase_[leg] = stance_progress / duration;
+        stance_phase_[leg] = std::clamp(stance_progress / duration, 0.0f, 1.0f);
       } else {
         contact_state_[leg] = 0.0f;
         stance_phase_[leg] = 0.0f;
@@ -247,17 +253,17 @@ class RLGait {
       }
 
       if (contact_state_[leg] < 0.5f) {
-        swing_phase_[leg] = swing_progress / swing_duration;
+        swing_phase_[leg] = std::clamp(swing_progress / swing_duration, 0.0f, 1.0f);
       } else {
         swing_phase_[leg] = 0.0f;
       }
     }
   }
 
-  ContactProfile profile_{60,
-                          (Eigen::Array<int, kNumLegs, 1>() << 0, 30, 30, 0)
+  ContactProfile profile_{40,
+                          (Eigen::Array<int, kNumLegs, 1>() << 0, 20, 20, 0)
                               .finished(),
-                          (Eigen::Array<int, kNumLegs, 1>() << 30, 30, 30, 30)
+                          (Eigen::Array<int, kNumLegs, 1>() << 20, 20, 20, 20)
                               .finished()};
   int frame_skip_{1};
   std::array<float, kNumLegs> contact_state_{{1.0f, 1.0f, 1.0f, 1.0f}};

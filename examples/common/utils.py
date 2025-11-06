@@ -41,8 +41,8 @@ def create_policy_kwargs():
     """Create policy kwargs for PPO model."""
     return dict(
         activation_fn=th.nn.Tanh,
-        net_arch=[dict(pi=[256, 256, 128], vf=[256, 256, 128])],
-        log_std_init=-2.0,
+        net_arch=[dict(pi=[256, 128], vf=[256, 128])],
+        log_std_init=-.8,
         # ortho_init=False,
     )
 
@@ -56,15 +56,15 @@ def create_ppo_model(env, policy_kwargs):
         learning_rate=1e-4,
         clip_range=0.3,
         target_kl=0.01,
-        n_steps=4096,
+        n_steps=1024,
         batch_size=128,
         n_epochs=10,
         gamma=0.995,
         gae_lambda=0.97,
         max_grad_norm=0.1,
-        ent_coef=0.01,
+        ent_coef=0.05,
         vf_coef=1.0,
-        clip_range_vf=0.3,
+        clip_range_vf=0.2,
         tensorboard_log="runs/ppo_taskspace",
         policy_kwargs=policy_kwargs,
         verbose=1,
