@@ -191,7 +191,13 @@ inline void MujocoEnv::RenderInit() {
   mjv_defaultScene(&scn_);
   mjv_defaultCamera(&cam_);
   cam_.type = mjCAMERA_FREE;
-  cam_.distance = std::max(1.0, 3 * model_->stat.extent);
+  cam_.distance = 1.5;
+  // Side view: place camera at (2, 0, 0) looking toward origin.
+  cam_.azimuth = 90.0;
+  cam_.elevation = 30;
+  cam_.lookat[0] = 0.0;
+  cam_.lookat[1] = 0.0;
+  cam_.lookat[2] = 0.0;
   mjr_defaultContext(&con_);
   mjv_defaultOption(&opt_);
   mjv_defaultPerturb(&pert_);
@@ -215,6 +221,7 @@ inline void MujocoEnv::RenderInit() {
 }
 
 inline void MujocoEnv::RenderFrame() {
+  opt_.flags[15] = 1;  // mjVIS_CONSTRAINT
   if (!OSMesaMakeCurrent(ctx, fb, GL_UNSIGNED_BYTE, render_w_, render_h_))
     throw std::runtime_error("OSMesaMakeCurrent failed");
 

@@ -444,7 +444,7 @@ class ModelBasedControllerInterface {
     loco.pBody_RPY_des[1] = 0.0f;
     loco.vBody_Ori_des[2] = mapToRange(current_action_[2], -1, 1, -0.5f, 0.5f);
 
-    constexpr float kContactForceThreshold = 5.0f;
+    constexpr float kContactForceThreshold = 0.0f;
     for (int leg = 0; leg < kNumLegs; ++leg) {
       const bool leg_in_contact = contact_schedule[leg] > 0.0f;
       const int base = 3 + leg * kFootActionDim;
@@ -472,7 +472,7 @@ class ModelBasedControllerInterface {
             static_cast<float>(sim_data->cfrc_ext[6 * body_id + 1]),
             static_cast<float>(sim_data->cfrc_ext[6 * body_id + 2]));
         if (contact_force.norm() > kContactForceThreshold) {
-          loco.Fr_se[leg] = contact_force;
+          loco.Fr_se[leg][2] = contact_force.norm();
         }
       }
 
@@ -481,10 +481,10 @@ class ModelBasedControllerInterface {
       //   loco.Fr_des[leg][2] = 10.0f;
       // }
 
-      std::cout << "Leg " << leg
-                << " Desired Force: [" << loco.Fr_des[leg][0] << ", "
-                << loco.Fr_des[leg][1] << ", " << loco.Fr_des[leg][2]
-                << "]\n";
+      // std::cout << "Leg " << leg
+      //           << " Desired Force: [" << loco.Fr_des[leg][0] << ", "
+      //           << loco.Fr_des[leg][1] << ", " << loco.Fr_des[leg][2]
+      //           << "]\n";
     }
     base_pos = seResult.position;
     FootstepPlanner::PlanInput plan_input{updated_contact_state,
@@ -791,11 +791,11 @@ class ModelBasedControllerInterface {
             }
           }
         }
-        std::cout << "Reaction Forces (per leg FR, FL, HR, HL): ";
+        // std::cout << "Reaction Forces (per leg FR, FL, HR, HL): ";
         for (double force : foot_forces_world) {
-          std::cout << force << " ";
+          // std::cout << force << " ";
         }
-        std::cout << std::endl;
+        // std::cout << std::endl;
       }
     }
 
