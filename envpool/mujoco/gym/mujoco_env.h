@@ -20,7 +20,9 @@
 #include <mjxmacro.h>
 #include <mujoco.h>
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdio>   // FILE*
 #include <cstring>  // std::memcpy
 #include <iostream>
@@ -72,6 +74,16 @@ class MujocoEnv {
   mjvOption opt_;
   mjvPerturb pert_;
   FILE* ffmpeg_pipe_ = nullptr;
+  struct PendingSphere {
+    std::array<mjtNum, 3> pos;
+    mjtNum radius;
+    std::array<float, 4> rgba;
+  };
+  std::vector<PendingSphere> pending_spheres_;
+
+  void AppendPendingSpheres();
+  void QueueSphere(const std::array<mjtNum, 3>& pos, mjtNum radius,
+                   const std::array<float, 4>& rgba);
 
   void RenderInit();
   void RenderFrame();
@@ -90,6 +102,13 @@ class MujocoEnv {
 
   // enable/disable rendering after construction
   void EnableRender(bool on = true);
+
+  void addSpheres(
+      const std::array<mjtNum, 3>& body_pos,
+      const std::vector<std::array<mjtNum, 3>>& joint_positions,
+      const std::vector<std::array<mjtNum, 3>>& foot_positions,
+      mjtNum body_radius = 0.04, mjtNum joint_radius = 0.025,
+      mjtNum foot_radius = 0.06);
 };
 
 // ========================================================================
@@ -181,6 +200,64 @@ inline void MujocoEnv::MujocoStep(const mjtNum* action) {
   ++elapsed_step_;
 }
 
+inline void MujocoEnv::QueueSphere(const std::array<mjtNum, 3>& pos,
+                                   mjtNum radius,
+                                   const std::array<float, 4>& rgba) {
+  PendingSphere sphere;
+  sphere.pos = pos;
+  sphere.radius = std::max<mjtNum>(1e-4, radius);
+  sphere.rgba = rgba;
+  pending_spheres_.push_back(sphere);
+}
+
+inline void MujocoEnv::addSpheres(
+    const std::array<mjtNum, 3>& body_pos,
+    const std::vector<std::array<mjtNum, 3>>& joint_positions,
+    const std::vector<std::array<mjtNum, 3>>& foot_positions,
+    mjtNum body_radius, mjtNum joint_radius, mjtNum foot_radius) {
+  pending_spheres_.clear();
+  auto is_valid = [](const std::array<mjtNum, 3>& p) {
+    return std::isfinite(p[0]) && std::isfinite(p[1]) &&
+           std::isfinite(p[2]);
+  };
+
+  const std::array<float, 4> body_color{1.f, 0.2f, 0.2f, 0.85f};
+  const std::array<float, 4> joint_color{1.f, 0.8f, 0.2f, 0.75f};
+  const std::array<float, 4> foot_color{0.1f, 0.6f, .2f, 0.85f};
+
+  if (is_valid(body_pos)) {
+    QueueSphere(body_pos, body_radius, body_color);
+  }
+
+  for (const auto& joint : joint_positions) {
+    if (is_valid(joint)) {
+      QueueSphere(joint, joint_radius, joint_color);
+    }
+  }
+
+  for (const auto& foot : foot_positions) {
+    if (is_valid(foot)) {
+      QueueSphere(foot, foot_radius, foot_color);
+    }
+  }
+}
+
+inline void MujocoEnv::AppendPendingSpheres() {
+  if (pending_spheres_.empty()) return;
+
+  for (const auto& sphere : pending_spheres_) {
+    if (scn_.ngeom >= scn_.maxgeom) {
+      break;
+    }
+    mjvGeom* geom = scn_.geoms + scn_.ngeom++;
+    mjtNum size[3] = {sphere.radius, sphere.radius, sphere.radius};
+    mjv_initGeom(geom, mjGEOM_SPHERE, size, sphere.pos.data(), nullptr,
+                 sphere.rgba.data());
+    geom->emission = 0.8f;
+  }
+  pending_spheres_.clear();
+}
+
 // --------------------- Rendering helpers ----------------------
 inline void MujocoEnv::RenderInit() {
   ctx = OSMesaCreateContextExt(OSMESA_RGBA, /*depthBits=*/16, 0, 0, nullptr);
@@ -194,7 +271,7 @@ inline void MujocoEnv::RenderInit() {
   cam_.distance = 1.5;
   // Side view: place camera at (2, 0, 0) looking toward origin.
   cam_.azimuth = 90.0;
-  cam_.elevation = 30;
+  cam_.elevation = -10.0;
   cam_.lookat[0] = 0.0;
   cam_.lookat[1] = 0.0;
   cam_.lookat[2] = 0.0;
@@ -227,6 +304,7 @@ inline void MujocoEnv::RenderFrame() {
 
   mjrRect vp{0, 0, render_w_, render_h_};
   mjv_updateScene(model_, data_, &opt_, &pert_, &cam_, mjCAT_ALL, &scn_);
+  AppendPendingSpheres();
   mjr_render(vp, &scn_, &con_);
   mjr_readPixels(rgb_.data(), nullptr, vp, &con_);
 

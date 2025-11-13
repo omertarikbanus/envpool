@@ -97,6 +97,17 @@ class ModelBasedControllerInterface {
     return nullptr;
   }
 
+  FloatingBaseModel<float>* robotModel() const {
+    if (_controller) {
+      return _controller->model();
+    }
+    return nullptr;
+  }
+
+  const SpiData* actuatorData() const { return _actuator_data; }
+
+  const VectorNavData* imuData() const { return _imu_data; }
+
   void reset() {
     reset_body_height_ = 0.36f;
     filtered_body_height_ = reset_body_height_;
