@@ -455,8 +455,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                                                  data_->qvel[2]);
     const mjtNum linear_velocity_error_sq = linear_velocity.squaredNorm();
 
-    Eigen::Quaternion<mjtNum> q(data_->qpos[6], data_->qpos[3], data_->qpos[4],
-                                data_->qpos[5]);
+    Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4], data_->qpos[5],
+                                data_->qpos[6]);
     const Eigen::Vector3<mjtNum> euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
     const Eigen::Vector3<mjtNum> orientation_error(wrap_to_pi(euler[0]),
                                                    wrap_to_pi(euler[1]),
@@ -574,8 +574,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   }
 
   mjtNum ComputeOrientationPenalty() const {
-    Eigen::Quaternion<mjtNum> q(data_->qpos[6], data_->qpos[3], data_->qpos[4],
-                                data_->qpos[5]);
+    Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4], data_->qpos[5],
+                                data_->qpos[6]);
     Eigen::Vector3<mjtNum> eul = q.toRotationMatrix().eulerAngles(0, 1, 2);
     mjtNum roll = eul[0];
     mjtNum pitch = eul[1];

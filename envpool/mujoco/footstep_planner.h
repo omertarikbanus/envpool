@@ -83,26 +83,41 @@ class FootstepPlanner {
             input.rotation_world_from_body *
                 (p_yaw_corrected +
                  commanded_velocity_body * swing_time_remaining);
-        constexpr float kPRelMax = 0.35f;
+        constexpr float kPRelMax = 0.15f;
         float pfx_rel =
             input.base_velocity_world[0] * (0.5f + input.cmpc_bonus) *
-                stance_duration +
-            0.01f * (input.base_velocity_world[0] -
-                     input.commanded_velocity_world[0]) +
+          stance_duration +
+            0.03f * (input.base_velocity_world[0] -
+               input.commanded_velocity_world[0]) +
             (0.5f * input.base_position[2] / input.gravity) *
-                (input.base_velocity_world[1] * input.yaw_rate_des);
+          (input.base_velocity_world[1] * input.yaw_rate_des);
         float pfy_rel =
             input.base_velocity_world[1] * 0.5f * stance_duration +
-            0.01f * (input.base_velocity_world[1] -
-                     input.commanded_velocity_world[1]) +
+            0.03f * (input.base_velocity_world[1] -
+               input.commanded_velocity_world[1]) +
             (0.5f * input.base_position[2] / input.gravity) *
-                (-input.base_velocity_world[0] * input.yaw_rate_des);
+          (-input.base_velocity_world[0] * input.yaw_rate_des);
         pfx_rel = std::clamp(pfx_rel, -kPRelMax, kPRelMax);
         pfy_rel = std::clamp(pfy_rel, -kPRelMax, kPRelMax);
         float side_offset = (leg % 2 == 0) ? -0.05f : 0.05f;
+        
+        // printf("Leg %d: base_pos=[%.3f,%.3f,%.3f], base_vel=[%.3f,%.3f,%.3f], cmd_vel=[%.3f,%.3f,%.3f]\n",
+        //        leg, input.base_position[0], input.base_position[1], input.base_position[2],
+        //        input.base_velocity_world[0], input.base_velocity_world[1], input.base_velocity_world[2],
+        //        input.commanded_velocity_world[0], input.commanded_velocity_world[1], input.commanded_velocity_world[2]);
+        // printf("Leg %d: stance_dur=%.3f, yaw_rate=%.3f, cmpc_bonus=%.3f, gravity=%.3f\n",
+        //        leg, stance_duration, input.yaw_rate_des, input.cmpc_bonus, input.gravity);
+        // printf("Leg %d: pfx_rel=%.3f, pfy_rel=%.3f, side_offset=%.3f\n",
+        //        leg, pfx_rel, pfy_rel, side_offset);
+        // printf("Leg %d: foot_target_before=[%.3f,%.3f,%.3f]\n",
+        //        leg, foot_target_world[0], foot_target_world[1], foot_target_world[2]);
+        
         foot_target_world[0] += pfx_rel;
         foot_target_world[1] += pfy_rel + side_offset;
         foot_target_world[2] = -0.003f;
+        
+        // printf("Leg %d: foot_target_after=[%.3f,%.3f,%.3f]\n",
+        //        leg, foot_target_world[0], foot_target_world[1], foot_target_world[2]);
 
         swing_traj.setFinalPosition(foot_target_world);
         foot_target_world.setZero(); // avoid reusing

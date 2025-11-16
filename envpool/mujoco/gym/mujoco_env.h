@@ -108,7 +108,7 @@ class MujocoEnv {
       const std::vector<std::array<mjtNum, 3>>& joint_positions,
       const std::vector<std::array<mjtNum, 3>>& foot_positions,
       mjtNum body_radius = 0.04, mjtNum joint_radius = 0.025,
-      mjtNum foot_radius = 0.06);
+      mjtNum foot_radius = 0.02);
 };
 
 // ========================================================================
@@ -153,8 +153,8 @@ void MujocoEnv::setIC() {
     int kSideSign_[4] = {-1, 1, -1, 1};
 
     model_->opt.timestep = 0.002;
-    const double minHeight = 0.25;  // minimum height
-    const double maxHeight = 0.4;  // maximum height
+    const double minHeight = 0.24;  // minimum height
+    const double maxHeight = 0.25;  // maximum height
     static std::random_device rd;
     static std::mt19937 gen(rd());
     std::uniform_real_distribution<double> distribution(minHeight, maxHeight);
@@ -174,7 +174,7 @@ inline void MujocoEnv::MujocoReset() {
   done_ = false;
   mj_resetData(model_, data_);
   MujocoResetModel();
-  mj_forward(model_, data_);
+  // mj_forward(model_, data_);
 }
 
 inline void MujocoEnv::MujocoResetModel() {
@@ -298,7 +298,9 @@ inline void MujocoEnv::RenderInit() {
 }
 
 inline void MujocoEnv::RenderFrame() {
-  opt_.flags[15] = 1;  // mjVIS_CONSTRAINT
+  opt_.flags[15] = 1;  // mjVIS_CONSTRAINT Visualize Contact Force
+  // opt_.flags[10] = 1;  // mjVIS_CONSTRAINT Visualize Inertia
+  cam_.azimuth += 0.5;  // slowly rotate camera
   if (!OSMesaMakeCurrent(ctx, fb, GL_UNSIGNED_BYTE, render_w_, render_h_))
     throw std::runtime_error("OSMesaMakeCurrent failed");
 

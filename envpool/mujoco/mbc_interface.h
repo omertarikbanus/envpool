@@ -320,6 +320,65 @@ class ModelBasedControllerInterface {
     _imu_data->pos_x = data_->qpos[0];
     _imu_data->pos_y = data_->qpos[1];
     _imu_data->pos_z = data_->qpos[2];
+
+    if (cheater_mode && _controller && _controller->_controlFSM &&
+        data_ && data_->qpos && data_->qvel) {
+      auto* se = _controller->_controlFSM->data._stateEstimator;
+      if (se) {
+        auto* result = se->getResultHandle();
+        Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4],
+                                       data_->qpos[5], data_->qpos[6]);
+        quat.normalize();
+
+        const Eigen::Matrix<mjtNum, 3, 3> R_body_to_world =
+            quat.toRotationMatrix();
+        const Eigen::Matrix<mjtNum, 3, 3> R_world_to_body =
+            R_body_to_world.transpose();
+
+        const Eigen::Matrix<mjtNum, 3, 1> v_world(data_->qvel[0],
+                                                  data_->qvel[1],
+                                                  data_->qvel[2]);
+        const Eigen::Matrix<mjtNum, 3, 1> v_body = R_world_to_body * v_world;
+
+        const Eigen::Matrix<mjtNum, 3, 1> omega_world(data_->qvel[3],
+                                                      data_->qvel[4],
+                                                      data_->qvel[5]);
+        const Eigen::Matrix<mjtNum, 3, 1> omega_body =
+            R_world_to_body * omega_world;
+
+        Eigen::Matrix<mjtNum, 3, 1> a_world =
+            Eigen::Matrix<mjtNum, 3, 1>::Zero();
+        if (data_->qacc) {
+          a_world[0] = data_->qacc[0];
+          a_world[1] = data_->qacc[1];
+          a_world[2] = data_->qacc[2];
+        }
+        const Eigen::Matrix<mjtNum, 3, 1> a_body =
+            R_world_to_body * a_world;
+
+        result->position[0] = static_cast<float>(data_->qpos[0]);
+        result->position[1] = static_cast<float>(data_->qpos[1]);
+        result->position[2] = static_cast<float>(data_->qpos[2]);
+        result->rBody = R_world_to_body.cast<float>();
+        result->vWorld = v_world.cast<float>();
+        result->vBody = v_body.cast<float>();
+
+        const auto euler = R_body_to_world.eulerAngles(0, 1, 2);
+        result->rpy[0] = static_cast<float>(euler[0]);
+        result->rpy[1] = static_cast<float>(euler[1]);
+        result->rpy[2] = static_cast<float>(euler[2]);
+
+        result->omegaWorld = omega_world.cast<float>();
+        result->omegaBody = omega_body.cast<float>();
+        result->aWorld = a_world.cast<float>();
+        result->aBody = a_body.cast<float>();
+
+        result->orientation[0] = static_cast<float>(quat.w());
+        result->orientation[1] = static_cast<float>(quat.x());
+        result->orientation[2] = static_cast<float>(quat.y());
+        result->orientation[3] = static_cast<float>(quat.z());
+      }
+    }
   }
   // function to map the input in range -1,1 to given limits
   float mapToRange(float input, float in_min = -1, float in_max = 1,
@@ -417,7 +476,7 @@ class ModelBasedControllerInterface {
     Eigen::Vector3f base_pos;
     Eigen::Vector3f v_world;
     if (sim_data && 0) {
-      Eigen::Quaterniond quat(sim_data->qpos[3], sim_data->qpos[4],
+      Eigen::Quaternion<mjtNum> quat(sim_data->qpos[3], sim_data->qpos[4],
                               sim_data->qpos[5], sim_data->qpos[6]);
       quat.normalize();
       Rwb = quat.toRotationMatrix().cast<float>();
@@ -455,7 +514,7 @@ class ModelBasedControllerInterface {
     loco.pBody_RPY_des[1] = 0.0f;
     loco.vBody_Ori_des[2] = mapToRange(current_action_[2], -1, 1, -0.5f, 0.5f);
 
-    constexpr float kContactForceThreshold = 0.0f;
+    constexpr float kContactForceThreshold = 5.0f;
     for (int leg = 0; leg < kNumLegs; ++leg) {
       const bool leg_in_contact = contact_schedule[leg] > 0.0f;
       const int base = 3 + leg * kFootActionDim;
@@ -527,8 +586,10 @@ class ModelBasedControllerInterface {
     float candidate_height =
         reset_body_height_ + phase * (target_height - reset_body_height_);
     filtered_body_height_ += 0.2f * (candidate_height - filtered_body_height_);
-    filtered_body_height_ = std::clamp(filtered_body_height_, 0.28f, 0.42f);
-    loco.pBody_des[2] = 0.36f;
+  filtered_body_height_ = std::clamp(filtered_body_height_, 0.28f, 0.42f);
+  // Track the filtered target height instead of a hard-coded value to avoid
+  // unintended lift when the command is to hold still.
+  loco.pBody_des[2] = filtered_body_height_;
 
     // Forward contact schedule into the state estimator so the estimator is
     // aware of which feet are in contact. This mirrors calls like
@@ -586,9 +647,8 @@ class ModelBasedControllerInterface {
         base_lin_acc[1] = data->qacc[1];
         base_lin_acc[2] = data->qacc[2];
       }
-
-      Eigen::Quaternion<mjtNum> quat(data->qpos[6], data->qpos[3],
-                                     data->qpos[4], data->qpos[5]);
+      Eigen::Quaternion<mjtNum> quat(data->qpos[3], data->qpos[4],
+                                     data->qpos[5], data->qpos[6]);
       const auto euler = quat.toRotationMatrix().eulerAngles(0, 1, 2);
       base_rpy[0] = euler[0];
       base_rpy[1] = euler[1];
@@ -893,7 +953,7 @@ class ModelBasedControllerInterface {
           static_cast<double>(sim_data->qvel[4]),
           static_cast<double>(sim_data->qvel[5]);
 
-      Eigen::Quaterniond quat_tmp(sim_data->qpos[3], sim_data->qpos[4],
+      Eigen::Quaternion<mjtNum> quat_tmp(sim_data->qpos[3], sim_data->qpos[4],
                                   sim_data->qpos[5], sim_data->qpos[6]);
       quat_tmp.normalize();
       R_body_to_world_sim = quat_tmp.toRotationMatrix();
@@ -1112,7 +1172,7 @@ class ModelBasedControllerInterface {
 
   float reset_body_height_{0.36f};
   float filtered_body_height_{0.36f};
-  int cheater_mode{0};
+  int cheater_mode{1};  // 0: off, 1: on
   const mjModel* model_{nullptr};
   std::array<int, kNumLegs> foot_body_ids_{-1, -1, -1, -1};
   std::array<int, kNumLegs> foot_geom_ids_{-1, -1, -1, -1};
