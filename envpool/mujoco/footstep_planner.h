@@ -31,6 +31,7 @@ class FootstepPlanner {
     float control_dt;
     float gravity;
     LegController<float>& leg_controller;
+    std::vector<mjtNum> current_action_;
   };
 
   float Plan(const PlanInput& input, LocomotionCtrlData<float>& loco) {
@@ -97,8 +98,8 @@ class FootstepPlanner {
                input.commanded_velocity_world[1]) +
             (0.5f * input.base_position[2] / input.gravity) *
           (-input.base_velocity_world[0] * input.yaw_rate_des);
-        pfx_rel = std::clamp(pfx_rel, -kPRelMax, kPRelMax);
-        pfy_rel = std::clamp(pfy_rel, -kPRelMax, kPRelMax);
+        pfx_rel = std::clamp(pfx_rel, -kPRelMax, kPRelMax) + input.current_action_[3 + leg * 5 + 3] * 0.10f;
+        pfy_rel = std::clamp(pfy_rel, -kPRelMax, kPRelMax) + input.current_action_[3 + leg * 5 + 4] * 0.10f;
         float side_offset = (leg % 2 == 0) ? -0.05f : 0.05f;
         
         // printf("Leg %d: base_pos=[%.3f,%.3f,%.3f], base_vel=[%.3f,%.3f,%.3f], cmd_vel=[%.3f,%.3f,%.3f]\n",

@@ -272,9 +272,9 @@ inline void MujocoEnv::RenderInit() {
   // Side view: place camera at (2, 0, 0) looking toward origin.
   cam_.azimuth = 90.0;
   cam_.elevation = -10.0;
-  cam_.lookat[0] = 0.0;
-  cam_.lookat[1] = 0.0;
-  cam_.lookat[2] = 0.0;
+  cam_.lookat[0] = data_->qpos[0];
+  cam_.lookat[1] = data_->qpos[1];
+  cam_.lookat[2] = data_->qpos[2];
   mjr_defaultContext(&con_);
   mjv_defaultOption(&opt_);
   mjv_defaultPerturb(&pert_);
@@ -301,6 +301,9 @@ inline void MujocoEnv::RenderFrame() {
   opt_.flags[15] = 1;  // mjVIS_CONSTRAINT Visualize Contact Force
   // opt_.flags[10] = 1;  // mjVIS_CONSTRAINT Visualize Inertia
   cam_.azimuth += 0.5;  // slowly rotate camera
+  cam_.lookat[0] = data_->qpos[0];
+  cam_.lookat[1] = data_->qpos[1];
+  cam_.lookat[2] = data_->qpos[2];
   if (!OSMesaMakeCurrent(ctx, fb, GL_UNSIGNED_BYTE, render_w_, render_h_))
     throw std::runtime_error("OSMesaMakeCurrent failed");
 

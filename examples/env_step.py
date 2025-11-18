@@ -47,7 +47,7 @@ def gym_sync_step() -> None:
     print(f"Observation shape: {env.observation_space.shape}")
   action= np.zeros((num_envs, action_num), dtype=np.float32)
   for env_id in range(num_envs):
-    action[env_id][0]= .0
+    action[env_id][0]= 1.0
     action[env_id][5]= 0.5
     action[env_id][8]= 0.5
     action[env_id][11]= 0.5

@@ -31,8 +31,8 @@
 class ModelBasedControllerInterface {
  public:
   static constexpr int kNumLegs = 4;
-  static constexpr int kFootActionDim = 3;
-  static constexpr int kActionDim = 15;
+  static constexpr int kFootActionDim = 5;
+  static constexpr int kActionDim = 23;
   static constexpr int kHistoryLength = 4;
   static constexpr int kBodyCoreDim = 15;
   static constexpr int kHeightDim = 2;
@@ -427,50 +427,8 @@ class ModelBasedControllerInterface {
     constexpr float kControlDt = 0.002f;
     const auto& seResult = data._stateEstimator->getResult();
     // overwrite seResult with sim data if available
-
     const mjData* sim_data = last_feedback_data_;
 
-    // if (sim_data) {
-    //   _controller->_controlFSM->data._stateEstimator->_data.result
-    //       ->position[0] = static_cast<float>(sim_data->qpos[0]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result
-    //       ->position[1] = static_cast<float>(sim_data->qpos[1]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result
-    //       ->position[2] = static_cast<float>(sim_data->qpos[2]);
-
-    //   _controller->_controlFSM->data._stateEstimator->_data.result
-    //       ->orientation[0] = static_cast<float>(sim_data->qpos[3]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result
-    //       ->orientation[1] = static_cast<float>(sim_data->qpos[4]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result
-    //       ->orientation[2] = static_cast<float>(sim_data->qpos[5]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result
-    //       ->orientation[3] = static_cast<float>(sim_data->qpos[6]);
-
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->vWorld[0]
-    //   =
-    //       static_cast<float>(sim_data->qvel[0]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->vWorld[1]
-    //   =
-    //       static_cast<float>(sim_data->qvel[1]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->vWorld[2]
-    //   =
-    //       static_cast<float>(sim_data->qvel[2]);
-
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->omegaBody[0]
-    //   =
-    //       static_cast<float>(sim_data->qvel[3]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->omegaBody[1]
-    //   =
-    //       static_cast<float>(sim_data->qvel[4]);
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->omegaBody[2]
-    //   =
-    //       static_cast<float>(sim_data->qvel[5]);
-
-    // _controller->_controlFSM->data._stateEstimator->_data.result->vBody =
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->rBody *
-    //   _controller->_controlFSM->data._stateEstimator->_data.result->vWorld;
-    // }
 
     Eigen::Matrix3f Rwb;
     Eigen::Vector3f base_pos;
@@ -492,13 +450,17 @@ class ModelBasedControllerInterface {
       v_world = seResult.vWorld;
     }
     // set desired body position in x and y such that max error is 5 cm
-    const float max_pos_error = 0.3f;
-    loco.pBody_des[0] = base_pos[0] - std::clamp(base_pos[0] - 0.0f,
-                                                 -max_pos_error, max_pos_error);
-    loco.pBody_des[1] = base_pos[1] - std::clamp(base_pos[1] - 0.0f,
-                                                 -max_pos_error, max_pos_error);
-    // _controller->_controlFSM->data.locomotionCtrlData.pBody_des[2] =
-    // base_pos[2];
+
+
+    // loco.pBody_des[2] = base_pos[2];
+
+    loco.vBody_des[0] = act[0];
+    loco.vBody_des[1] = act[1];
+    loco.vBody_des[2] = 0.0f;
+
+    loco.vBody_Ori_des[0] = 0.0f;
+    loco.vBody_Ori_des[1] = 0.0f;
+    loco.vBody_Ori_des[2] = act[2];
 
     const Eigen::Vector3f v_body_des_vec(loco.vBody_des[0], loco.vBody_des[1],
                                          0.0f);
@@ -508,32 +470,41 @@ class ModelBasedControllerInterface {
     const float cmpc_bonus =
         user_params ? static_cast<float>(user_params->cmpc_bonus_swing) : 0.0f;
     constexpr float kGravity = 9.81f;
-    loco.vBody_des[0] = mapToRange(current_action_[0], -1, 1, -0.5f, 0.5f);
-    loco.vBody_des[1] = mapToRange(current_action_[1], -1, 1, -0.2f, 0.2f);
-    loco.pBody_RPY_des[0] = 0.0f;
-    loco.pBody_RPY_des[1] = 0.0f;
+
+    loco.vBody_des[0] = mapToRange(current_action_[0], -1, 1, -2.f, 2.f);
+    loco.vBody_des[1] = mapToRange(current_action_[1], -1, 1, -1.f, 1.f);
+    loco.vBody_des[2] = 0.0f;
+
+    loco.pBody_des[0] = base_pos[0] + loco.vBody_des[0] * kControlDt ;
+    loco.pBody_des[1] = base_pos[1] + loco.vBody_des[1] * kControlDt;
+
+    loco.vBody_Ori_des[0] = 0.0f;
+    loco.vBody_Ori_des[1] = 0.0f;
     loco.vBody_Ori_des[2] = mapToRange(current_action_[2], -1, 1, -0.5f, 0.5f);
 
-    constexpr float kContactForceThreshold = 5.0f;
-    for (int leg = 0; leg < kNumLegs; ++leg) {
-      const bool leg_in_contact = contact_schedule[leg] > 0.0f;
-      const int base = 3 + leg * kFootActionDim;
-      const mjtNum fx = current_action_[base + 0];
-      const mjtNum fy = current_action_[base + 1];
-      const mjtNum fz = current_action_[base + 2];
-      loco.Fr_des[leg][0] =
-          mapToRange(static_cast<float>(fx), -1, 1, -50.f, 50.0f);
-      loco.Fr_des[leg][1] =
-          mapToRange(static_cast<float>(fy), -1, 1, -50.f, 50.0f);
-      loco.Fr_des[leg][2] =
-          mapToRange(static_cast<float>(fz), -1, 1, 0.f, 250.0f);
+    loco.pBody_RPY_des[0] = 0.0f;
+    loco.pBody_RPY_des[1] = 0.0f;
+    loco.pBody_RPY_des[2] = seResult.rpy[2] + loco.vBody_Ori_des[2] * kControlDt;
 
-      if (!leg_in_contact) {
-        loco.Fr_des[leg][0] = 0.0f;
-        loco.Fr_des[leg][1] = 0.0f;
-        loco.Fr_des[leg][2] = 0.0f;
+
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      if (contact_schedule[leg] > 0.0f) { // if leg is in stance, set desired GRF
+        const int base = 3 + leg * kFootActionDim;
+        const mjtNum fx = current_action_[base + 0];
+        const mjtNum fy = current_action_[base + 1];
+        const mjtNum fz = current_action_[base + 2];
+        loco.Fr_des[leg][0] =
+            mapToRange(static_cast<float>(fx), -1, 1, -50.f, 50.0f);
+        loco.Fr_des[leg][1] =
+            mapToRange(static_cast<float>(fy), -1, 1, -50.f, 50.0f);
+        loco.Fr_des[leg][2] =
+            mapToRange(static_cast<float>(fz), -1, 1, 0.f, 250.0f);
+      } else {
+        loco.Fr_des[leg].setZero();
       }
 
+
+      constexpr float kContactForceThreshold = 5.0f;
       loco.Fr_se[leg].setZero();
       if (sim_data && foot_body_ids_[leg] >= 0) {
         const int body_id = foot_body_ids_[leg];
@@ -545,16 +516,6 @@ class ModelBasedControllerInterface {
           loco.Fr_se[leg][2] = contact_force.norm();
         }
       }
-
-      // else if (prev_contact_schedule[leg] <= 0.0f &&
-      //            loco.Fr_des[leg][2] < 10.0f) {
-      //   loco.Fr_des[leg][2] = 10.0f;
-      // }
-
-      // std::cout << "Leg " << leg
-      //           << " Desired Force: [" << loco.Fr_des[leg][0] << ", "
-      //           << loco.Fr_des[leg][1] << ", " << loco.Fr_des[leg][2]
-      //           << "]\n";
     }
     base_pos = seResult.position;
     FootstepPlanner::PlanInput plan_input{updated_contact_state,
@@ -568,7 +529,8 @@ class ModelBasedControllerInterface {
                                           cmpc_bonus,
                                           kControlDt,
                                           kGravity,
-                                          *data._legController};
+                                          *data._legController,
+                                          current_action_};
     float accum_foot_des_z = footstep_planner_.Plan(plan_input, loco);
     float avg_foot_des_z = accum_foot_des_z / static_cast<float>(kNumLegs);
     float target_height = reset_body_height_ - 0.5f * avg_foot_des_z;
@@ -576,12 +538,6 @@ class ModelBasedControllerInterface {
 
     int smoothing_horizon = std::max(1, frame_skip_ * 8);
     float phase = 0.0f;
-    // if (smoothing_horizon > 0) {
-    //   float normalized = static_cast<float>(elapsed_step_ %
-    //   smoothing_horizon) /
-    //                      static_cast<float>(smoothing_horizon);
-    //   phase = normalized * normalized * (3.0f - 2.0f * normalized);
-    // }
 
     float candidate_height =
         reset_body_height_ + phase * (target_height - reset_body_height_);

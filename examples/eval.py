@@ -8,21 +8,37 @@ and reusability between training and evaluation scripts.
 
 import argparse
 import logging
+import os
+import sys
 
-# Import refactored common modules
-from common import (
-    setup_environment,
-    load_model_and_normalization,
-    detailed_evaluation,
-    print_evaluation_results,
-    save_evaluation_results
-)
+# Import refactored common modules. Support running either as
+# `python -m envpool.examples.eval` or `python envpool/examples/eval.py`.
+try:
+    from .common import (
+        setup_environment,
+        load_model_and_normalization,
+        detailed_evaluation,
+        print_evaluation_results,
+        save_evaluation_results,
+    )
+except ImportError:
+    CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+    if CURRENT_DIR not in sys.path:
+        sys.path.insert(0, CURRENT_DIR)
+    from common import (  # type: ignore  # noqa: F401
+        setup_environment,
+        load_model_and_normalization,
+        detailed_evaluation,
+        print_evaluation_results,
+        save_evaluation_results,
+    )
 
 
 
 
 
 def parse_args():
+    print("Parsing command-line arguments for evaluation...")
     parser = argparse.ArgumentParser(description="Evaluate trained PPO models with EnvPool.")
     parser.add_argument("--model-path", type=str, default="data/current/quadruped_ppo_model.zip", help="Path to the saved model (without .zip extension)")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
@@ -59,6 +75,7 @@ def setup_evaluation_environment(args):
 
 
 def main():
+    print("Starting PPO Model Evaluation...")
     args = parse_args()
     
     # Set up logging
@@ -117,4 +134,5 @@ def main():
 
 
 if __name__ == "__main__":
+    print("Running evaluation script...")
     main()

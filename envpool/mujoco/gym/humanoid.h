@@ -41,10 +41,10 @@ class HumanoidEnvFns {
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
-        "velocity_tracking_weight"_.Bind(5.0),
+        "velocity_tracking_weight"_.Bind(0.5),
         "yaw_tracking_weight"_.Bind(0.2),
         "orientation_penalty_weight"_.Bind(5.0),
-        "height_penalty_weight"_.Bind(10.0),
+        "height_penalty_weight"_.Bind(.9),
         "foot_slip_penalty_weight"_.Bind(0.5),
         "reset_noise_scale"_.Bind(0));
   }
@@ -502,7 +502,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     constexpr mjtNum kContactExpGain = 0.5;
     constexpr mjtNum kPostureExpGain = 0.5;
     constexpr mjtNum kTrackingExpGain = 0.5;
-    const mjtNum fall_pen = 15.0;
+    const mjtNum fall_pen = 5.0;
 
     const auto* loco = mbc.locomotionData();
     const mjtNum vx_des = loco ? loco->vBody_des[0] : static_cast<mjtNum>(0.0);
@@ -556,15 +556,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     mjtNum reward = 0.0;
     if (is_healthy) {
-      reward += healthy_reward;
-      reward += tracking_shaping;
-      reward += 0.5 * posture_shaping;
-      reward += 0.3 * contact_shaping;
-      reward += progress_term;
-      reward -= (tracking_error + 0.5 * posture_error + 0.2 * contact_error);
+      reward += 1;
+      reward += xv;
+      // reward += tracking_shaping;
+      // reward += 0.5 * posture_shaping;
+      // reward += 0.3 * contact_shaping;
+      // reward += progress_term;
+      // reward -= (tracking_error + 0.5 * posture_error + 0.2 * contact_error);
     } else {
       reward -= fall_pen;
-      reward -= tracking_error;
+      // reward -= tracking_error;
     }
 
     orientation_penalty_out = orientation_penalty;
@@ -838,11 +839,6 @@ inline void mujoco_gym::HumanoidEnv::UpdateMbcDebugMarkers() {
            static_cast<mjtNum>(imu->foot_pos[leg * 3 + 2])});
     }
   }
-  std::cout << "foot_positions: ";
-  for (const auto& foot_pos : foot_positions) {
-    std::cout << "(" << foot_pos[0] << ", " << foot_pos[1] << ", " << foot_pos[2] << ") ";
-  }
-  std::cout << std::endl;
 
   addSpheres(body_pos, joint_positions, foot_positions);
 }
