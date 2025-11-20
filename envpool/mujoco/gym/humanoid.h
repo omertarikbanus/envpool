@@ -426,7 +426,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     return {mass_x / mass_sum, mass_y / mass_sum};
   }
 
-  // ------------------------------------------------------------------------
   // Standing reward that keeps the base rooted at (0, 0, desired_h) with
   // negligible velocity across all DoFs and neutral orientation.
   // A weighted, normalised squared error is mapped through an exponential so
@@ -478,101 +477,54 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
   // ------------------------------------------------------------------------
 
-  // Locomotion reward inspired by model-based RL literature
-  // (e.g., Hwangbo et al., 2019; Siekmann et al., 2021) that combines
-  // trajectory-tracking terms with posture and contact regularisation.
-  // When the WBC reference matches the simulated motion, the exponential
-  // shaping terms peak and penalties vanish, yielding a high reward.
-  // Components:
-  //  - Translational velocity tracking toward the WBC command.
-  //  - Yaw-rate tracking to keep heading aligned with the planner.
-  //  - Forward-progress term that rewards velocity alignment.
-  //  - Posture (roll/pitch + height) and stance slip penalties to stabilise the base.
-  //  - Fall penalty mirroring MPC-style safety constraints.
-  mjtNum ComputeLocomotionReward(mjtNum xv, mjtNum yv,
-                                 mjtNum healthy_reward,
-                                 mjtNum& velocity_cost,
-                                 mjtNum& yaw_rate_cost,
-                                 mjtNum& orientation_penalty_out,
-                                 mjtNum& height_penalty_out,
-                                 mjtNum& foot_slip_penalty_out,
-                                 bool& is_healthy) {
-    constexpr mjtNum kMinVelScale = 0.25;
-    constexpr mjtNum kMinYawScale = 0.3;
-    constexpr mjtNum kContactExpGain = 0.5;
-    constexpr mjtNum kPostureExpGain = 0.5;
-    constexpr mjtNum kTrackingExpGain = 0.5;
-    const mjtNum fall_pen = 5.0;
-
-    const auto* loco = mbc.locomotionData();
-    const mjtNum vx_des = loco ? loco->vBody_des[0] : static_cast<mjtNum>(0.0);
-    const mjtNum vy_des = loco ? loco->vBody_des[1] : static_cast<mjtNum>(0.0);
-    const mjtNum wz_des = loco ? loco->vBody_Ori_des[2] : static_cast<mjtNum>(0.0);
-
-    const mjtNum wz = data_->qvel[5];
-
-    const mjtNum vx_scale = std::max(std::abs(vx_des), kMinVelScale);
-    const mjtNum vy_scale = std::max(std::abs(vy_des), kMinVelScale);
-    const mjtNum wz_scale = std::max(std::abs(wz_des), kMinYawScale);
-
-    const mjtNum norm_vx = (xv - vx_des) / vx_scale;
-    const mjtNum norm_vy = (yv - vy_des) / vy_scale;
-    const mjtNum norm_wz = (wz - wz_des) / wz_scale;
-
-    velocity_cost =
-        velocity_tracking_weight_ * (norm_vx * norm_vx + norm_vy * norm_vy);
-    yaw_rate_cost = yaw_tracking_weight_ * (norm_wz * norm_wz);
-
-    const mjtNum orientation_penalty = ComputeOrientationPenalty();
-    const mjtNum height_penalty = ComputeHeightPenalty();
-    const mjtNum foot_slip_penalty = ComputeFootSlipPenalty();
-
-    const mjtNum tracking_error = velocity_cost + yaw_rate_cost;
-    const mjtNum posture_error = orientation_penalty + height_penalty;
-    const mjtNum contact_error = foot_slip_penalty;
-
-    Eigen::Matrix<mjtNum, 2, 1> v_des(vx_des, vy_des);
-    Eigen::Matrix<mjtNum, 2, 1> v_meas(xv, yv);
-    mjtNum progress_term = 0.0;
-    const mjtNum desired_speed = v_des.norm();
-    if (desired_speed > static_cast<mjtNum>(1e-3)) {
-      progress_term =
-          v_meas.dot(v_des) / (desired_speed + static_cast<mjtNum>(1e-6));
-    } else {
-      progress_term = v_meas.norm();
+  // Locomotion reward encourages fast travel in any direction while keeping the
+  // body upright, level, and with low slip.
+  mjtNum ComputeLocomotionReward(
+      mjtNum xv, mjtNum yv, mjtNum healthy_reward, mjtNum& velocity_cost,
+      mjtNum& yaw_cost, mjtNum& orientation_penalty, mjtNum& height_penalty,
+      mjtNum& foot_slip_penalty, bool& is_healthy) {
+    static_cast<void>(healthy_reward);
+    const Eigen::Matrix<mjtNum, 3, 1> v_world(xv, yv, static_cast<mjtNum>(0));
+    Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4],
+                                   data_->qpos[5], data_->qpos[6]);
+    if (std::abs(static_cast<double>(quat.norm() - 1.0)) > 1e-6) {
+      quat.normalize();
     }
-    progress_term = std::clamp(progress_term, static_cast<mjtNum>(-2.0),
-                               static_cast<mjtNum>(2.0));
-    progress_term *= forward_reward_weight_;
+    const Eigen::Matrix<mjtNum, 3, 3> R_world_to_body =
+        quat.toRotationMatrix().transpose();
+    const Eigen::Matrix<mjtNum, 3, 1> v_body = R_world_to_body * v_world;
+    const Eigen::Matrix<mjtNum, 2, 1> actual_planar_body_vel =
+        v_body.head<2>();
+    const mjtNum planar_speed = actual_planar_body_vel.norm();
+    velocity_cost = 0.0;
 
-    const mjtNum tracking_shaping =
-        std::exp(-kTrackingExpGain * tracking_error);
-    const mjtNum posture_shaping =
-        std::exp(-kPostureExpGain * posture_error);
-    const mjtNum contact_shaping =
-        std::exp(-kContactExpGain * contact_error);
+    const Eigen::Matrix<mjtNum, 3, 1> omega_world(
+        data_->qvel[3], data_->qvel[4], data_->qvel[5]);
+    const Eigen::Matrix<mjtNum, 3, 1> omega_body =
+        R_world_to_body * omega_world;
+    const mjtNum yaw_rate = omega_body[2];
+    yaw_cost = yaw_tracking_weight_ * yaw_rate * yaw_rate;
+
+    orientation_penalty = ComputeOrientationPenalty();
+    height_penalty = ComputeHeightPenalty();
+    foot_slip_penalty = ComputeFootSlipPenalty();
 
     is_healthy = IsHealthy();
-
-    mjtNum reward = 0.0;
-    if (is_healthy) {
-      reward += 1;
-      reward += xv;
-      // reward += tracking_shaping;
-      // reward += 0.5 * posture_shaping;
-      // reward += 0.3 * contact_shaping;
-      // reward += progress_term;
-      // reward -= (tracking_error + 0.5 * posture_error + 0.2 * contact_error);
-    } else {
-      reward -= fall_pen;
-      // reward -= tracking_error;
+    if (!is_healthy) {
+      return 0.0;
     }
 
-    orientation_penalty_out = orientation_penalty;
-    height_penalty_out = height_penalty;
-    foot_slip_penalty_out = foot_slip_penalty;
-    return reward;
+    const mjtNum total_penalty =
+        yaw_cost + orientation_penalty + height_penalty + foot_slip_penalty;
+    const mjtNum speed_reward =
+        forward_reward_weight_ * planar_speed;
+    const mjtNum posture_reward =
+        std::exp(-std::max(static_cast<mjtNum>(0.1), orientation_penalty_weight_) *
+                 total_penalty);
+    return posture_reward * (static_cast<mjtNum>(1.0) + speed_reward);
   }
+  
+  
 
   mjtNum ComputeOrientationPenalty() const {
     Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4], data_->qpos[5],
