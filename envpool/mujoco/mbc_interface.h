@@ -468,25 +468,8 @@ class ModelBasedControllerInterface {
     }
     // set desired body position in x and y such that max error is 5 cm
 
-
-    // loco.pBody_des[2] = base_pos[2];
-
-    loco.vBody_des[0] = act[0];
-    loco.vBody_des[1] = act[1];
-    loco.vBody_des[2] = 0.0f;
-
-    loco.vBody_Ori_des[0] = 0.0f;
-    loco.vBody_Ori_des[1] = 0.0f;
-    loco.vBody_Ori_des[2] = act[2];
-
-    const Eigen::Vector3f v_body_des_vec(loco.vBody_des[0], loco.vBody_des[1],
-                                         0.0f);
-    const Eigen::Vector3f v_des_world = Rwb * v_body_des_vec;
-    const float yaw_rate_des = static_cast<float>(loco.vBody_Ori_des[2]);
-    const auto* user_params = data.userParameters;
-    const float cmpc_bonus =
-        user_params ? static_cast<float>(user_params->cmpc_bonus_swing) : 0.0f;
-    constexpr float kGravity = 9.81f;
+   
+    
 
     const float residual_vx =
         mapToRange(current_action_[0], -1, 1, -cmd_linear_residual_limit_,
@@ -494,11 +477,25 @@ class ModelBasedControllerInterface {
     const float residual_vy =
         mapToRange(current_action_[1], -1, 1, -cmd_linear_residual_limit_,
                    cmd_linear_residual_limit_);
+    const float target_vx =
+      static_cast<float>(latest_cmd_vel_[0]) + residual_vx;
+    const float target_vy =
+      static_cast<float>(latest_cmd_vel_[1]) + residual_vy;
+    const float target_vz = 0.0f;
+
+    constexpr float kMaxStepChange = 0.2f;
+    auto apply_rate_limit = [](float current, float target, float max_delta) {
+      float delta = target - current;
+      delta = std::clamp(delta, -max_delta, max_delta);
+      return current + delta;
+    };
+
     loco.vBody_des[0] =
-        static_cast<float>(latest_cmd_vel_[0]) + residual_vx;
+      apply_rate_limit(loco.vBody_des[0], target_vx, kMaxStepChange);
     loco.vBody_des[1] =
-        static_cast<float>(latest_cmd_vel_[1]) + residual_vy;
-    loco.vBody_des[2] = 0.0f;
+      apply_rate_limit(loco.vBody_des[1], target_vy, kMaxStepChange);
+    loco.vBody_des[2] =
+      apply_rate_limit(loco.vBody_des[2], target_vz, kMaxStepChange);
 
     loco.pBody_des[0] = base_pos[0] + loco.vBody_des[0] * kControlDt ;
     loco.pBody_des[1] = base_pos[1] + loco.vBody_des[1] * kControlDt;
@@ -549,6 +546,15 @@ class ModelBasedControllerInterface {
       }
     }
     base_pos = seResult.position;
+
+    const auto* user_params = data.userParameters;
+    const float cmpc_bonus =
+        user_params ? static_cast<float>(user_params->cmpc_bonus_swing) : 0.0f;
+    constexpr float kGravity = 9.81f;
+    const Eigen::Vector3f v_body_des_vec(loco.vBody_des[0], loco.vBody_des[1],
+                                         0.0f);
+    const Eigen::Vector3f v_des_world = Rwb * v_body_des_vec;
+    const float yaw_rate_des = static_cast<float>(loco.vBody_Ori_des[2]);
     FootstepPlanner::PlanInput plan_input{updated_contact_state,
                                           prev_contact_schedule,
                                           swing_phase,
@@ -1171,8 +1177,8 @@ class ModelBasedControllerInterface {
   std::deque<std::vector<mjtNum>> action_history_;
   std::deque<std::array<mjtNum, kBodyHistoryDim>> body_history_;
   std::array<mjtNum, kCommandDim> latest_cmd_vel_{{0.0, 0.0, 0.0}};
-  float cmd_linear_residual_limit_{0.5f};
-  float cmd_yaw_residual_limit_{0.3f};
+  float cmd_linear_residual_limit_{2.0f};
+  float cmd_yaw_residual_limit_{1.0f};
   LeggedGaitScheduler gait_scheduler_;
   FootstepPlanner footstep_planner_;
   std::array<float, kNumLegs> last_contact_schedule_{{1.0f, 1.0f, 1.0f, 1.0f}};
