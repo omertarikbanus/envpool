@@ -9,6 +9,7 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -43,9 +44,23 @@ class HumanoidEnvFns {
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
         "velocity_tracking_weight"_.Bind(0.5),
         "yaw_tracking_weight"_.Bind(0.2),
-        "orientation_penalty_weight"_.Bind(5.0),
+        "orientation_penalty_weight"_.Bind(0.1),
         "height_penalty_weight"_.Bind(.9),
-        "foot_slip_penalty_weight"_.Bind(0.5),
+        "foot_slip_penalty_weight"_.Bind(0.1),
+        "action_penalty_weight"_.Bind(5e-3),
+        "cmd_profile_mode"_.Bind(std::string("random_episode")),
+        "cmd_fixed_vx"_.Bind(0.5),
+        "cmd_fixed_vy"_.Bind(0.0),
+        "cmd_fixed_yaw"_.Bind(0.0),
+        "cmd_rand_vx_min"_.Bind(-1.5),
+        "cmd_rand_vx_max"_.Bind(1.5),
+        "cmd_rand_vy_min"_.Bind(-0.5),
+        "cmd_rand_vy_max"_.Bind(0.5),
+        "cmd_rand_yaw_min"_.Bind(-0.4),
+        "cmd_rand_yaw_max"_.Bind(0.4),
+        "cmd_tracking_weight"_.Bind(1.0),
+        "cmd_residual_linear_limit"_.Bind(0.5),
+        "cmd_residual_yaw_limit"_.Bind(0.3),
         "reset_noise_scale"_.Bind(0));
   }
   template <typename Config>
@@ -103,6 +118,20 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjtNum orientation_penalty_weight_;
   mjtNum height_penalty_weight_;
   mjtNum foot_slip_penalty_weight_;
+  mjtNum action_penalty_weight_;
+  std::string cmd_profile_mode_;
+  std::array<mjtNum, 3> cmd_fixed_cmd_vel_;
+  mjtNum cmd_rand_vx_min_;
+  mjtNum cmd_rand_vx_max_;
+  mjtNum cmd_rand_vy_min_;
+  mjtNum cmd_rand_vy_max_;
+  mjtNum cmd_rand_yaw_min_;
+  mjtNum cmd_rand_yaw_max_;
+  mjtNum cmd_tracking_weight_;
+  mjtNum cmd_residual_linear_limit_;
+  mjtNum cmd_residual_yaw_limit_;
+  std::array<mjtNum, 3> cmd_vel_target_body_{{0.0, 0.0, 0.0}};
+  std::mt19937 cmd_rng_;
   std::vector<mjtNum> last_action_vector_;
   std::vector<mjtNum> last_observation_;
   mjtNum last_ctrl_cost_{0.0};
@@ -110,6 +139,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjtNum last_velocity_tracking_cost_{0.0};
   mjtNum last_yaw_rate_tracking_cost_{0.0};
   mjtNum last_healthy_reward_{0.0};
+  mjtNum last_action_penalty_{0.0};
   mjtNum last_x_velocity_{0.0};
   mjtNum last_y_velocity_{0.0};
   mjtNum last_x_position_{0.0};
@@ -153,8 +183,25 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         yaw_tracking_weight_(spec.config["yaw_tracking_weight"_]),
         orientation_penalty_weight_(spec.config["orientation_penalty_weight"_]),
         height_penalty_weight_(spec.config["height_penalty_weight"_]),
-        foot_slip_penalty_weight_(spec.config["foot_slip_penalty_weight"_]) {
+        foot_slip_penalty_weight_(spec.config["foot_slip_penalty_weight"_]),
+        action_penalty_weight_(spec.config["action_penalty_weight"_]),
+        cmd_profile_mode_(spec.config["cmd_profile_mode"_]),
+        cmd_fixed_cmd_vel_{{spec.config["cmd_fixed_vx"_],
+                            spec.config["cmd_fixed_vy"_],
+                            spec.config["cmd_fixed_yaw"_]}},
+        cmd_rand_vx_min_(spec.config["cmd_rand_vx_min"_]),
+        cmd_rand_vx_max_(spec.config["cmd_rand_vx_max"_]),
+        cmd_rand_vy_min_(spec.config["cmd_rand_vy_min"_]),
+        cmd_rand_vy_max_(spec.config["cmd_rand_vy_max"_]),
+        cmd_rand_yaw_min_(spec.config["cmd_rand_yaw_min"_]),
+        cmd_rand_yaw_max_(spec.config["cmd_rand_yaw_max"_]),
+        cmd_tracking_weight_(spec.config["cmd_tracking_weight"_]),
+        cmd_residual_linear_limit_(spec.config["cmd_residual_linear_limit"_]),
+        cmd_residual_yaw_limit_(spec.config["cmd_residual_yaw_limit"_]),
+        cmd_rng_(std::random_device{}() + env_id) {
     mbc.setModel(model_);
+    mbc.setCommandResidualLimits(static_cast<float>(cmd_residual_linear_limit_),
+                                 static_cast<float>(cmd_residual_yaw_limit_));
     if (env_id_ == 0 ) {
       csv_logging_enabled_ = 1;
     }
@@ -174,6 +221,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     desired_h = 0.35;  // Set the desired height to 0.35
     mbc.setBaseHeight(static_cast<float>(desired_h));
+    ResampleCommandVelocity();
 
     // Save the initial controller configuration to backup
     // while (mbc.getMode() != 6) {
@@ -243,6 +291,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mbc.setFeedback(data_);
     mbc.setModeLocomotion();
     mbc.setDesiredBodyHeight(static_cast<float>(desired_h));
+    ResampleCommandVelocity();
     if (csv_logging_enabled_) {
       mbc.writeWBCLogCSV(wbc_csv_filename_, /*write_header_if_new=*/true);
     }
@@ -275,13 +324,18 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     auto action_array = action["action"_];
     auto* act = static_cast<mjtNum*>(action_array.Data());
     std::size_t action_count = action_array.size;
+    mbc.setCommandVelocity(cmd_vel_target_body_[0], cmd_vel_target_body_[1],
+                           cmd_vel_target_body_[2]);
     bool invalid_action = false;
+    mjtNum action_penalty = 0.0;
     for (std::size_t idx = 0; idx < action_count; ++idx) {
       if (!std::isfinite(static_cast<double>(act[idx]))) {
         act[idx] = 0.0;
         invalid_action = true;
       }
+      action_penalty += act[idx] * act[idx];
     }
+    action_penalty *= action_penalty_weight_;
     if (invalid_action && env_id_ == 0) {
       std::cerr << "[HumanoidEnv] Non-finite action detected; replaced with zeros." << std::endl;
     }
@@ -360,8 +414,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum foot_slip_penalty = 0.0;
     bool is_healthy = true;
     mjtNum reward = ComputeLocomotionReward(
-        xv, yv, healthy_reward_, velocity_cost, yaw_cost, orientation_penalty,
-        height_penalty, foot_slip_penalty, is_healthy);
+        xv, yv, cmd_vel_target_body_, healthy_reward_, velocity_cost, yaw_cost,
+        orientation_penalty, height_penalty, foot_slip_penalty, is_healthy);
+    reward -= action_penalty;
 
     if (!std::isfinite(static_cast<double>(reward))) {
       if (env_id_ == 0) {
@@ -373,6 +428,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       return;
     }
 
+    last_action_penalty_ = action_penalty;
     last_ctrl_cost_ = ctrl_cost;
     last_contact_cost_ = contact_cost;
     last_orientation_penalty_ = orientation_penalty;
@@ -480,10 +536,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // Locomotion reward encourages fast travel in any direction while keeping the
   // body upright, level, and with low slip.
   mjtNum ComputeLocomotionReward(
-      mjtNum xv, mjtNum yv, mjtNum healthy_reward, mjtNum& velocity_cost,
-      mjtNum& yaw_cost, mjtNum& orientation_penalty, mjtNum& height_penalty,
+      mjtNum xv, mjtNum yv, const std::array<mjtNum, 3>& cmd_target,
+      mjtNum healthy_reward, mjtNum& velocity_cost, mjtNum& yaw_cost,
+      mjtNum& orientation_penalty, mjtNum& height_penalty,
       mjtNum& foot_slip_penalty, bool& is_healthy) {
-    static_cast<void>(healthy_reward);
     const Eigen::Matrix<mjtNum, 3, 1> v_world(xv, yv, static_cast<mjtNum>(0));
     Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4],
                                    data_->qpos[5], data_->qpos[6]);
@@ -493,19 +549,23 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     const Eigen::Matrix<mjtNum, 3, 3> R_world_to_body =
         quat.toRotationMatrix().transpose();
     const Eigen::Matrix<mjtNum, 3, 1> v_body = R_world_to_body * v_world;
-    const Eigen::Matrix<mjtNum, 2, 1> actual_planar_body_vel =
-        v_body.head<2>();
-    const mjtNum planar_speed = actual_planar_body_vel.norm();
-    velocity_cost = 0.0;
+    const Eigen::Matrix<mjtNum, 2, 1> actual_planar_body_vel = v_body.head<2>();
+    const Eigen::Matrix<mjtNum, 2, 1> desired_planar_body_vel(
+        cmd_target[0], cmd_target[1]);
+    const Eigen::Matrix<mjtNum, 2, 1> vel_error =
+        actual_planar_body_vel - desired_planar_body_vel;
+    velocity_cost = velocity_tracking_weight_ * vel_error.squaredNorm();
 
     const Eigen::Matrix<mjtNum, 3, 1> omega_world(
         data_->qvel[3], data_->qvel[4], data_->qvel[5]);
     const Eigen::Matrix<mjtNum, 3, 1> omega_body =
         R_world_to_body * omega_world;
     const mjtNum yaw_rate = omega_body[2];
-    yaw_cost = yaw_tracking_weight_ * yaw_rate * yaw_rate;
+    const mjtNum yaw_error = yaw_rate - cmd_target[2];
+    yaw_cost = yaw_tracking_weight_ * yaw_error * yaw_error;
 
     orientation_penalty = ComputeOrientationPenalty();
+
     height_penalty = ComputeHeightPenalty();
     foot_slip_penalty = ComputeFootSlipPenalty();
 
@@ -514,14 +574,17 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       return 0.0;
     }
 
-    const mjtNum total_penalty =
-        yaw_cost + orientation_penalty + height_penalty + foot_slip_penalty;
-    const mjtNum speed_reward =
-        forward_reward_weight_ * planar_speed;
+    const mjtNum total_posture_penalty =
+        orientation_penalty + height_penalty + foot_slip_penalty;
     const mjtNum posture_reward =
         std::exp(-std::max(static_cast<mjtNum>(0.1), orientation_penalty_weight_) *
-                 total_penalty);
-    return posture_reward * (static_cast<mjtNum>(1.0) + speed_reward);
+                 total_posture_penalty);
+    const mjtNum tracking_penalty =
+        cmd_tracking_weight_ * std::max(static_cast<mjtNum>(0.0),
+                                        velocity_cost + yaw_cost);
+    const mjtNum tracking_reward = std::exp(-tracking_penalty);
+    return healthy_reward * posture_reward *
+           (static_cast<mjtNum>(1.0) + forward_reward_weight_ * tracking_reward);
   }
   
   
@@ -559,6 +622,31 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       }
     }
     return foot_slip_penalty_weight_ * slip_cost;
+  }
+
+  mjtNum SampleCommandValue(mjtNum min_value, mjtNum max_value) {
+    if (min_value > max_value) {
+      std::swap(min_value, max_value);
+    }
+    std::uniform_real_distribution<mjtNum> dist(min_value, max_value);
+    return dist(cmd_rng_);
+  }
+
+  void SetCommandVelocityTarget(const std::array<mjtNum, 3>& cmd) {
+    cmd_vel_target_body_ = cmd;
+    mbc.setCommandVelocity(cmd[0], cmd[1], cmd[2]);
+  }
+
+  void ResampleCommandVelocity() {
+    std::array<mjtNum, 3> new_cmd{};
+    if (cmd_profile_mode_ == "fixed") {
+      new_cmd = cmd_fixed_cmd_vel_;
+    } else {
+      new_cmd[0] = SampleCommandValue(cmd_rand_vx_min_, cmd_rand_vx_max_);
+      new_cmd[1] = SampleCommandValue(cmd_rand_vy_min_, cmd_rand_vy_max_);
+      new_cmd[2] = SampleCommandValue(cmd_rand_yaw_min_, cmd_rand_yaw_max_);
+    }
+    SetCommandVelocityTarget(new_cmd);
   }
 
   // ------------------------------------------------------------------------
@@ -659,9 +747,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                  << "HL_abad,HL_hip,HL_knee,"
                  << "reward_total,healthy_reward,velocity_tracking_penalty,"
                  << "yaw_rate_tracking_penalty,orientation_penalty,height_penalty,foot_slip_penalty,"
-                 << "ctrl_cost,contact_cost,is_healthy,"
+                 << "ctrl_cost,contact_cost,action_penalty,is_healthy,"
                  << "x_position,y_position,x_velocity,y_velocity,"
-                 << "pBody_des_z,desired_h";
+                 << "pBody_des_z,desired_h,cmd_vel_x,cmd_vel_y,cmd_vel_yaw";
       for (std::size_t i = 0; i < last_action_vector_.size(); ++i) {
         outputFile << ",action_" << i;
       }
@@ -687,6 +775,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                << ',' << static_cast<double>(last_foot_slip_penalty_)
                << ',' << static_cast<double>(last_ctrl_cost_)
                << ',' << static_cast<double>(last_contact_cost_)
+               << ',' << static_cast<double>(last_action_penalty_)
                << ',' << (last_is_healthy_ ? 1 : 0)
                << ',' << static_cast<double>(last_x_position_)
                << ',' << static_cast<double>(last_y_position_)
@@ -694,7 +783,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                << ',' << static_cast<double>(last_y_velocity_)
                << ','
                << static_cast<double>(mbc.desiredBodyHeight())
-               << ',' << static_cast<double>(desired_h);
+               << ',' << static_cast<double>(desired_h)
+               << ',' << static_cast<double>(cmd_vel_target_body_[0])
+               << ',' << static_cast<double>(cmd_vel_target_body_[1])
+               << ',' << static_cast<double>(cmd_vel_target_body_[2]);
 
     for (std::size_t i = 0; i < last_action_vector_.size(); ++i) {
       outputFile << ',' << static_cast<double>(last_action_vector_[i]);

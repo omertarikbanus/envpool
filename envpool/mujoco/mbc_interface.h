@@ -45,9 +45,11 @@ class ModelBasedControllerInterface {
   static constexpr int kFootObsPerLeg =
       1 + kFootCtrlStateDim +
       kFootMeasuredStateDim;  // contact + ctrl state + measured state
+  static constexpr int kCommandDim = 3;
   static constexpr int kObservationDim =
       kBodyCoreDim + kHeightDim + kNumLegs * kFootObsPerLeg +
-      kActionDim * (1 + kHistoryLength) + kBodyHistoryDim * kHistoryLength;
+      kActionDim * (1 + kHistoryLength) + kBodyHistoryDim * kHistoryLength +
+      kCommandDim;
 
   ModelBasedControllerInterface() : footstep_planner_(gait_scheduler_) {
     reset();
@@ -199,6 +201,21 @@ class ModelBasedControllerInterface {
     if (auto* loco = mutableLocomotionData_()) {
       loco->pBody_des[2] = filtered_body_height_;
     }
+  }
+
+  void setCommandVelocity(mjtNum vx, mjtNum vy, mjtNum yaw_rate) {
+    latest_cmd_vel_[0] = vx;
+    latest_cmd_vel_[1] = vy;
+    latest_cmd_vel_[2] = yaw_rate;
+  }
+
+  std::array<mjtNum, kCommandDim> commandVelocity() const {
+    return latest_cmd_vel_;
+  }
+
+  void setCommandResidualLimits(float linear_limit, float yaw_limit) {
+    cmd_linear_residual_limit_ = std::max(0.0f, linear_limit);
+    cmd_yaw_residual_limit_ = std::max(0.0f, yaw_limit);
   }
 
   void setModel(const mjModel* model) {
@@ -471,8 +488,16 @@ class ModelBasedControllerInterface {
         user_params ? static_cast<float>(user_params->cmpc_bonus_swing) : 0.0f;
     constexpr float kGravity = 9.81f;
 
-    loco.vBody_des[0] = mapToRange(current_action_[0], -1, 1, -2.f, 2.f);
-    loco.vBody_des[1] = mapToRange(current_action_[1], -1, 1, -1.f, 1.f);
+    const float residual_vx =
+        mapToRange(current_action_[0], -1, 1, -cmd_linear_residual_limit_,
+                   cmd_linear_residual_limit_);
+    const float residual_vy =
+        mapToRange(current_action_[1], -1, 1, -cmd_linear_residual_limit_,
+                   cmd_linear_residual_limit_);
+    loco.vBody_des[0] =
+        static_cast<float>(latest_cmd_vel_[0]) + residual_vx;
+    loco.vBody_des[1] =
+        static_cast<float>(latest_cmd_vel_[1]) + residual_vy;
     loco.vBody_des[2] = 0.0f;
 
     loco.pBody_des[0] = base_pos[0] + loco.vBody_des[0] * kControlDt ;
@@ -480,7 +505,11 @@ class ModelBasedControllerInterface {
 
     loco.vBody_Ori_des[0] = 0.0f;
     loco.vBody_Ori_des[1] = 0.0f;
-    loco.vBody_Ori_des[2] = mapToRange(current_action_[2], -1, 1, -0.5f, 0.5f);
+    const float residual_yaw =
+        mapToRange(current_action_[2], -1, 1, -cmd_yaw_residual_limit_,
+                   cmd_yaw_residual_limit_);
+    loco.vBody_Ori_des[2] =
+        static_cast<float>(latest_cmd_vel_[2]) + residual_yaw;
 
     loco.pBody_RPY_des[0] = 0.0f;
     loco.pBody_RPY_des[1] = 0.0f;
@@ -513,7 +542,9 @@ class ModelBasedControllerInterface {
             static_cast<float>(sim_data->cfrc_ext[6 * body_id + 1]),
             static_cast<float>(sim_data->cfrc_ext[6 * body_id + 2]));
         if (contact_force.norm() > kContactForceThreshold) {
-          loco.Fr_se[leg][2] = contact_force.norm();
+          for (int axis = 0; axis < 3 /*foot force dim*/; ++axis) {
+            loco.Fr_se[leg][axis] = contact_force[axis];
+          }
         }
       }
     }
@@ -750,6 +781,10 @@ class ModelBasedControllerInterface {
       body_history_.pop_front();
     }
 
+    for (int i = 0; i < kCommandDim; ++i) {
+      *ptr++ = latest_cmd_vel_[i];
+    }
+
     return ptr;
   }
 
@@ -797,24 +832,24 @@ class ModelBasedControllerInterface {
     auto* legDat = data._legController->datas;
     const auto& loco = data.locomotionCtrlData;
 
-    std::array<double, 12> foot_forces_world{};
+    std::array<double, kNumLegs * 3 /* foot force dim */> foot_forces_world{};
     if (auto* locomotion_state = fsm.statesList.locomotion) {
       if (auto* wbc_ctrl = locomotion_state->getWbcCtrl()) {
         const auto& fr = wbc_ctrl->getReactionForces();
         std::size_t contact_idx = 0;
         for (int leg = 0; leg < kNumLegs; ++leg) {
           if (loco.contact_state[leg] > 0.5f) {
-            for (int axis = 0; axis < kFootActionDim; ++axis) {
-              const std::size_t fr_idx = contact_idx * kFootActionDim + axis;
+            for (int axis = 0; axis < 3 /* foot force dim */; ++axis) {
+              const std::size_t fr_idx = contact_idx * 3 /* foot force dim */ + axis;
               if (fr_idx < static_cast<std::size_t>(fr.size())) {
-                foot_forces_world[leg * kFootActionDim + axis] =
+                foot_forces_world[leg * 3 /* foot force dim */ + axis] =
                     static_cast<double>(fr[fr_idx]);
               }
             }
             ++contact_idx;
           } else {
-            for (int axis = 0; axis < kFootActionDim; ++axis) {
-              foot_forces_world[leg * kFootActionDim + axis] = 0.0;
+            for (int axis = 0; axis < 3 /* foot force dim */; ++axis) {
+              foot_forces_world[leg * 3 /* foot force dim */ + axis] = 0.0;
             }
           }
         }
@@ -1135,6 +1170,9 @@ class ModelBasedControllerInterface {
   std::vector<mjtNum> current_action_;
   std::deque<std::vector<mjtNum>> action_history_;
   std::deque<std::array<mjtNum, kBodyHistoryDim>> body_history_;
+  std::array<mjtNum, kCommandDim> latest_cmd_vel_{{0.0, 0.0, 0.0}};
+  float cmd_linear_residual_limit_{0.5f};
+  float cmd_yaw_residual_limit_{0.3f};
   LeggedGaitScheduler gait_scheduler_;
   FootstepPlanner footstep_planner_;
   std::array<float, kNumLegs> last_contact_schedule_{{1.0f, 1.0f, 1.0f, 1.0f}};

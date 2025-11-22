@@ -170,6 +170,7 @@ docker-run:
 		-v $(HOME)/.cache:/root/.cache \
 		-v /:/host \
 		--shm-size=4gb -it --rm \
+		--name $(CONTAINER_NAME) \
 		-e DISPLAY=$(DISPLAY) \
 		-e QT_X11_NO_MITSHM=1 \
 		-e XAUTHORITY=/tmp/.docker.xauth \

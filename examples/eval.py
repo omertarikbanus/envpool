@@ -16,6 +16,7 @@ import sys
 try:
     from .common import (
         setup_environment,
+        build_cmd_profile_config,
         load_model_and_normalization,
         detailed_evaluation,
         print_evaluation_results,
@@ -27,6 +28,7 @@ except ImportError:
         sys.path.insert(0, CURRENT_DIR)
     from common import (  # type: ignore  # noqa: F401
         setup_environment,
+        build_cmd_profile_config,
         load_model_and_normalization,
         detailed_evaluation,
         print_evaluation_results,
@@ -47,9 +49,32 @@ def parse_args():
     parser.add_argument("--n-eval-episodes", type=int, default=3, help="Number of episodes for evaluation")
     parser.add_argument("--seed", type=int, default=0, help="Random seed for evaluation")
     parser.add_argument("--render", action="store_true", help="Render the environment during evaluation")
-    parser.add_argument("--deterministic", action="store_true", help="Use deterministic actions (no exploration)")
-    parser.add_argument("--auto-detect-vecnorm", action="store_true", default=False, help="Automatically detect and load VecNormalize statistics")
-    parser.add_argument("--vecnormalize-path", type=str, default="data/current/quadruped_ppo_model_vecnormalize.pkl", help="Explicit path to VecNormalize statistics file")
+    parser.add_argument(
+        "--deterministic",
+        dest="deterministic",
+        action="store_true",
+        default=True,
+        help="Use deterministic actions (no exploration, default behaviour)"
+    )
+    parser.add_argument(
+        "--stochastic",
+        dest="deterministic",
+        action="store_false",
+        help="Sample actions from the policy distribution during evaluation"
+    )
+    parser.add_argument("--auto-detect-vecnorm", action="store_true", default=True, help="Automatically detect and load VecNormalize statistics based on model path")
+    parser.add_argument("--no-auto-detect-vecnorm", dest="auto_detect_vecnorm", action="store_false", help="Disable automatic VecNormalize detection")
+    parser.add_argument("--vecnormalize-path", type=str, default=None, help="Explicit path to VecNormalize statistics file (overrides auto-detection)")
+    parser.add_argument("--cmd-profile", type=str, default="fixed", choices=["random_episode", "fixed"], help="Command sampling strategy")
+    parser.add_argument("--cmd-fixed-vx", type=float, default=3, help="Fixed command in body X (m/s)")
+    parser.add_argument("--cmd-fixed-vy", type=float, default=0, help="Fixed command in body Y (m/s)")
+    parser.add_argument("--cmd-fixed-yaw", type=float, default=0, help="Fixed yaw-rate command (rad/s)")
+    parser.add_argument("--cmd-rand-vx-min", type=float, default=None, help="Minimum random body X command (m/s)")
+    parser.add_argument("--cmd-rand-vx-max", type=float, default=None, help="Maximum random body X command (m/s)")
+    parser.add_argument("--cmd-rand-vy-min", type=float, default=None, help="Minimum random body Y command (m/s)")
+    parser.add_argument("--cmd-rand-vy-max", type=float, default=None, help="Maximum random body Y command (m/s)")
+    parser.add_argument("--cmd-rand-yaw-min", type=float, default=None, help="Minimum random yaw-rate command (rad/s)")
+    parser.add_argument("--cmd-rand-yaw-max", type=float, default=None, help="Maximum random yaw-rate command (rad/s)")
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
     return parser.parse_args()
 
@@ -61,18 +86,9 @@ def setup_evaluation_environment(args):
         num_envs=args.num_envs,
         seed=args.seed,
         render_mode=True if args.render else None,
-        stack_frames=args.stack_frames
+        stack_frames=args.stack_frames,
+        env_config=build_cmd_profile_config(args)
     )
-
-
-
-
-
-
-
-
-
-
 
 def main():
     print("Starting PPO Model Evaluation...")

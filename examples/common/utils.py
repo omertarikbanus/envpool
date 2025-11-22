@@ -17,15 +17,41 @@ from datetime import datetime
 from .vec_adapter import VecAdapter
 
 
-def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1):
+def build_cmd_profile_config(args):
+    """Convert command-profile CLI args to EnvPool config entries."""
+    config = {}
+    profile = getattr(args, "cmd_profile", None)
+    if profile:
+        config["cmd_profile_mode"] = profile
+    arg_map = [
+        ("cmd_fixed_vx", "cmd_fixed_vx"),
+        ("cmd_fixed_vy", "cmd_fixed_vy"),
+        ("cmd_fixed_yaw", "cmd_fixed_yaw"),
+        ("cmd_rand_vx_min", "cmd_rand_vx_min"),
+        ("cmd_rand_vx_max", "cmd_rand_vx_max"),
+        ("cmd_rand_vy_min", "cmd_rand_vy_min"),
+        ("cmd_rand_vy_max", "cmd_rand_vy_max"),
+        ("cmd_rand_yaw_min", "cmd_rand_yaw_min"),
+        ("cmd_rand_yaw_max", "cmd_rand_yaw_max"),
+    ]
+    for attr_name, config_key in arg_map:
+        value = getattr(args, attr_name, None)
+        if value is not None:
+            config[config_key] = value
+    return config
+
+
+def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1, env_config=None):
     """Set up the environment with proper wrappers."""
     # Create EnvPool environment
+    env_config = env_config or {}
     env = envpool.make(
         env_name,
         env_type="gym",
         num_envs=num_envs,
         seed=seed,
-        render_mode=render_mode
+        render_mode=render_mode,
+        **env_config
     )
     
     # Set environment ID
