@@ -5,6 +5,13 @@
 
 - Clean up codes.
 - remove unused log files.
+
+
+## Development Notes
+- number of environments is crucial for succesfull training. I set them to 32 vs 128 and the training was stable only for 32 environments case. 
+
+- frameskip variable also effects the training's success. Under same conditions with 32 envs, when frameskip was set to 15 the policy's learning was much worse. 
+
 - 
 ## Basic Usage
 

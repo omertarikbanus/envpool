@@ -17,15 +17,41 @@ from datetime import datetime
 from .vec_adapter import VecAdapter
 
 
-def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1):
+def build_cmd_profile_config(args):
+    """Convert command-profile CLI args to EnvPool config entries."""
+    config = {}
+    profile = getattr(args, "cmd_profile", None)
+    if profile:
+        config["cmd_profile_mode"] = profile
+    arg_map = [
+        ("cmd_fixed_vx", "cmd_fixed_vx"),
+        ("cmd_fixed_vy", "cmd_fixed_vy"),
+        ("cmd_fixed_yaw", "cmd_fixed_yaw"),
+        ("cmd_rand_vx_min", "cmd_rand_vx_min"),
+        ("cmd_rand_vx_max", "cmd_rand_vx_max"),
+        ("cmd_rand_vy_min", "cmd_rand_vy_min"),
+        ("cmd_rand_vy_max", "cmd_rand_vy_max"),
+        ("cmd_rand_yaw_min", "cmd_rand_yaw_min"),
+        ("cmd_rand_yaw_max", "cmd_rand_yaw_max"),
+    ]
+    for attr_name, config_key in arg_map:
+        value = getattr(args, attr_name, None)
+        if value is not None:
+            config[config_key] = value
+    return config
+
+
+def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1, env_config=None):
     """Set up the environment with proper wrappers."""
     # Create EnvPool environment
+    env_config = env_config or {}
     env = envpool.make(
         env_name,
         env_type="gym",
         num_envs=num_envs,
         seed=seed,
-        render_mode=render_mode
+        render_mode=render_mode,
+        **env_config
     )
     
     # Set environment ID
@@ -41,8 +67,8 @@ def create_policy_kwargs():
     """Create policy kwargs for PPO model."""
     return dict(
         activation_fn=th.nn.Tanh,
-        net_arch=[dict(pi=[256, 256, 128], vf=[256, 256, 128])],
-        log_std_init=-2.0,
+        net_arch=[dict(pi=[256, 128], vf=[256, 128])],
+        log_std_init=-.8,
         # ortho_init=False,
     )
 
@@ -62,9 +88,9 @@ def create_ppo_model(env, policy_kwargs):
         gamma=0.995,
         gae_lambda=0.97,
         max_grad_norm=0.1,
-        ent_coef=0.01,
+        ent_coef=0.05,
         vf_coef=1.0,
-        clip_range_vf=0.3,
+        clip_range_vf=0.2,
         tensorboard_log="runs/ppo_taskspace",
         policy_kwargs=policy_kwargs,
         verbose=1,

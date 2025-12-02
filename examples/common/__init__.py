@@ -5,6 +5,7 @@ Common utilities for quadruped training and evaluation with EnvPool and PPO.
 from .vec_adapter import VecAdapter
 from .utils import (
     setup_environment,
+    build_cmd_profile_config,
     create_policy_kwargs,
     create_ppo_model,
     setup_logging,
@@ -25,6 +26,7 @@ from .evaluation import (
 __all__ = [
     'VecAdapter',
     'setup_environment',
+    'build_cmd_profile_config',
     'create_policy_kwargs',
     'create_ppo_model',
     'setup_logging',

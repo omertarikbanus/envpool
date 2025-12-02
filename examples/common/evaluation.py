@@ -30,15 +30,16 @@ def load_model_and_normalization(model_path, env, vecnormalize_path=None, auto_d
         vecnormalize_file = vecnormalize_path
     elif auto_detect_vecnorm:
         # Auto-detect VecNormalize file
-        base_path = model_path.rstrip('.zip')
+        base_path = model_path[:-4] if model_path.endswith('.zip') else model_path
         potential_vecnorm_path = f"{base_path}_vecnormalize.pkl"
         if os.path.exists(potential_vecnorm_path):
             vecnormalize_file = potential_vecnorm_path
+        else:
+            print(f"Auto-detect VecNormalize: no stats found next to model at {potential_vecnorm_path}")
     
     # Apply VecNormalize if statistics file exists
     if vecnormalize_file and os.path.exists(vecnormalize_file):
         print(f"Loading VecNormalize statistics from: {vecnormalize_file}")
-        env = VecNormalize(env, training=False)  # Set training=False for evaluation
         env = VecNormalize.load(vecnormalize_file, env)
         env.training = False
         env.norm_reward = False  # Don't normalize rewards during evaluation

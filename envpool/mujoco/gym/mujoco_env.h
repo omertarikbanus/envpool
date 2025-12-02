@@ -20,7 +20,9 @@
 #include <mjxmacro.h>
 #include <mujoco.h>
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdio>   // FILE*
 #include <cstring>  // std::memcpy
 #include <iostream>
@@ -72,6 +74,16 @@ class MujocoEnv {
   mjvOption opt_;
   mjvPerturb pert_;
   FILE* ffmpeg_pipe_ = nullptr;
+  struct PendingSphere {
+    std::array<mjtNum, 3> pos;
+    mjtNum radius;
+    std::array<float, 4> rgba;
+  };
+  std::vector<PendingSphere> pending_spheres_;
+
+  void AppendPendingSpheres();
+  void QueueSphere(const std::array<mjtNum, 3>& pos, mjtNum radius,
+                   const std::array<float, 4>& rgba);
 
   void RenderInit();
   void RenderFrame();
@@ -90,6 +102,13 @@ class MujocoEnv {
 
   // enable/disable rendering after construction
   void EnableRender(bool on = true);
+
+  void addSpheres(
+      const std::array<mjtNum, 3>& body_pos,
+      const std::vector<std::array<mjtNum, 3>>& joint_positions,
+      const std::vector<std::array<mjtNum, 3>>& foot_positions,
+      mjtNum body_radius = 0.04, mjtNum joint_radius = 0.025,
+      mjtNum foot_radius = 0.02);
 };
 
 // ========================================================================
@@ -134,8 +153,8 @@ void MujocoEnv::setIC() {
     int kSideSign_[4] = {-1, 1, -1, 1};
 
     model_->opt.timestep = 0.002;
-    const double minHeight = 0.25;  // minimum height
-    const double maxHeight = 0.4;  // maximum height
+    const double minHeight = 0.24;  // minimum height
+    const double maxHeight = 0.25;  // maximum height
     static std::random_device rd;
     static std::mt19937 gen(rd());
     std::uniform_real_distribution<double> distribution(minHeight, maxHeight);
@@ -143,7 +162,7 @@ void MujocoEnv::setIC() {
 
     for (int leg = 0; leg < 4; leg++) {
       data_->qpos[(leg) * 3 + 0 + 7] =
-          0 * (M_PI / 180) *
+          10 * (M_PI / 180) *
           kSideSign_[leg];  // Add 7 to skip the first 7 dofs from body.
                             // (Position + Quaternion)
       data_->qpos[(leg) * 3 + 1 + 7] = -80 * (M_PI / 180);  //*kDirSign_[leg];
@@ -155,7 +174,7 @@ inline void MujocoEnv::MujocoReset() {
   done_ = false;
   mj_resetData(model_, data_);
   MujocoResetModel();
-  mj_forward(model_, data_);
+  // mj_forward(model_, data_);
 }
 
 inline void MujocoEnv::MujocoResetModel() {
@@ -181,6 +200,64 @@ inline void MujocoEnv::MujocoStep(const mjtNum* action) {
   ++elapsed_step_;
 }
 
+inline void MujocoEnv::QueueSphere(const std::array<mjtNum, 3>& pos,
+                                   mjtNum radius,
+                                   const std::array<float, 4>& rgba) {
+  PendingSphere sphere;
+  sphere.pos = pos;
+  sphere.radius = std::max<mjtNum>(1e-4, radius);
+  sphere.rgba = rgba;
+  pending_spheres_.push_back(sphere);
+}
+
+inline void MujocoEnv::addSpheres(
+    const std::array<mjtNum, 3>& body_pos,
+    const std::vector<std::array<mjtNum, 3>>& joint_positions,
+    const std::vector<std::array<mjtNum, 3>>& foot_positions,
+    mjtNum body_radius, mjtNum joint_radius, mjtNum foot_radius) {
+  pending_spheres_.clear();
+  auto is_valid = [](const std::array<mjtNum, 3>& p) {
+    return std::isfinite(p[0]) && std::isfinite(p[1]) &&
+           std::isfinite(p[2]);
+  };
+
+  const std::array<float, 4> body_color{1.f, 0.2f, 0.2f, 0.85f};
+  const std::array<float, 4> joint_color{1.f, 0.8f, 0.2f, 0.75f};
+  const std::array<float, 4> foot_color{0.1f, 0.6f, .2f, 0.85f};
+
+  if (is_valid(body_pos)) {
+    QueueSphere(body_pos, body_radius, body_color);
+  }
+
+  for (const auto& joint : joint_positions) {
+    if (is_valid(joint)) {
+      QueueSphere(joint, joint_radius, joint_color);
+    }
+  }
+
+  for (const auto& foot : foot_positions) {
+    if (is_valid(foot)) {
+      QueueSphere(foot, foot_radius, foot_color);
+    }
+  }
+}
+
+inline void MujocoEnv::AppendPendingSpheres() {
+  if (pending_spheres_.empty()) return;
+
+  for (const auto& sphere : pending_spheres_) {
+    if (scn_.ngeom >= scn_.maxgeom) {
+      break;
+    }
+    mjvGeom* geom = scn_.geoms + scn_.ngeom++;
+    mjtNum size[3] = {sphere.radius, sphere.radius, sphere.radius};
+    mjv_initGeom(geom, mjGEOM_SPHERE, size, sphere.pos.data(), nullptr,
+                 sphere.rgba.data());
+    geom->emission = 0.8f;
+  }
+  pending_spheres_.clear();
+}
+
 // --------------------- Rendering helpers ----------------------
 inline void MujocoEnv::RenderInit() {
   ctx = OSMesaCreateContextExt(OSMESA_RGBA, /*depthBits=*/16, 0, 0, nullptr);
@@ -191,7 +268,13 @@ inline void MujocoEnv::RenderInit() {
   mjv_defaultScene(&scn_);
   mjv_defaultCamera(&cam_);
   cam_.type = mjCAMERA_FREE;
-  cam_.distance = std::max(1.0, 3 * model_->stat.extent);
+  cam_.distance = 1.5;
+  // Side view: place camera at (2, 0, 0) looking toward origin.
+  cam_.azimuth = 90.0;
+  cam_.elevation = -10.0;
+  cam_.lookat[0] = data_->qpos[0];
+  cam_.lookat[1] = data_->qpos[1];
+  cam_.lookat[2] = data_->qpos[2];
   mjr_defaultContext(&con_);
   mjv_defaultOption(&opt_);
   mjv_defaultPerturb(&pert_);
@@ -200,7 +283,8 @@ inline void MujocoEnv::RenderInit() {
   mjr_makeContext(model_, &con_, mjFONTSCALE_150);
 
   rgb_.resize(static_cast<size_t>(render_w_ * render_h_ * 3));
-
+  // Launch ffmpeg process to pipe frames into a video file
+  // video file is named data/current/mujoco_env<env_id>_<timestamp>.mp4
   std::string cmd =
       "ffmpeg -loglevel warning -y -f rawvideo -vcodec rawvideo "
       "-pix_fmt rgb24 -s " +
@@ -208,17 +292,24 @@ inline void MujocoEnv::RenderInit() {
       std::to_string(fps_) +
       " -i - -an -vcodec libx264 -preset ultrafast -tune zerolatency "
       "-crf 18 -pix_fmt yuv420p "
-      "/app/mujoco_record_init.mp4";
+      "data/current/mujoco_env" + ".mp4";
   ffmpeg_pipe_ = popen(cmd.c_str(), "w");
   if (!ffmpeg_pipe_) throw std::runtime_error("Cannot open ffmpeg pipe");
 }
 
 inline void MujocoEnv::RenderFrame() {
+  opt_.flags[15] = 1;  // mjVIS_CONSTRAINT Visualize Contact Force
+  // opt_.flags[10] = 1;  // mjVIS_CONSTRAINT Visualize Inertia
+  cam_.azimuth += 0.5;  // slowly rotate camera
+  cam_.lookat[0] = data_->qpos[0];
+  cam_.lookat[1] = data_->qpos[1];
+  cam_.lookat[2] = data_->qpos[2];
   if (!OSMesaMakeCurrent(ctx, fb, GL_UNSIGNED_BYTE, render_w_, render_h_))
     throw std::runtime_error("OSMesaMakeCurrent failed");
 
   mjrRect vp{0, 0, render_w_, render_h_};
   mjv_updateScene(model_, data_, &opt_, &pert_, &cam_, mjCAT_ALL, &scn_);
+  AppendPendingSpheres();
   mjr_render(vp, &scn_, &con_);
   mjr_readPixels(rgb_.data(), nullptr, vp, &con_);
 
