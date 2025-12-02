@@ -12,7 +12,26 @@ DATE           = $(shell date "+%Y-%m-%d")
 DOCKER_TAG     = may
 DOCKER_USER    = trinkle23897
 CONTAINER_NAME = $(PROJECT_NAME)-dev
+WORKSPACE      ?= $(shell pwd)
+NOTEBOOK_PORT  ?= 8888
+CONTAINER_NOTEBOOK_PORT ?= 8888
+EXTRA_DOCKER_RUN_ARGS ?=
+RUN_FLAGS      = --name $(CONTAINER_NAME) -v $(WORKSPACE):/workspace $(EXTRA_DOCKER_RUN_ARGS)
+RUN_FLAGS_CLEAN = $(RUN_FLAGS) --rm -it
+RUN_FLAGS_DETACHED = $(RUN_FLAGS) -d
+JUPYTER_CMD    ?= jupyter lab
+JUPYTER_WORKDIR ?= /workspace
+JUPYTER_ARGS   ?= --ip=0.0.0.0 --no-browser --ServerApp.allow_remote_access=1 --ServerApp.token= --ServerApp.password=
+JUPYTER_COMMAND = cd $(JUPYTER_WORKDIR) && $(JUPYTER_CMD) $(JUPYTER_ARGS)
+EXEC_CMD       ?= /bin/bash
+RUN_CMD        ?=
 PATH           := $(HOME)/go/bin:$(PATH)
+
+.PHONY: help
+help: ## Show common Make targets with inline descriptions
+	@echo "Usage: make <target>"
+	@echo ""
+	@grep -E '^[a-zA-Z0-9_-]+:.*##' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*## "}; {printf "  %-26s %s\n", $$1, $$2}'
 
 # installation
 
@@ -150,6 +169,8 @@ format: py-format-install clang-format-install buildifier-install addlicense-ins
 
 # Build docker images
 
+.PHONY: docker-ci docker-ci-push docker-ci-launch docker-run docker-run-jupyter docker-up-jupyter docker-exec docker-exec-run docker-stop docker-rm docker-logs
+
 docker-ci:
 	docker build --network=host -t $(PROJECT_NAME):$(DOCKER_TAG) -f docker/dev.dockerfile .
 	echo successfully build docker image with tag $(PROJECT_NAME):$(DOCKER_TAG)
@@ -161,22 +182,46 @@ docker-ci-push: docker-ci
 docker-ci-launch: docker-ci
 	docker run --network=host -v /home/ubuntu:/home/github-action --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) bash
 
-docker-exec:
-	docker exec -it $(CONTAINER_NAME) /bin/bash
+docker-exec: ## Attach to the running container; override EXEC_CMD to run a different command
+	docker exec -it $(CONTAINER_NAME) $(EXEC_CMD)
+
+docker-exec-run: ## Execute RUN_CMD (via bash -lc) inside the running container
+	@if [ -z "$(RUN_CMD)" ]; then \
+		echo "Set RUN_CMD, e.g. make docker-exec-run RUN_CMD='python -m pytest'"; \
+		exit 1; \
+	fi
+	docker exec -it $(CONTAINER_NAME) bash -lc "$(RUN_CMD)"
 
 docker-run:
-		docker run --network=host \
-		-v $(shell pwd)/../:/app \
-		-v $(HOME)/.cache:/root/.cache \
-		-v /:/host \
-		--shm-size=4gb -it --rm \
-		--name $(CONTAINER_NAME) \
-		-e DISPLAY=$(DISPLAY) \
-		-e QT_X11_NO_MITSHM=1 \
-		-e XAUTHORITY=/tmp/.docker.xauth \
-		-v /tmp/.X11-unix:/tmp/.X11-unix \
-		-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
-		$(PROJECT_NAME):$(DOCKER_TAG) zsh
+# 	-docker rm -f $(CONTAINER_NAME) >/dev/null 2>&1 || true
+	docker run --network=host \
+			-v $(shell pwd)/../:/app \
+			-v $(HOME)/.cache:/root/.cache \
+			-v /:/host \
+			--shm-size=4gb -it --rm \
+			--name $(CONTAINER_NAME) \
+			-e DISPLAY=$(DISPLAY) \
+			-e QT_X11_NO_MITSHM=1 \
+			-e XAUTHORITY=/tmp/.docker.xauth \
+			-v /tmp/.X11-unix:/tmp/.X11-unix \
+			-v $(shell test -n "$$XAUTHORITY" && echo "$$XAUTHORITY" || echo "/tmp/.Xauthority"):/tmp/.docker.xauth \
+			$(PROJECT_NAME):$(DOCKER_TAG) zsh
+
+docker-run-jupyter: ## Launch a disposable container with Jupyter Lab exposed on NOTEBOOK_PORT
+	docker run --network=host $(RUN_FLAGS_CLEAN) -p $(NOTEBOOK_PORT):$(CONTAINER_NOTEBOOK_PORT) $(PROJECT_NAME):$(DOCKER_TAG) bash -lc "$(JUPYTER_COMMAND)"
+
+docker-up-jupyter: ## Start the container in detached mode with Jupyter Lab running inside
+	-docker rm -f $(CONTAINER_NAME) >/dev/null 2>&1 || true
+	docker run --network=host $(RUN_FLAGS_DETACHED) -p $(NOTEBOOK_PORT):$(CONTAINER_NOTEBOOK_PORT) $(PROJECT_NAME):$(DOCKER_TAG) bash -lc "$(JUPYTER_COMMAND)"
+
+docker-stop: ## Stop the running container named $(CONTAINER_NAME)
+	docker stop $(CONTAINER_NAME)
+
+docker-rm: ## Force remove the container named $(CONTAINER_NAME)
+	-docker rm -f $(CONTAINER_NAME) >/dev/null 2>&1 || true
+
+docker-logs: ## Follow the logs of the running container
+	docker logs -f $(CONTAINER_NAME)
 
 # docker-run-gpu:
 # 		docker run --network=host \
@@ -207,6 +252,7 @@ docker-run:
 # 		$(PROJECT_NAME):$(DOCKER_TAG) bash
 
 docker-run-mac:
+	-docker rm -f $(CONTAINER_NAME) >/dev/null 2>&1 || true
 	mkdir -p /tmp/runtime-dir-$(USER)
 	chmod 700 /tmp/runtime-dir-$(USER)
 	docker run --network=host \
@@ -216,13 +262,14 @@ docker-run-mac:
 		-v /tmp/.X11-unix:/tmp/.X11-unix \
 		-v /tmp/runtime-dir-$(USER):/tmp/runtime-dir \
 		--shm-size=4gb -it --rm \
+		--name $(CONTAINER_NAME) \
 		-e DISPLAY=host.docker.internal:0 \
 		-e QT_X11_NO_MITSHM=1 \
 		- gpus all \
 		-e XDG_RUNTIME_DIR=/tmp/runtime-dir \
 		-e LIBGL_ALWAYS_INDIRECT=1 \
-		-e MESA_GL_VERSION_OVERRIDE=3.3 \
-		$(PROJECT_NAME):$(DOCKER_TAG) bash
+	-e MESA_GL_VERSION_OVERRIDE=3.3 \
+	$(PROJECT_NAME):$(DOCKER_TAG) bash
 
 # docker-run-mac:
 # 		mkdir -p /tmp/runtime-dir-$(USER) 
@@ -249,7 +296,8 @@ docker-dev: docker-ci docker-run
 docker-dev-cn:
 	docker build --network=host -t $(PROJECT_NAME):$(DOCKER_TAG) -f docker/dev-cn.dockerfile .
 	echo successfully build docker image with tag $(PROJECT_NAME):$(DOCKER_TAG)
-	docker run --network=host -v /:/host -v $(shell pwd):/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it $(PROJECT_NAME):$(DOCKER_TAG) zsh
+	-docker rm -f $(CONTAINER_NAME) >/dev/null 2>&1 || true
+	docker run --network=host -v /:/host -v $(shell pwd):/app -v $(HOME)/.cache:/root/.cache --shm-size=4gb -it --name $(CONTAINER_NAME) $(PROJECT_NAME):$(DOCKER_TAG) zsh
 
 docker-release:
 	docker build --network=host -t $(PROJECT_NAME)-release:$(DOCKER_TAG) -f docker/release.dockerfile .

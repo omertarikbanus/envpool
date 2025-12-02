@@ -1,0 +1,48 @@
+{
+  "name": "EnvPool GPU DevContainer",
+
+  // Use your existing Dockerfile at repo root
+  "build": {
+    "dockerfile": "docker/dev.dockerfile",
+    "context": ".."
+  },
+
+  // Mount the repo into /app (your Dockerfile already uses WORKDIR /app)
+  "workspaceFolder": "/app",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
+
+  // Enable GPU access (requires host to have nvidia-container-toolkit set up)
+  "runArgs": [
+    "--gpus=all",
+    "--shm-size=8g"
+  ],
+
+  // You'll probably want root inside this image
+  "remoteUser": "root",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-vscode.cpptools",
+        "BazelBuild.vscode-bazel",
+        "ms-toolsai.jupyter",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/bin/python3",
+        "python.analysis.typeCheckingMode": "basic",
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh"
+          }
+        }
+      }
+    }
+  },
+
+  // If entrypoint.sh causes issues for interactive use, you can flip this to true
+  "overrideCommand": false
+}
