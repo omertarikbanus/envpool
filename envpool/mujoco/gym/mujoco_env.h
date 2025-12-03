@@ -292,7 +292,7 @@ inline void MujocoEnv::RenderInit() {
       std::to_string(fps_) +
       " -i - -an -vcodec libx264 -preset ultrafast -tune zerolatency "
       "-crf 18 -pix_fmt yuv420p "
-      "data/current/mujoco_env" + ".mp4";
+      "data/current/mujoco_render" + ".mp4";
   ffmpeg_pipe_ = popen(cmd.c_str(), "w");
   if (!ffmpeg_pipe_) throw std::runtime_error("Cannot open ffmpeg pipe");
 }

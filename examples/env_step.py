@@ -20,60 +20,31 @@ import envpool
 import os
 
 os.environ["MUJOCO_GL"] = "osmesa"
-# print(os.environ.get("MUJOCO_GL")) 
-
 is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
-
 def gym_sync_step() -> None:
-  debug_prints = 0
-  
   num_envs =1
-  if debug_prints:
-    print(f"num_envs set to {num_envs}")
-  if debug_prints:
-    print(f" envpool.list_all_envs() { envpool.list_all_envs()}")
-  envpool.list_all_envs()
-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=True)
-  if debug_prints:
-    print(f"Environment created with {num_envs} environments")
+  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=True, cmd_profile_mode="fixed", cmd_fixed_vx= 3.25, cmd_fixed_vy= 0.0, cmd_fixed_yaw= 0.0)
   
-  action_num = env.action_space.shape[0]
-  if debug_prints:
-    print(f"Action space shape: {env.action_space.shape}, action_num set to {action_num}")
+  print("\n\n\nCreated envpool env Humanoid-v4 with : ", num_envs, " environments\n\n\n")
+  print(f"Observation space: {env.observation_space}")
+  print(f"Observation shape: {env.observation_space.shape}")
 
-  if debug_prints:
-    print(f"Observation space: {env.observation_space}")
-    print(f"Observation shape: {env.observation_space.shape}")
-  action= np.zeros((num_envs, action_num), dtype=np.float32)
+  action= np.zeros((num_envs, env.action_space.shape[0]), dtype=np.float32)
   for env_id in range(num_envs):
-    action[env_id][0]= 1.0
+    action[env_id][0]= 0.0
+    
     action[env_id][5]= 0.5
     action[env_id][8]= 0.5
     action[env_id][11]= 0.5
     action[env_id][14]= 0.5
+
   for _ in range(5000):
-
-    if debug_prints:
-      print(f"Sampled action: {action}")
-
-    # result = env.step(action)
     if is_legacy_gym:
       obs, rew, done, info = env.step(action)
-      print(rew)
-      if debug_prints:
-        print(f"Step result (legacy) - obs: {obs}, rew: {rew}, done: {done}, info: {info}")
     else:
       obs, rew, term, trunc, info = env.step(action)
-      # input("Press Enter to continue...")
-      if debug_prints:
-        print(f"Step result - obs: \n\n {obs} \n\n rew: \n\n {rew} \n\n term: \n\n {term} \n\n trunc: \n\n {trunc} \n\n info: \n\n {info}")
-
-"""   # Of course, you can specify env_id to step corresponding envs
-  partial_action = np.array([0, 0, 2])
-  env_id = np.array([3, 2, 0])
-  if debug_prints:
-    print(f"Partial action: {partial_action}, env_id: {env_id}") """
+   
 
 
 
@@ -149,11 +120,9 @@ def async_step() -> None:
 
 
 if __name__ == "__main__":
-  start_time = time.time()
+  t_begin = time.time()
   gym_sync_step()
-  end_time = time.time()
-  elapsed_time = end_time - start_time
-  print(f"Function {gym_sync_step.__name__} took {elapsed_time:.2f} seconds to run.")
-
-  # dm_sync_step()
-  # async_step()
+  t_end = time.time()
+  duration = t_end - t_begin
+  print(f"Function {gym_sync_step.__name__} took {duration:.2f} seconds to run.")
+  
