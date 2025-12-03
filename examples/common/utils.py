@@ -68,7 +68,10 @@ def create_policy_kwargs():
     return dict(
         activation_fn=th.nn.Tanh,
         net_arch=[dict(pi=[256, 128], vf=[256, 128])],
-        log_std_init=-.8,
+        log_std_init=-3.0,
+        full_std=False,          # important
+        use_expln=False,
+   
         # ortho_init=False,
     )
 
@@ -80,10 +83,10 @@ def create_ppo_model(env, policy_kwargs):
         env=env,
         # PPO hyper-parameters
         learning_rate=1e-4,
-        clip_range=0.3,
+        clip_range=0.1,
         target_kl=0.01,
-        n_steps=1024,
-        batch_size=128,
+        n_steps=512,
+        batch_size=1024,
         n_epochs=10,
         gamma=0.995,
         gae_lambda=0.97,
@@ -223,8 +226,8 @@ def setup_vecnormalize(env, use_vecnormalize=True):
     """Set up VecNormalize wrapper if requested."""
     vecnormalize_wrapper = None
     if use_vecnormalize:
+        vecnormalize_wrapper = VecNormalize(env, norm_obs=True, norm_reward=Truelip_reward=10.0)
         print("Using VecNormalize wrapper...")
-        vecnormalize_wrapper = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
         env = vecnormalize_wrapper
     return env, vecnormalize_wrapper
 
