@@ -82,7 +82,7 @@ def create_ppo_model(env, policy_kwargs):
         policy="MlpPolicy",
         env=env,
         # PPO hyper-parameters
-        learning_rate=1e-4,
+        learning_rate=1e-5,
         clip_range=0.1,
         target_kl=0.01,
         n_steps=512,
@@ -192,7 +192,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         # model.n_epochs = 5
 
         # Update learning rate; also refresh PPO's lr schedule so it is not overwritten
-        new_learning_rate =1e-4
+        new_learning_rate =5e-6
         model.learning_rate = new_learning_rate
         model.lr_schedule = get_schedule_fn(new_learning_rate)
         for param_group in model.policy.optimizer.param_groups:
@@ -226,7 +226,7 @@ def setup_vecnormalize(env, use_vecnormalize=True):
     """Set up VecNormalize wrapper if requested."""
     vecnormalize_wrapper = None
     if use_vecnormalize:
-        vecnormalize_wrapper = VecNormalize(env, norm_obs=True, norm_reward=Truelip_reward=10.0)
+        vecnormalize_wrapper = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=10.0)
         print("Using VecNormalize wrapper...")
         env = vecnormalize_wrapper
     return env, vecnormalize_wrapper

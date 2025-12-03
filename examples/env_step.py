@@ -24,7 +24,7 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 def gym_sync_step() -> None:
   num_envs =1
-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=True, cmd_profile_mode="fixed", cmd_fixed_vx= 3.25, cmd_fixed_vy= 0.0, cmd_fixed_yaw= 0.0)
+  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=True, cmd_profile_mode="fixed", cmd_fixed_vx= 1.25, cmd_fixed_vy= 0.0, cmd_fixed_yaw= 0.0)
   
   print("\n\n\nCreated envpool env Humanoid-v4 with : ", num_envs, " environments\n\n\n")
   print(f"Observation space: {env.observation_space}")

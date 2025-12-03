@@ -5,12 +5,10 @@
 #include <array>
 #include <cmath>  // For std::sqrt, std::abs
 #include <cstdio>
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
-#include <numeric>
 #include <random>
 #include <string>
 #include <vector>
@@ -51,10 +49,9 @@ struct ReferenceTargets {
 struct RewardConfig {
   RewardWeights weights{};
   ReferenceTargets refs{};
-  int window_length{5};
 };
 
-// Computes a smooth Cassie-inspired locomotion reward from buffered penalties.
+// Computes a Cassie-inspired locomotion reward from instantaneous penalties.
 class LocomotionReward {
  public:
   static constexpr int kNumTerms = 8;
@@ -76,18 +73,9 @@ class LocomotionReward {
     std::array<mjtNum, kNumTerms> rewards{};
   };
 
-  explicit LocomotionReward(const RewardConfig& config)
-      : config_(config),
-        window_length_(std::max(1, config.window_length)) {
-    config_.window_length = window_length_;
-    Reset();
-  }
+  explicit LocomotionReward(const RewardConfig& config) : config_(config) {}
 
-  void Reset() {
-    for (auto& buf : penalty_buffers_) {
-      buf.clear();
-    }
-  }
+  void Reset() {}
 
   void SetReferences(const ReferenceTargets& refs) { config_.refs = refs; }
 
@@ -99,12 +87,14 @@ class LocomotionReward {
                  const std::vector<mjtNum>& action,
                  const std::vector<mjtNum>& prev_action) {
     Result result;
+    constexpr mjtNum kVelPenaltyScale = static_cast<mjtNum>(3.0);
+
     result.penalties[kBaseXVel] =
-        static_cast<mjtNum>(3.0) * std::abs(base_lin_vel[0] - config_.refs.xdot_ref);
+        kVelPenaltyScale * std::abs(base_lin_vel[0] - config_.refs.xdot_ref);
     result.penalties[kBaseZVel] =
-        static_cast<mjtNum>(3.0) * std::abs(base_lin_vel[2] - config_.refs.zdot_ref);
+        kVelPenaltyScale * std::abs(base_lin_vel[2] - config_.refs.zdot_ref);
     result.penalties[kBaseZPos] =
-        static_cast<mjtNum>(3.0) * std::abs(base_pos[2] - config_.refs.z_ref);
+        kVelPenaltyScale * std::abs(base_pos[2] - config_.refs.z_ref);
 
     Eigen::Quaternion<mjtNum> q = base_quat;
     if (std::abs(static_cast<double>(q.norm() - 1.0)) > 1e-6) {
@@ -128,10 +118,9 @@ class LocomotionReward {
     result.penalties[kActionSmooth] =
         ComputeActionSmoothPenalty(action, prev_action);
 
+    result.smoothed_penalties = result.penalties;  // Legacy field, now identical to raw penalties.
     for (int idx = 0; idx < kNumTerms; ++idx) {
-      const mjtNum mean_penalty = UpdateBufferAndMean(idx, result.penalties[idx]);
-      result.smoothed_penalties[idx] = mean_penalty;
-      result.rewards[idx] = std::exp(-mean_penalty);
+      result.rewards[idx] = std::exp(-result.penalties[idx]);
     }
 
     const auto& w = config_.weights;
@@ -161,21 +150,7 @@ class LocomotionReward {
     return static_cast<mjtNum>(3.0) * diff_sq_sum;
   }
 
-  mjtNum UpdateBufferAndMean(int term_index, mjtNum penalty) {
-    auto& buf = penalty_buffers_[term_index];
-    buf.push_back(penalty);
-    if (static_cast<int>(buf.size()) > window_length_) {
-      buf.pop_front();
-    }
-    const mjtNum sum =
-        std::accumulate(buf.begin(), buf.end(), static_cast<mjtNum>(0.0));
-    return buf.empty() ? penalty
-                       : sum / static_cast<mjtNum>(buf.size());
-  }
-
   RewardConfig config_;
-  int window_length_;
-  std::array<std::deque<mjtNum>, kNumTerms> penalty_buffers_;
 };
 
 class HumanoidEnvFns {
