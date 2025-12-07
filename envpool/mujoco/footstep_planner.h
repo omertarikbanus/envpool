@@ -90,33 +90,23 @@ class FootstepPlanner {
                input.commanded_velocity_world[0]) +
             (0.5f * input.base_position[2] / input.gravity) *
           (input.base_velocity_world[1] * input.yaw_rate_des);
+        const float side_sign = Quadruped<float>::getSideSign(leg);
         float pfy_rel =
             input.base_velocity_world[1] * 0.5f * stance_duration +
             0.03f * (input.base_velocity_world[1] -
-               input.commanded_velocity_world[1]) +
-            (0.5f * input.base_position[2] / input.gravity) *
-          (-input.base_velocity_world[0] * input.yaw_rate_des);
+               input.commanded_velocity_world[1]);
+        // Mirror the yaw-coupled lateral placement so left/right feet are
+        // symmetric per Raibert's rule instead of all shifting the same way.
+        pfy_rel += side_sign *
+          ((0.5f * input.base_position[2] / input.gravity) *
+           (-input.base_velocity_world[0] * input.yaw_rate_des));
         pfx_rel = std::clamp(pfx_rel, -kPRelMax, kPRelMax) + input.current_action_[3 + leg * 5 + 3] * 0.50f;
         pfy_rel = std::clamp(pfy_rel, -kPRelMax, kPRelMax) + input.current_action_[3 + leg * 5 + 4] * 0.50f;
-        float side_offset = (leg % 2 == 0) ? -0.05f : 0.05f;
-        
-        // printf("Leg %d: base_pos=[%.3f,%.3f,%.3f], base_vel=[%.3f,%.3f,%.3f], cmd_vel=[%.3f,%.3f,%.3f]\n",
-        //        leg, input.base_position[0], input.base_position[1], input.base_position[2],
-        //        input.base_velocity_world[0], input.base_velocity_world[1], input.base_velocity_world[2],
-        //        input.commanded_velocity_world[0], input.commanded_velocity_world[1], input.commanded_velocity_world[2]);
-        // printf("Leg %d: stance_dur=%.3f, yaw_rate=%.3f, cmpc_bonus=%.3f, gravity=%.3f\n",
-        //        leg, stance_duration, input.yaw_rate_des, input.cmpc_bonus, input.gravity);
-        // printf("Leg %d: pfx_rel=%.3f, pfy_rel=%.3f, side_offset=%.3f\n",
-        //        leg, pfx_rel, pfy_rel, side_offset);
-        // printf("Leg %d: foot_target_before=[%.3f,%.3f,%.3f]\n",
-        //        leg, foot_target_world[0], foot_target_world[1], foot_target_world[2]);
-        
+        float side_offset = side_sign * 0.05f;
+
         foot_target_world[0] += pfx_rel;
         foot_target_world[1] += pfy_rel + side_offset;
         foot_target_world[2] = -0.003f;
-        
-        // printf("Leg %d: foot_target_after=[%.3f,%.3f,%.3f]\n",
-        //        leg, foot_target_world[0], foot_target_world[1], foot_target_world[2]);
 
         swing_traj.setFinalPosition(foot_target_world);
         foot_target_world.setZero(); // avoid reusing

@@ -264,17 +264,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   std::vector<mjtNum> last_observation_;
   mjtNum last_ctrl_cost_{0.0};
   mjtNum last_contact_cost_{0.0};
-  mjtNum last_velocity_tracking_cost_{0.0};
-  mjtNum last_yaw_rate_tracking_cost_{0.0};
   mjtNum last_healthy_reward_{0.0};
-  mjtNum last_action_penalty_{0.0};
   mjtNum last_x_velocity_{0.0};
   mjtNum last_y_velocity_{0.0};
   mjtNum last_x_position_{0.0};
   mjtNum last_y_position_{0.0};
-  mjtNum last_orientation_penalty_{0.0};
-  mjtNum last_height_penalty_{0.0};
-  mjtNum last_foot_slip_penalty_{0.0};
   bool last_is_healthy_{true};
   bool pending_reset_marker_{true};
   // Added: Torque bound constant (example value; adjust as needed)
@@ -564,14 +558,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     last_penalties_ = reward_result.penalties;
     last_smoothed_penalties_ = reward_result.smoothed_penalties;
     last_term_rewards_ = reward_result.rewards;
-    last_action_penalty_ = reward_result.smoothed_penalties[LocomotionReward::kActionSmooth];
     last_ctrl_cost_ = ctrl_cost;
     last_contact_cost_ = contact_cost;
-    last_orientation_penalty_ = reward_result.smoothed_penalties[LocomotionReward::kBaseOrientation];
-    last_height_penalty_ = reward_result.smoothed_penalties[LocomotionReward::kBaseZPos];
-    last_foot_slip_penalty_ = reward_result.smoothed_penalties[LocomotionReward::kBaseStraight];
-    last_velocity_tracking_cost_ = reward_result.smoothed_penalties[LocomotionReward::kBaseXVel];
-    last_yaw_rate_tracking_cost_ = reward_result.smoothed_penalties[LocomotionReward::kBaseZVel];
     last_healthy_reward_ = is_healthy ? healthy_reward_ : 0.0;
     last_x_velocity_ = base_lin_vel[0];
     last_y_velocity_ = base_lin_vel[1];
@@ -618,113 +606,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     }
     return {mass_x / mass_sum, mass_y / mass_sum};
   }
-
-  // Standing reward that keeps the base rooted at (0, 0, desired_h) with
-  // negligible velocity across all DoFs and neutral orientation.
-  // A weighted, normalised squared error is mapped through an exponential so
-  // the reward smoothly peaks at 1 when the target pose is perfectly matched.
-  mjtNum ComputeStandingReward() {
-    const auto wrap_to_pi = [](mjtNum angle) -> mjtNum {
-      return std::atan2(std::sin(angle), std::cos(angle));
-    };
-
-    const mjtNum raw_w_pos = 0.05;
-    const mjtNum raw_w_lin_vel = 0.01;
-    const mjtNum raw_w_ori = 0.05;
-    const mjtNum raw_w_ang_vel = 0.005;
-    const mjtNum weight_sum = raw_w_pos + raw_w_lin_vel + raw_w_ori + raw_w_ang_vel;
-    const mjtNum w_pos = raw_w_pos / weight_sum;
-    const mjtNum w_lin_vel = raw_w_lin_vel / weight_sum;
-    const mjtNum w_ori = raw_w_ori / weight_sum;
-    const mjtNum w_ang_vel = raw_w_ang_vel / weight_sum;
-
-    const Eigen::Vector3<mjtNum> base_pos(data_->qpos[0], data_->qpos[1],
-                                          data_->qpos[2]);
-    const Eigen::Vector3<mjtNum> target_pos(0.0, 0.0, desired_h);
-    const mjtNum position_error_sq = (base_pos - target_pos).squaredNorm();
-
-    const Eigen::Vector3<mjtNum> linear_velocity(data_->qvel[0], data_->qvel[1],
-                                                 data_->qvel[2]);
-    const mjtNum linear_velocity_error_sq = linear_velocity.squaredNorm();
-
-    Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4], data_->qpos[5],
-                                data_->qpos[6]);
-    const Eigen::Vector3<mjtNum> euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
-    const Eigen::Vector3<mjtNum> orientation_error(wrap_to_pi(euler[0]),
-                                                   wrap_to_pi(euler[1]),
-                                                   wrap_to_pi(euler[2]));
-    const mjtNum orientation_error_sq = orientation_error.squaredNorm();
-
-    const Eigen::Vector3<mjtNum> angular_velocity(data_->qvel[3], data_->qvel[4],
-                                                  data_->qvel[5]);
-    const mjtNum angular_velocity_error_sq = angular_velocity.squaredNorm();
-
-    const mjtNum weighted_error = w_pos * position_error_sq +
-                                  w_lin_vel * linear_velocity_error_sq +
-                                  w_ori * orientation_error_sq +
-                                  w_ang_vel * angular_velocity_error_sq;
-
-    const mjtNum gain = 1.0;  // Sharpen reward around the goal pose.
-    return std::exp(-gain * weighted_error);
-  }
-
-  // ------------------------------------------------------------------------
-
-  // Locomotion reward encourages fast travel in any direction while keeping the
-  // body upright, level, and with low slip.
-  mjtNum ComputeLocomotionReward(
-      mjtNum xv, mjtNum yv, const std::array<mjtNum, 3>& cmd_target,
-      mjtNum healthy_reward, mjtNum& velocity_cost, mjtNum& yaw_cost,
-      mjtNum& orientation_penalty, mjtNum& height_penalty,
-      mjtNum& foot_slip_penalty, bool& is_healthy) {
-    const Eigen::Matrix<mjtNum, 3, 1> v_world(xv, yv, static_cast<mjtNum>(0));
-    Eigen::Quaternion<mjtNum> quat(data_->qpos[3], data_->qpos[4],
-                                   data_->qpos[5], data_->qpos[6]);
-    if (std::abs(static_cast<double>(quat.norm() - 1.0)) > 1e-6) {
-      quat.normalize();
-    }
-    const Eigen::Matrix<mjtNum, 3, 3> R_world_to_body =
-        quat.toRotationMatrix().transpose();
-    const Eigen::Matrix<mjtNum, 3, 1> v_body = R_world_to_body * v_world;
-    const Eigen::Matrix<mjtNum, 2, 1> actual_planar_body_vel = v_body.head<2>();
-    const Eigen::Matrix<mjtNum, 2, 1> desired_planar_body_vel(
-        cmd_target[0], cmd_target[1]);
-    const Eigen::Matrix<mjtNum, 2, 1> vel_error =
-        actual_planar_body_vel - desired_planar_body_vel;
-    velocity_cost = velocity_tracking_weight_ * vel_error.squaredNorm();
-
-    const Eigen::Matrix<mjtNum, 3, 1> omega_world(
-        data_->qvel[3], data_->qvel[4], data_->qvel[5]);
-    const Eigen::Matrix<mjtNum, 3, 1> omega_body =
-        R_world_to_body * omega_world;
-    const mjtNum yaw_rate = omega_body[2];
-    const mjtNum yaw_error = yaw_rate - cmd_target[2];
-    yaw_cost = yaw_tracking_weight_ * yaw_error * yaw_error;
-
-    orientation_penalty = ComputeOrientationPenalty();
-
-    height_penalty = ComputeHeightPenalty();
-    foot_slip_penalty = ComputeFootSlipPenalty();
-
-    is_healthy = IsHealthy();
-    if (!is_healthy) {
-      return 0.0;
-    }
-
-    const mjtNum total_posture_penalty =
-        orientation_penalty + height_penalty + foot_slip_penalty;
-    const mjtNum posture_reward =
-        std::exp(-std::max(static_cast<mjtNum>(0.1), orientation_penalty_weight_) *
-                 total_posture_penalty);
-    const mjtNum tracking_penalty =
-        cmd_tracking_weight_ * std::max(static_cast<mjtNum>(0.0),
-                                        velocity_cost + yaw_cost);
-    const mjtNum tracking_reward = std::exp(-tracking_penalty);
-    return healthy_reward * posture_reward *
-           (static_cast<mjtNum>(1.0) + forward_reward_weight_ * tracking_reward);
-  }
-  
-  
 
   mjtNum ComputeOrientationPenalty() const {
     Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4], data_->qpos[5],

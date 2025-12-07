@@ -14,17 +14,15 @@
 #include "cppTypes.h"
 #include <array>
 #include <cmath>
-#include <cstdio>
 #include <eigen3/Eigen/Dense>
 #include <eigen3/Eigen/Geometry>
-#include <fstream>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
 #include "footstep_planner.h"
 #include "legged_gait_scheduler.h"
+#include "wbc_logger.h"
 
 class ModelBasedControllerInterface {
  public:
@@ -147,17 +145,6 @@ class ModelBasedControllerInterface {
     }
   }
 
-  void setModeStandUp() {
-    if (!_controller || !_controller->_controlFSM || !_robot_runner) {
-      return;
-    }
-    _controller->_controlFSM->data.controlParameters->control_mode = 1;
-    while (_controller->_controlFSM->currentState->stateName !=
-           FSM_StateName::BALANCE_STAND) {
-      _robot_runner->run();
-    }
-  }
-
   void setModeLocomotion() {
     if (!_controller || !_controller->_controlFSM || !_robot_runner) {
       return;
@@ -190,21 +177,10 @@ class ModelBasedControllerInterface {
     latest_cmd_vel_[2] = yaw_rate;
   }
 
-  std::array<mjtNum, kCommandDim> commandVelocity() const {
-    return latest_cmd_vel_;
-  }
-
   void setCommandResidualLimits(float linear_limit, float yaw_limit) {
     cmd_linear_residual_limit_ = std::max(0.0f, linear_limit);
     cmd_yaw_residual_limit_ = std::max(0.0f, yaw_limit);
   }
-
-  void setGaitPattern(const std::array<float, kNumLegs>& offsets,
-                      const std::array<float, kNumLegs>& contact_durations) {
-    gait_scheduler_.setPattern(offsets, contact_durations);
-  }
-
-  void setGaitPhase(float theta) { gait_scheduler_.setPhase(theta); }
 
   void setModel(const mjModel* model) {
     model_ = model;
@@ -230,13 +206,6 @@ class ModelBasedControllerInterface {
 
   void clearObservationHistory() {
     current_action_.assign(kActionDim, 0.0);
-  }
-
-  int getMode() const {
-    if (!_controller || !_controller->_controlFSM) {
-      return -1;
-    }
-    return static_cast<int>(_controller->_controlFSM->currentState->stateName);
   }
 
   void run() {
@@ -563,19 +532,6 @@ class ModelBasedControllerInterface {
 
   }
 
-  // Allow external code to set the contact phase used by the state estimator.
-  // This forwards a 4-element contact phase array into the internal
-  // StateEstimatorContainer by building an ::Vec4<float> and calling
-  // setContactPhase on the estimator if present.
-  void setContactPhase(const std::array<float, kNumLegs>& contact_phase) {
-    if (!_controller || !_controller->_controlFSM) return;
-    auto* data = &_controller->_controlFSM->data;
-    if (!data->_stateEstimator) return;
-    ::Vec4<float> phase;
-    for (int i = 0; i < kNumLegs; ++i) phase[i] = static_cast<float>(contact_phase[i]);
-    data->_stateEstimator->setContactPhase(phase);
-  }
-
   mjtNum* setObservation(mjtNum* obs) {
     if (obs == nullptr) {
       return obs;
@@ -721,21 +677,10 @@ class ModelBasedControllerInterface {
   }
 
   void clearWBCLogFile(const std::string& filepath = "") {
-    if (wbc_log_stream_.is_open()) {
-      wbc_log_stream_.close();
-    }
-    if (!filepath.empty()) {
-      std::remove(filepath.c_str());
-    } else if (!wbc_log_path_.empty()) {
-      std::remove(wbc_log_path_.c_str());
-    }
-    wbc_log_path_.clear();
+    wbc_logger_.clearFile(filepath);
   }
 
   // Write a CSV row with WBC-related data (no LCM). Call this after run().
-  // If filepath changes or the stream is closed, it will be re-opened in append
-  // mode. Set write_header_if_new=true to write a header when opening a new
-  // file.
   void writeWBCLogCSV(const std::string& filepath,
                       bool write_header_if_new = false) {
     if (!_controller || !_controller->_controlFSM) {
@@ -747,308 +692,31 @@ class ModelBasedControllerInterface {
       return;
     }
 
-    // (Re)open stream if needed
-    if (!wbc_log_stream_.is_open() || filepath != wbc_log_path_) {
-      if (wbc_log_stream_.is_open()) wbc_log_stream_.close();
-      wbc_log_stream_.open(filepath.c_str(), std::ios::out | std::ios::app);
-      if (!wbc_log_stream_) return;
-      wbc_log_path_ = filepath;
-      // Only write header if requested AND file is empty
-      auto pos = wbc_log_stream_.tellp();
-      bool is_empty = (pos == std::streampos(0));
-      if (write_header_if_new && is_empty) writeHeader_();
-    }
-
     const auto& se = data._stateEstimator->getResult();
-    auto* legCmd = data._legController->commands;
-    auto* legDat = data._legController->datas;
-    const auto& loco = data.locomotionCtrlData;
+    const auto motor_cmd =
+        (_actuator_command && _actuator_data) ? getMotorCommands()
+                                              : std::array<double, 12>{};
 
-    std::array<double, kNumLegs * 3 /* foot force dim */> foot_forces_world{};
-    if (auto* locomotion_state = fsm.statesList.locomotion) {
-      if (auto* wbc_ctrl = locomotion_state->getWbcCtrl()) {
-        const auto& fr = wbc_ctrl->getReactionForces();
-        std::size_t contact_idx = 0;
-        for (int leg = 0; leg < kNumLegs; ++leg) {
-          if (loco.contact_state[leg] > 0.5f) {
-            for (int axis = 0; axis < 3 /* foot force dim */; ++axis) {
-              const std::size_t fr_idx = contact_idx * 3 /* foot force dim */ + axis;
-              if (fr_idx < static_cast<std::size_t>(fr.size())) {
-                foot_forces_world[leg * 3 /* foot force dim */ + axis] =
-                    static_cast<double>(fr[fr_idx]);
-              }
-            }
-            ++contact_idx;
-          } else {
-            for (int axis = 0; axis < 3 /* foot force dim */; ++axis) {
-              foot_forces_world[leg * 3 /* foot force dim */ + axis] = 0.0;
-            }
-          }
-        }
-        // std::cout << "Reaction Forces (per leg FR, FL, HR, HL): ";
-        for (double force : foot_forces_world) {
-          // std::cout << force << " ";
-        }
-        // std::cout << std::endl;
-      }
-    }
+    WBCLogger::GaitState gait_state;
+    gait_state.contact_state = state_.gait_contact_state;
+    gait_state.contact_phase = state_.gait_contact_phase;
+    gait_state.swing_phase = state_.gait_swing_phase;
+    gait_state.delta_theta = state_.delta_theta;
+    gait_state.phase = state_.gait_phase;
+    gait_state.cycle_time = state_.gait_cycle_time;
 
-    // Desired body orientation quaternion from desired RPY (ZYX)
-    auto quatFromRPY = [](float roll, float pitch, float yaw) {
-      float cr = std::cos(roll * 0.5f);
-      float sr = std::sin(roll * 0.5f);
-      float cp = std::cos(pitch * 0.5f);
-      float sp = std::sin(pitch * 0.5f);
-      float cy = std::cos(yaw * 0.5f);
-      float sy = std::sin(yaw * 0.5f);
-      Eigen::Matrix<float, 4, 1> q;
-      q[0] = cr * cp * cy + sr * sp * sy;  // w
-      q[1] = sr * cp * cy - cr * sp * sy;  // x
-      q[2] = cr * sp * cy + sr * cp * sy;  // y
-      q[3] = cr * cp * sy - sr * sp * cy;  // z
-      return q;
-    };
-    Eigen::Matrix<float, 4, 1> q_cmd =
-        quatFromRPY(static_cast<float>(loco.pBody_RPY_des[0]),
-                    static_cast<float>(loco.pBody_RPY_des[1]),
-                    static_cast<float>(loco.pBody_RPY_des[2]));
-
-    auto append_vec = [&](std::ostringstream& oss, const auto& v, int n) {
-      for (int i = 0; i < n; ++i) oss << static_cast<double>(v[i]) << ",";
-    };
-    auto append_3x4_flat = [&](std::ostringstream& oss, auto getter) {
-      for (int leg = 0; leg < 4; ++leg) {
-        const auto tmp = getter(leg);
-        for (int i = 0; i < 3; ++i) oss << static_cast<double>(tmp[i]) << ",";
-      }
-    };
-
-    auto to_vec3d = [](const auto& vec) {
-      return Eigen::Vector3d(static_cast<double>(vec[0]),
-                             static_cast<double>(vec[1]),
-                             static_cast<double>(vec[2]));
-    };
-
-    const mjData* sim_data = state_.feedback;
-
-    Eigen::Matrix3d R_world_to_body_se;
-    for (int r = 0; r < 3; ++r) {
-      for (int c = 0; c < 3; ++c) {
-        R_world_to_body_se(r, c) = static_cast<double>(se.rBody(r, c));
-      }
-    }
-    Eigen::Matrix3d R_body_to_world_se = R_world_to_body_se.transpose();
-
-    const Eigen::Vector3d body_pos_se = to_vec3d(se.position);
-    const Eigen::Vector3d v_world_se = to_vec3d(se.vWorld);
-    const Eigen::Vector3d v_body_se = to_vec3d(se.vBody);
-    const Eigen::Vector3d omega_body_se = to_vec3d(se.omegaBody);
-    const Eigen::Vector3d omega_world_se = to_vec3d(se.omegaWorld);
-    Eigen::Vector3d a_body_se = to_vec3d(se.aBody);
-    Eigen::Vector3d a_world_se = to_vec3d(se.aWorld);
-    const Eigen::Vector3d rpy_se = to_vec3d(se.rpy);
-
-    Eigen::Vector4d quat_se;
-    for (int i = 0; i < 4; ++i) {
-      quat_se[i] = static_cast<double>(se.orientation[i]);
-    }
-
-    Eigen::Matrix3d R_body_to_world_sim = R_body_to_world_se;
-    Eigen::Vector3d body_pos_sim = body_pos_se;
-    Eigen::Vector3d v_world_sim = v_world_se;
-    Eigen::Vector3d v_body_sim = v_body_se;
-    Eigen::Vector3d omega_body_sim = omega_body_se;
-    Eigen::Vector3d omega_world_sim = omega_world_se;
-    Eigen::Vector3d a_body_sim = a_body_se;
-    Eigen::Vector3d a_world_sim = a_world_se;
-    Eigen::Vector3d rpy_sim = rpy_se;
-    Eigen::Vector4d quat_sim = quat_se;
-    const bool have_sim = (sim_data != nullptr);
-
-    if (have_sim) {
-      body_pos_sim << static_cast<double>(sim_data->qpos[0]),
-          static_cast<double>(sim_data->qpos[1]),
-          static_cast<double>(sim_data->qpos[2]);
-      v_world_sim << static_cast<double>(sim_data->qvel[0]),
-          static_cast<double>(sim_data->qvel[1]),
-          static_cast<double>(sim_data->qvel[2]);
-      omega_body_sim << static_cast<double>(sim_data->qvel[3]),
-          static_cast<double>(sim_data->qvel[4]),
-          static_cast<double>(sim_data->qvel[5]);
-
-      Eigen::Quaternion<mjtNum> quat_tmp(sim_data->qpos[3], sim_data->qpos[4],
-                                  sim_data->qpos[5], sim_data->qpos[6]);
-      quat_tmp.normalize();
-      R_body_to_world_sim = quat_tmp.toRotationMatrix();
-      quat_sim << quat_tmp.w(), quat_tmp.x(), quat_tmp.y(), quat_tmp.z();
-      rpy_sim = R_body_to_world_sim.eulerAngles(0, 1, 2);
-
-      v_body_sim = R_body_to_world_sim.transpose() * v_world_sim;
-      omega_world_sim = R_body_to_world_sim * omega_body_sim;
-
-      if (sim_data->qacc) {
-        a_world_sim << static_cast<double>(sim_data->qacc[0]),
-            static_cast<double>(sim_data->qacc[1]),
-            static_cast<double>(sim_data->qacc[2]);
-        a_body_sim = R_body_to_world_sim.transpose() * a_world_sim;
-      } else {
-        a_world_sim.setZero();
-        a_body_sim = R_body_to_world_sim.transpose() * a_world_sim;
-      }
-    }
-
-    std::array<double, 4> contact_est_se{};
-    std::array<double, 4> contact_est_sim{};
-    for (int leg = 0; leg < 4; ++leg) {
-      contact_est_se[leg] = std::max(
-          0.0, std::min(1.0, static_cast<double>(se.contactEstimate[leg])));
-    }
-    if (have_sim) {
-      for (int leg = 0; leg < 4; ++leg) {
-        contact_est_sim[leg] = 0.0;
-        const int body_id = foot_body_ids_[leg];
-        if (body_id >= 0) {
-          const double fx =
-              static_cast<double>(sim_data->cfrc_ext[6 * body_id + 0]);
-          const double fy =
-              static_cast<double>(sim_data->cfrc_ext[6 * body_id + 1]);
-          const double fz =
-              static_cast<double>(sim_data->cfrc_ext[6 * body_id + 2]);
-          const double force_norm = std::sqrt(fx * fx + fy * fy + fz * fz);
-          if (force_norm > 5.0) {
-            contact_est_sim[leg] = 1.0;
-          }
-        }
-      }
-    } else {
-      for (int leg = 0; leg < 4; ++leg) {
-        contact_est_sim[leg] = loco.contact_state[leg] > 0.0f ? 1.0 : 0.0;
-      }
-    }
-
-    std::array<Eigen::Vector3d, 4> foot_pos_local;
-    std::array<Eigen::Vector3d, 4> foot_vel_local;
-    std::array<Eigen::Vector3d, 4> foot_pos_world_se;
-    std::array<Eigen::Vector3d, 4> foot_vel_world_se;
-    std::array<Eigen::Vector3d, 4> foot_pos_world_sim;
-    std::array<Eigen::Vector3d, 4> foot_vel_world_sim;
-
-    for (int leg = 0; leg < 4; ++leg) {
-      foot_pos_local[leg] = to_vec3d(legDat[leg].p);
-      foot_vel_local[leg] = to_vec3d(legDat[leg].v);
-      Eigen::Vector3d hip = Eigen::Vector3d::Zero();
-      if (legDat[leg].quadruped) {
-        hip = to_vec3d(legDat[leg].quadruped->getHipLocation(leg));
-      }
-      const Eigen::Vector3d foot_body = hip + foot_pos_local[leg];
-
-      const Eigen::Vector3d vel_body_se =
-          foot_vel_local[leg] + omega_body_se.cross(foot_body);
-      foot_pos_world_se[leg] = body_pos_se + R_body_to_world_se * foot_body;
-      foot_vel_world_se[leg] = v_world_se + R_body_to_world_se * vel_body_se;
-
-      const Eigen::Vector3d vel_body_sim =
-          foot_vel_local[leg] + omega_body_sim.cross(foot_body);
-      foot_pos_world_sim[leg] = body_pos_sim + R_body_to_world_sim * foot_body;
-      foot_vel_world_sim[leg] =
-          v_world_sim + R_body_to_world_sim * vel_body_sim;
-    }
-
-    std::array<double, 12> motor_cmd{};
-    if (_actuator_command && _actuator_data) {
-      motor_cmd = getMotorCommands();
-    }
-
-    std::ostringstream oss;
-    oss.setf(std::ios::fixed);
-    oss.precision(6);
-
-    // contact_estimator vs sim [4 each]
-    for (int leg = 0; leg < 4; ++leg) {
-      oss << contact_est_se[leg] << ",";
-    }
-    for (int leg = 0; leg < 4; ++leg) {
-      oss << contact_est_sim[leg] << ",";
-    }
-    // Fr_des[12]
-    append_3x4_flat(oss, [&](int leg) { return loco.Fr_des[leg]; });
-    // Fr_se[12] (Mujoco contact forces when in contact)
-    append_3x4_flat(oss, [&](int leg) { return loco.Fr_se[leg]; });
-    // Fr[12] (estimated contact forces from WBC)
-    for (double force : foot_forces_world) oss << force << ",";
-    // body_ori_cmd[4]
-    for (int i = 0; i < 4; ++i) oss << static_cast<double>(q_cmd[i]) << ",";
-    // body_pos_cmd[3], body_vel_cmd[3], body_ang_vel_cmd[3]
-    append_vec(oss, loco.pBody_des, 3);
-    append_vec(oss, loco.vBody_des, 3);
-    append_vec(oss, loco.vBody_Ori_des, 3);
-    // body states: estimator vs sim
-    append_vec(oss, body_pos_se, 3);
-    append_vec(oss, body_pos_sim, 3);
-    append_vec(oss, v_world_se, 3);
-    append_vec(oss, v_world_sim, 3);
-    append_vec(oss, v_body_se, 3);
-    append_vec(oss, v_body_sim, 3);
-    append_vec(oss, quat_se, 4);
-    append_vec(oss, quat_sim, 4);
-    append_vec(oss, rpy_se, 3);
-    append_vec(oss, rpy_sim, 3);
-    append_vec(oss, omega_body_se, 3);
-    append_vec(oss, omega_body_sim, 3);
-    append_vec(oss, omega_world_se, 3);
-    append_vec(oss, omega_world_sim, 3);
-    append_vec(oss, a_body_se, 3);
-    append_vec(oss, a_body_sim, 3);
-    append_vec(oss, a_world_se, 3);
-    append_vec(oss, a_world_sim, 3);
-    // foot_pos_cmd[12], foot_vel_cmd[12], foot_acc_cmd[12]
-    append_3x4_flat(oss, [&](int leg) { return loco.pFoot_des[leg]; });
-    append_3x4_flat(oss, [&](int leg) { return loco.vFoot_des[leg]; });
-    append_3x4_flat(oss, [&](int leg) { return loco.aFoot_des[leg]; });
-    // foot_acc_numeric[12] -> zeros
-    for (int i = 0; i < 12; ++i) oss << 0.0 << ",";
-    // foot_pos[12] (world) estimator vs sim, foot_vel[12] (world)
-    append_3x4_flat(oss, [&](int leg) { return foot_pos_world_se[leg]; });
-    append_3x4_flat(oss, [&](int leg) { return foot_pos_world_sim[leg]; });
-    append_3x4_flat(oss, [&](int leg) { return foot_vel_world_se[leg]; });
-    append_3x4_flat(oss, [&](int leg) { return foot_vel_world_sim[leg]; });
-    // foot_local_pos[12], foot_local_vel[12] (leg frame)
-    append_3x4_flat(oss, [&](int leg) { return foot_pos_local[leg]; });
-    append_3x4_flat(oss, [&](int leg) { return foot_vel_local[leg]; });
-    // jpos_cmd[12], jvel_cmd[12]
-    for (int leg = 0; leg < 4; ++leg) append_vec(oss, legCmd[leg].qDes, 3);
-    for (int leg = 0; leg < 4; ++leg) append_vec(oss, legCmd[leg].qdDes, 3);
-    // jacc_cmd[12] -> zeros
-    for (int i = 0; i < 12; ++i) oss << 0.0 << ",";
-    // tau_ff_cmd[12]
-    for (int leg = 0; leg < 4; ++leg) {
-      for (int axis = 0; axis < 3; ++axis) {
-        oss << static_cast<double>(legCmd[leg].tauFeedForward[axis]) << ",";
-      }
-    }
-    // motor_cmd[12]
-    for (double cmd : motor_cmd) oss << cmd << ",";
-    // jpos[12], jvel[12]
-    for (int leg = 0; leg < 4; ++leg) append_vec(oss, legDat[leg].q, 3);
-    for (int leg = 0; leg < 4; ++leg) append_vec(oss, legDat[leg].qd, 3);
-    // gait state
-    oss << static_cast<double>(state_.delta_theta) << ","
-        << static_cast<double>(state_.gait_phase) << ","
-        << static_cast<double>(state_.gait_cycle_time) << ",";
-    for (int leg = 0; leg < kNumLegs; ++leg) {
-      oss << static_cast<double>(state_.gait_contact_state[leg]) << ",";
-    }
-    for (int leg = 0; leg < kNumLegs; ++leg) {
-      oss << static_cast<double>(state_.gait_contact_phase[leg]) << ",";
-    }
-    for (int leg = 0; leg < kNumLegs; ++leg) {
-      oss << static_cast<double>(state_.gait_swing_phase[leg]) << ",";
-    }
-    // vision_loc[3] -> zeros, end line
-    for (int i = 0; i < 3; ++i) oss << 0.0 << (i == 2 ? '\n' : ',');
-
-    wbc_log_stream_ << oss.str();
-    wbc_log_stream_.flush();
+    wbc_logger_.writeRow(
+        filepath,
+        write_header_if_new,
+        se,
+        data._legController->commands,
+        data._legController->datas,
+        data.locomotionCtrlData,
+        state_.feedback,
+        foot_body_ids_,
+        fsm.statesList.locomotion,
+        motor_cmd,
+        gait_state);
   }
  private:
   ControlFSMData<float>* mutableControlData_() {
@@ -1099,133 +767,9 @@ class ModelBasedControllerInterface {
   SpiData* _actuator_data{nullptr};
   VectorNavData* _imu_data{nullptr};
   GamepadCommand* _gamepad_command{nullptr};
-  // RobotControlParameters* _control_params{nullptr};
   PeriodicTaskManager* _periodic_task_manager{nullptr};
   RobotRunner* _robot_runner{nullptr};
-  // TODO can we do this better? Automatic log file header and management
-  void writeHeader_() {
-    if (!wbc_log_stream_) return;
-    // contact estimates
-    wbc_log_stream_ << "contact_est_se_FR,contact_est_se_FL,contact_est_se_HR,"
-                       "contact_est_se_HL,";
-    wbc_log_stream_ << "contact_est_sim_FR,contact_est_sim_FL,contact_est_sim_"
-                       "HR,contact_est_sim_HL,";
-    // Fr_des[12], Fr_se[12], Fr[12]
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "Fr_des_" << i << "_x,Fr_des_" << i << "_y,Fr_des_"
-                      << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "Fr_se_" << i << "_x,Fr_se_" << i << "_y,Fr_se_"
-                      << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "Fr_" << i << "_x,Fr_" << i << "_y,Fr_" << i << "_z,";
-    // body ori/pos/vel cmd
-    wbc_log_stream_
-        << "body_ori_cmd_w,body_ori_cmd_x,body_ori_cmd_y,body_ori_cmd_z,";
-    wbc_log_stream_ << "body_pos_cmd_x,body_pos_cmd_y,body_pos_cmd_z,";
-    wbc_log_stream_ << "body_vel_cmd_x,body_vel_cmd_y,body_vel_cmd_z,";
-    wbc_log_stream_
-        << "body_ang_vel_cmd_x,body_ang_vel_cmd_y,body_ang_vel_cmd_z,";
-    // body state (estimator vs sim)
-    wbc_log_stream_ << "body_pos_se_x,body_pos_se_y,body_pos_se_z,";
-    wbc_log_stream_ << "body_pos_sim_x,body_pos_sim_y,body_pos_sim_z,";
-    wbc_log_stream_
-        << "body_vel_se_world_x,body_vel_se_world_y,body_vel_se_world_z,";
-    wbc_log_stream_
-        << "body_vel_sim_world_x,body_vel_sim_world_y,body_vel_sim_world_z,";
-    wbc_log_stream_
-        << "body_vel_se_body_x,body_vel_se_body_y,body_vel_se_body_z,";
-    wbc_log_stream_
-        << "body_vel_sim_body_x,body_vel_sim_body_y,body_vel_sim_body_z,";
-    wbc_log_stream_
-        << "body_ori_se_w,body_ori_se_x,body_ori_se_y,body_ori_se_z,";
-    wbc_log_stream_
-        << "body_ori_sim_w,body_ori_sim_x,body_ori_sim_y,body_ori_sim_z,";
-    wbc_log_stream_ << "body_rpy_se_r,body_rpy_se_p,body_rpy_se_y,";
-    wbc_log_stream_ << "body_rpy_sim_r,body_rpy_sim_p,body_rpy_sim_y,";
-    wbc_log_stream_ << "body_ang_vel_se_body_x,body_ang_vel_se_body_y,body_ang_"
-                       "vel_se_body_z,";
-    wbc_log_stream_ << "body_ang_vel_sim_body_x,body_ang_vel_sim_body_y,body_"
-                       "ang_vel_sim_body_z,";
-    wbc_log_stream_ << "body_ang_vel_se_world_x,body_ang_vel_se_world_y,body_"
-                       "ang_vel_se_world_z,";
-    wbc_log_stream_ << "body_ang_vel_sim_world_x,body_ang_vel_sim_world_y,body_"
-                       "ang_vel_sim_world_z,";
-    wbc_log_stream_
-        << "body_acc_se_body_x,body_acc_se_body_y,body_acc_se_body_z,";
-    wbc_log_stream_
-        << "body_acc_sim_body_x,body_acc_sim_body_y,body_acc_sim_body_z,";
-    wbc_log_stream_
-        << "body_acc_se_world_x,body_acc_se_world_y,body_acc_se_world_z,";
-    wbc_log_stream_
-        << "body_acc_sim_world_x,body_acc_sim_world_y,body_acc_sim_world_z,";
-    // foot cmd
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_pos_cmd_" << i << "_x,foot_pos_cmd_" << i
-                      << "_y,foot_pos_cmd_" << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_vel_cmd_" << i << "_x,foot_vel_cmd_" << i
-                      << "_y,foot_vel_cmd_" << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_acc_cmd_" << i << "_x,foot_acc_cmd_" << i
-                      << "_y,foot_acc_cmd_" << i << "_z,";
-    // foot_acc_numeric
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_acc_num_" << i << "_x,foot_acc_num_" << i
-                      << "_y,foot_acc_num_" << i << "_z,";
-    // foot state (estimator vs sim)
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_pos_se_" << i << "_x,foot_pos_se_" << i
-                      << "_y,foot_pos_se_" << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_pos_sim_" << i << "_x,foot_pos_sim_" << i
-                      << "_y,foot_pos_sim_" << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_vel_se_" << i << "_x,foot_vel_se_" << i
-                      << "_y,foot_vel_se_" << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_vel_sim_" << i << "_x,foot_vel_sim_" << i
-                      << "_y,foot_vel_sim_" << i << "_z,";
-    // foot local (leg frame)
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_local_pos_" << i << "_x,foot_local_pos_" << i
-                      << "_y,foot_local_pos_" << i << "_z,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "foot_local_vel_" << i << "_x,foot_local_vel_" << i
-                      << "_y,foot_local_vel_" << i << "_z,";
-    // joint cmd
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "jpos_cmd_" << i << "_h,jpos_cmd_" << i
-                      << "_k,jpos_cmd_" << i << "_a,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "jvel_cmd_" << i << "_h,jvel_cmd_" << i
-                      << "_k,jvel_cmd_" << i << "_a,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "jacc_cmd_" << i << "_h,jacc_cmd_" << i
-                      << "_k,jacc_cmd_" << i << "_a,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "tau_abad_ff_" << i << ",tau_hip_ff_" << i
-                      << ",tau_knee_ff_" << i << ",";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "motor_cmd_" << i << "_abad,motor_cmd_" << i
-                      << "_hip,motor_cmd_" << i << "_knee,";
-    // joint state
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "jpos_" << i << "_h,jpos_" << i << "_k,jpos_" << i
-                      << "_a,";
-    for (int i = 0; i < 4; ++i)
-      wbc_log_stream_ << "jvel_" << i << "_h,jvel_" << i << "_k,jvel_" << i
-                      << "_a,";
-    // gait state
-    wbc_log_stream_ << "gait_delta_theta,gait_phase,gait_cycle_s,";
-    wbc_log_stream_ << "gait_contact_FR,gait_contact_FL,gait_contact_HR,gait_contact_HL,";
-    wbc_log_stream_ << "gait_contact_phase_FR,gait_contact_phase_FL,gait_contact_phase_HR,gait_contact_phase_HL,";
-    wbc_log_stream_ << "gait_swing_phase_FR,gait_swing_phase_FL,gait_swing_phase_HR,gait_swing_phase_HL,";
-    // vision
-    wbc_log_stream_ << "vision_loc_x,vision_loc_y,vision_loc_z\n";
-  }
-  std::ofstream wbc_log_stream_;
-  std::string wbc_log_path_;
+  WBCLogger wbc_logger_;
 };
 
 #endif  // MBC_INTERFACE_H

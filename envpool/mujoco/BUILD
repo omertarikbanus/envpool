@@ -137,6 +137,7 @@ cc_library(
     srcs = glob([  
     "mbc_interface.h",
     "rl_gait.h",
+    "wbc_logger.h",
     "legged_gait_scheduler.h",
     "footstep_planner.h",
     "legged-sim/src/**/*.cpp",
