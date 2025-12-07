@@ -38,6 +38,7 @@ def gym_sync_step() -> None:
     action[env_id][8]= 0.5
     action[env_id][11]= 0.5
     action[env_id][14]= 0.5
+    action[env_id][23]= 0.0
 
   for _ in range(5000):
     if is_legacy_gym:

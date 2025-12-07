@@ -28,7 +28,6 @@ class FootstepPlanner {
     const Eigen::Vector3f& commanded_velocity_world;
     float yaw_rate_des;
     float cmpc_bonus;
-    float control_dt;
     float gravity;
     LegController<float>& leg_controller;
     std::vector<mjtNum> current_action_;
@@ -63,10 +62,9 @@ class FootstepPlanner {
       if (!leg_in_contact) {
         auto& swing_traj = gait_scheduler_.swingTrajectory(leg);
         const float stance_duration =
-            gait_scheduler_.stanceDurationSeconds(leg, input.control_dt);
-        const float swing_duration =
-            std::max(gait_scheduler_.swingDurationSeconds(leg, input.control_dt),
-                     1e-3f);
+            gait_scheduler_.stanceDurationSeconds(leg);
+        const float swing_duration = std::max(
+            gait_scheduler_.swingDurationSeconds(leg), 1e-3f);
         const float clamped_phase =
             std::clamp(input.swing_phase[leg], 0.0f, 1.0f);
         const float swing_time_remaining =

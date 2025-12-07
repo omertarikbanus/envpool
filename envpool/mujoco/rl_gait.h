@@ -8,6 +8,8 @@
 
 #include <Eigen/Core>
 
+
+// currently unused code.
 namespace rl_gait {
 
 inline float clamp01(float value) {

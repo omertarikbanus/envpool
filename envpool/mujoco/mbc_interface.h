@@ -19,7 +19,6 @@
 #include <eigen3/Eigen/Geometry>
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -31,7 +30,13 @@ class ModelBasedControllerInterface {
  public:
   static constexpr int kNumLegs = 4;
   static constexpr int kFootActionDim = 5;
-  static constexpr int kActionDim = 23;
+  static constexpr int kActionDim = 24;
+  static constexpr int kPhaseDeltaIdx = kActionDim - 1;
+  // Nominal phase advance per control tick (~40 ticks per cycle).
+  static constexpr float kDefaultPhaseDelta = 1.0f / 200.0f;
+  // Keep learned phase deltas near nominal to avoid racing through the gait.
+  static constexpr float kMaxPhaseDelta = 2*kDefaultPhaseDelta;
+  static constexpr float kControlDt = 0.002f;
   static constexpr int kCommandDim = 3;
   static constexpr int kObservationDim =
       1   /* commanded forward velocity */ +
@@ -41,17 +46,13 @@ class ModelBasedControllerInterface {
       6   /* feet positions relative to base (FR, FL) */ +
       2;  /* phase (sin, cos) */
 
-  ModelBasedControllerInterface() : footstep_planner_(gait_scheduler_) {
+  ModelBasedControllerInterface()
+      : gait_scheduler_(kControlDt), footstep_planner_(gait_scheduler_) {
     reset();
     // Constructor implementation
   }
 
   ~ModelBasedControllerInterface() = default;
-
-  void setFrameSkip(int frame_skip) { frame_skip_ = frame_skip; }
-  void setElapsedStep(int elapsed_step) { elapsed_step_ = elapsed_step; }
-  int frameSkip() const { return frame_skip_; }
-  int elapsedStep() const { return elapsed_step_; }
 
   void setDesiredBodyHeight(float height) {
     filtered_body_height_ = height;
@@ -103,10 +104,10 @@ class ModelBasedControllerInterface {
   void reset() {
     reset_body_height_ = 0.36f;
     filtered_body_height_ = reset_body_height_;
-    last_feedback_data_ = nullptr;
+    state_.feedback = nullptr;
     clearObservationHistory();
     gait_scheduler_.reset();
-    resetContactOrdering_();
+    state_.contact_schedule = gait_scheduler_.contactState();
 
     if (!_controller) {
       _controller = new EmbeddedController();
@@ -128,7 +129,7 @@ class ModelBasedControllerInterface {
     }
     if (!_robot_runner) {
       _robot_runner = new RobotRunner(_controller, _periodic_task_manager,
-                                      0.002, "robot-control");
+                                      kControlDt, "robot-control");
     }
 
     _robot_runner->driverCommand = _gamepad_command;
@@ -143,16 +144,6 @@ class ModelBasedControllerInterface {
         loco->Fr_se[leg].setZero();
         loco->Fr_des[leg].setZero();
       }
-    }
-  }
-  void construct() {
-    if (!_controller || !_controller->_controlFSM || !_robot_runner) {
-      return;
-    }
-    _controller->_controlFSM->data.controlParameters->control_mode = 1;
-    while (_controller->_controlFSM->currentState->stateName !=
-           FSM_StateName::BALANCE_STAND) {
-      _robot_runner->run();
     }
   }
 
@@ -182,7 +173,7 @@ class ModelBasedControllerInterface {
       loco->pBody_des[2] = filtered_body_height_;
     }
     gait_scheduler_.reset();
-    resetContactOrdering_();
+    state_.contact_schedule = gait_scheduler_.contactState();
   }
 
   void setBaseHeight(float height) {
@@ -207,6 +198,13 @@ class ModelBasedControllerInterface {
     cmd_linear_residual_limit_ = std::max(0.0f, linear_limit);
     cmd_yaw_residual_limit_ = std::max(0.0f, yaw_limit);
   }
+
+  void setGaitPattern(const std::array<float, kNumLegs>& offsets,
+                      const std::array<float, kNumLegs>& contact_durations) {
+    gait_scheduler_.setPattern(offsets, contact_durations);
+  }
+
+  void setGaitPhase(float theta) { gait_scheduler_.setPhase(theta); }
 
   void setModel(const mjModel* model) {
     model_ = model;
@@ -286,7 +284,7 @@ class ModelBasedControllerInterface {
     if (!_actuator_data || !_imu_data) {
       return;
     }
-    last_feedback_data_ = data_;
+    state_.feedback = data_;
     for (int leg = 0; leg < 4; leg++) {
       _actuator_data->q_abad[leg] =
           data_->qpos[(leg) * 3 + 0 + 7];  // Add 7 to skip the first 7 dofs
@@ -391,15 +389,15 @@ class ModelBasedControllerInterface {
     return (input - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
   }
 
+  
+
   void setAction(const mjtNum* act, std::size_t dim) {
     // Cache the latest action for observation and command mapping.
-    if (act == nullptr) {
-      current_action_.assign(kActionDim, 0.0);
-    } else {
-      current_action_.assign(kActionDim, 0.0);
-      const std::size_t copy_dim =
-          std::min(dim, static_cast<std::size_t>(kActionDim));
-      for (std::size_t i = 0; i < copy_dim; ++i) {
+    std::size_t incoming_dim = 0;
+    current_action_.assign(kActionDim, 0.0);
+    if (act != nullptr) {
+      incoming_dim = std::min(dim, static_cast<std::size_t>(kActionDim));
+      for (std::size_t i = 0; i < incoming_dim; ++i) {
         current_action_[i] = act[i];
       }
     }
@@ -413,13 +411,19 @@ class ModelBasedControllerInterface {
     }
 
     auto& loco = data.locomotionCtrlData;
-    gait_scheduler_.update(std::max(frame_skip_, 1), elapsed_step_);
-    const auto prev_contact_schedule = last_contact_schedule_;
+    const float delta_theta = mapToRange(current_action_[kPhaseDeltaIdx], -1.0f, 1.0f, 0.0f, kMaxPhaseDelta);
+    state_.delta_theta = delta_theta;
+    gait_scheduler_.update(delta_theta);
+    state_.gait_phase = gait_scheduler_.phase();
+    state_.gait_cycle_time = gait_scheduler_.cycleTimeSeconds();
+
+    const auto prev_contact_schedule = state_.contact_schedule;
     const auto& contact_schedule = gait_scheduler_.contactState();
     const auto& swing_phase = gait_scheduler_.swingPhase();
+    const auto contact_phase = gait_scheduler_.contactPhase();
     // NOTE: LocomotionCtrl
     // (legged-sim/src/Controllers/WBC_Ctrl/LocomotionCtrl.cpp) treats any value
-    // > 0 as a stance constraint. Write back only 1.0 or 0.0 so swing legs
+    // > 0 as a stance constraint. Write back only 1.0 or 0.  
     // clear the contact set and the WBC actually lifts them.
     for (int leg = 0; leg < kNumLegs; ++leg) {
       const bool leg_should_contact = contact_schedule[leg] > 0.0f;
@@ -429,35 +433,17 @@ class ModelBasedControllerInterface {
     for (int leg = 0; leg < kNumLegs; ++leg) {
       updated_contact_state[leg] = loco.contact_state[leg];
     }
-    constexpr float kControlDt = 0.002f;
+    state_.gait_contact_state = updated_contact_state;
+    state_.gait_contact_phase = contact_phase;
+    state_.gait_swing_phase = swing_phase;
+    state_.contact_schedule = updated_contact_state;
     const auto& seResult = data._stateEstimator->getResult();
-    // overwrite seResult with sim data if available
-    const mjData* sim_data = last_feedback_data_;
+    const mjData* sim_data = state_.feedback;
 
-
-    Eigen::Matrix3f Rwb;
-    Eigen::Vector3f base_pos;
-    Eigen::Vector3f v_world;
-    if (sim_data && 0) {
-      Eigen::Quaternion<mjtNum> quat(sim_data->qpos[3], sim_data->qpos[4],
-                              sim_data->qpos[5], sim_data->qpos[6]);
-      quat.normalize();
-      Rwb = quat.toRotationMatrix().cast<float>();
-      base_pos = Eigen::Vector3f(static_cast<float>(sim_data->qpos[0]),
-                                 static_cast<float>(sim_data->qpos[1]),
-                                 static_cast<float>(sim_data->qpos[2]));
-      v_world = Eigen::Vector3f(static_cast<float>(sim_data->qvel[0]),
-                                static_cast<float>(sim_data->qvel[1]),
-                                static_cast<float>(sim_data->qvel[2]));
-    } else {
-      Rwb = seResult.rBody.transpose();
-      base_pos = seResult.position;
-      v_world = seResult.vWorld;
-    }
+    const Eigen::Matrix3f Rwb = seResult.rBody.transpose();
+    Eigen::Vector3f base_pos = seResult.position;
+    const Eigen::Vector3f v_world = seResult.vWorld;
     // set desired body position in x and y such that max error is 5 cm
-
-   
-    
 
     const float residual_vx =
         mapToRange(current_action_[0], -1, 1, -cmd_linear_residual_limit_,
@@ -533,7 +519,6 @@ class ModelBasedControllerInterface {
         }
       }
     }
-    base_pos = seResult.position;
 
     const auto* user_params = data.userParameters;
     const float cmpc_bonus =
@@ -552,7 +537,6 @@ class ModelBasedControllerInterface {
                                           v_des_world,
                                           yaw_rate_des,
                                           cmpc_bonus,
-                                          kControlDt,
                                           kGravity,
                                           *data._legController,
                                           current_action_};
@@ -561,16 +545,11 @@ class ModelBasedControllerInterface {
     float target_height = reset_body_height_ - 0.5f * avg_foot_des_z;
     target_height = std::clamp(target_height, 0.28f, 0.42f);
 
-    int smoothing_horizon = std::max(1, frame_skip_ * 8);
-    float phase = 0.0f;
-
-    float candidate_height =
-        reset_body_height_ + phase * (target_height - reset_body_height_);
-    filtered_body_height_ += 0.2f * (candidate_height - filtered_body_height_);
-  filtered_body_height_ = std::clamp(filtered_body_height_, 0.28f, 0.42f);
-  // Track the filtered target height instead of a hard-coded value to avoid
-  // unintended lift when the command is to hold still.
-  loco.pBody_des[2] = filtered_body_height_;
+    filtered_body_height_ += 0.2f * (target_height - filtered_body_height_);
+    filtered_body_height_ = std::clamp(filtered_body_height_, 0.28f, 0.42f);
+    // Track the filtered target height instead of a hard-coded value to avoid
+    // unintended lift when the command is to hold still.
+    loco.pBody_des[2] = filtered_body_height_;
 
     // Forward contact schedule into the state estimator so the estimator is
     // aware of which feet are in contact. This mirrors calls like
@@ -582,7 +561,6 @@ class ModelBasedControllerInterface {
       data._stateEstimator->setContactPhase(phase);
     }
 
-    updateContactOrdering_(updated_contact_state);
   }
 
   // Allow external code to set the contact phase used by the state estimator.
@@ -598,16 +576,15 @@ class ModelBasedControllerInterface {
     data->_stateEstimator->setContactPhase(phase);
   }
 
-  mjtNum* setObservation(mjtNum* obs, mjtNum desired_body_height) {
+  mjtNum* setObservation(mjtNum* obs) {
     if (obs == nullptr) {
       return obs;
     }
-    (void)desired_body_height;
     auto& seResult =
         _controller->_controlFSM->data._stateEstimator->getResult();
-    const bool have_feedback = (last_feedback_data_ != nullptr);
+    const bool have_feedback = (state_.feedback != nullptr);
     const bool use_cheater = (cheater_mode == 1) && have_feedback;
-    const mjData* data = last_feedback_data_;
+    const mjData* data = state_.feedback;
 
     mjtNum base_pos[3] = {0, 0, 0};
     mjtNum base_lin_vel[3] = {0, 0, 0};
@@ -852,7 +829,7 @@ class ModelBasedControllerInterface {
                              static_cast<double>(vec[2]));
     };
 
-    const mjData* sim_data = last_feedback_data_;
+    const mjData* sim_data = state_.feedback;
 
     Eigen::Matrix3d R_world_to_body_se;
     for (int r = 0; r < 3; ++r) {
@@ -1054,47 +1031,26 @@ class ModelBasedControllerInterface {
     // jpos[12], jvel[12]
     for (int leg = 0; leg < 4; ++leg) append_vec(oss, legDat[leg].q, 3);
     for (int leg = 0; leg < 4; ++leg) append_vec(oss, legDat[leg].qd, 3);
+    // gait state
+    oss << static_cast<double>(state_.delta_theta) << ","
+        << static_cast<double>(state_.gait_phase) << ","
+        << static_cast<double>(state_.gait_cycle_time) << ",";
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      oss << static_cast<double>(state_.gait_contact_state[leg]) << ",";
+    }
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      oss << static_cast<double>(state_.gait_contact_phase[leg]) << ",";
+    }
+    for (int leg = 0; leg < kNumLegs; ++leg) {
+      oss << static_cast<double>(state_.gait_swing_phase[leg]) << ",";
+    }
     // vision_loc[3] -> zeros, end line
     for (int i = 0; i < 3; ++i) oss << 0.0 << (i == 2 ? '\n' : ',');
 
     wbc_log_stream_ << oss.str();
     wbc_log_stream_.flush();
   }
-  // private:
-  // std::shared_ptr<EmbeddedController> _controller;
-  // std::shared_ptr<SpiCommand> _actuator_command;
-  // std::shared_ptr<SpiData> _actuator_data;
-  // std::shared_ptr<VectorNavData> _imu_data;
-  // std::shared_ptr<GamepadCommand> _gamepad_command;
-  // std::shared_ptr<RobotControlParameters> _control_params;
-  // std::shared_ptr<PeriodicTaskManager> _periodic_task_manager;
-  // std::shared_ptr<RobotRunner> _robot_runner;
-  int elapsed_step_{0};
-  int frame_skip_{0};
-
  private:
-  void resetContactOrdering_() {
-    last_contact_schedule_.fill(1.0f);
-    last_contact_count_ = static_cast<std::size_t>(kNumLegs);
-    for (int leg = 0; leg < kNumLegs; ++leg) {
-      last_contact_order_[leg] = leg;
-    }
-  }
-
-  void updateContactOrdering_(
-      const std::array<float, kNumLegs>& contact_schedule) {
-    last_contact_schedule_ = contact_schedule;
-    last_contact_count_ = 0;
-    for (int leg = 0; leg < kNumLegs; ++leg) {
-      if (contact_schedule[leg] > 0.0f) {
-        last_contact_order_[last_contact_count_++] = leg;
-      }
-    }
-    for (std::size_t idx = last_contact_count_; idx < kNumLegs; ++idx) {
-      last_contact_order_[idx] = -1;
-    }
-  }
-
   ControlFSMData<float>* mutableControlData_() {
     if (!_controller || !_controller->_controlFSM) {
       return nullptr;
@@ -1128,10 +1084,16 @@ class ModelBasedControllerInterface {
   float cmd_yaw_residual_limit_{1.0f};
   LeggedGaitScheduler gait_scheduler_;
   FootstepPlanner footstep_planner_;
-  std::array<float, kNumLegs> last_contact_schedule_{{1.0f, 1.0f, 1.0f, 1.0f}};
-  std::array<int, kNumLegs> last_contact_order_{{0, 1, 2, 3}};
-  std::size_t last_contact_count_{static_cast<std::size_t>(kNumLegs)};
-
+  struct RuntimeState {
+    std::array<float, kNumLegs> contact_schedule{{1.0f, 1.0f, 1.0f, 1.0f}};
+    std::array<float, kNumLegs> gait_contact_state{{1.0f, 1.0f, 1.0f, 1.0f}};
+    std::array<float, kNumLegs> gait_contact_phase{{0.0f, 0.0f, 0.0f, 0.0f}};
+    std::array<float, kNumLegs> gait_swing_phase{{0.0f, 0.0f, 0.0f, 0.0f}};
+    float delta_theta{0.0f};
+    float gait_phase{0.0f};
+    float gait_cycle_time{0.0f};
+    mjData* feedback{nullptr};
+  } state_;
   RobotController* _controller{nullptr};
   SpiCommand* _actuator_command{nullptr};
   SpiData* _actuator_data{nullptr};
@@ -1140,7 +1102,7 @@ class ModelBasedControllerInterface {
   // RobotControlParameters* _control_params{nullptr};
   PeriodicTaskManager* _periodic_task_manager{nullptr};
   RobotRunner* _robot_runner{nullptr};
-  mjData* last_feedback_data_{nullptr};
+  // TODO can we do this better? Automatic log file header and management
   void writeHeader_() {
     if (!wbc_log_stream_) return;
     // contact estimates
@@ -1254,6 +1216,11 @@ class ModelBasedControllerInterface {
     for (int i = 0; i < 4; ++i)
       wbc_log_stream_ << "jvel_" << i << "_h,jvel_" << i << "_k,jvel_" << i
                       << "_a,";
+    // gait state
+    wbc_log_stream_ << "gait_delta_theta,gait_phase,gait_cycle_s,";
+    wbc_log_stream_ << "gait_contact_FR,gait_contact_FL,gait_contact_HR,gait_contact_HL,";
+    wbc_log_stream_ << "gait_contact_phase_FR,gait_contact_phase_FL,gait_contact_phase_HR,gait_contact_phase_HL,";
+    wbc_log_stream_ << "gait_swing_phase_FR,gait_swing_phase_FL,gait_swing_phase_HR,gait_swing_phase_HL,";
     // vision
     wbc_log_stream_ << "vision_loc_x,vision_loc_y,vision_loc_z\n";
   }

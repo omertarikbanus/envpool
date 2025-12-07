@@ -209,14 +209,12 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    // Action layout (30 dims total, with 1 unused slot per leg to match current indexing):
-    // [0] vBody_des.x, [1] vBody_des.y, [2] yaw_rate_des,
-    // Per-leg (4 legs) stride of 7 each (N_FOOT_PARAM_ACT):
-    //   [3 + 7*leg + 0..2] pFoot_des[leg] (x, y, z)
-    //   [3 + 7*leg + 3..5] Fr_des[leg] (x, y, z)  -- currently zeroed in WBC
-    //   [3 + 7*leg + 6]    unused (reserved)
-    // Total reserved: 3 + 4 * 7 = 31 slots (0..30), but the highest index read is 29,
-    // so dimension 30 is sufficient for current access pattern.
+    // Action layout (24 dims total):
+    // [0] vBody_des.x residual, [1] vBody_des.y residual, [2] yaw_rate residual,
+    // Per-leg (4 legs), stride 5:
+    //   [3 + 5*leg + 0..2] ground reaction force target (x, y, z) when in contact
+    //   [3 + 5*leg + 3..4] foot placement residual (x, y) for swing target
+    // [23] gait phase delta_theta (normalized, mapped to 0..kMaxPhaseDelta)
     return MakeDict("action"_.Bind(
         Spec<mjtNum>({-1, ModelBasedControllerInterface::kActionDim}, {-1, 1})));
   }
@@ -483,8 +481,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     mjtNum ctrl_cost = 0.0;
 
     for (int i = 0; i < frame_skip_; ++i) {
-      mbc.setFrameSkip(frame_skip_);
-      mbc.setElapsedStep(elapsed_step_);
       mbc.setAction(act, action_count);
       mbc.setFeedback(data_);
       mbc.run();
@@ -812,7 +808,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     auto* obs = static_cast<mjtNum*>(obs_array.Data());
     mjtNum* obs_start = obs;  // Save the starting pointer for debugging
 
-    mjtNum* obs_end = mbc.setObservation(obs, desired_h);
+    mjtNum* obs_end = mbc.setObservation(obs);
     bool invalid_obs = false;
     for (std::size_t idx = 0; idx < obs_array.size; ++idx) {
       if (!std::isfinite(static_cast<double>(obs[idx]))) {
