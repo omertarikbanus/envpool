@@ -126,9 +126,30 @@ class LeggedGaitScheduler {
   void update(float delta_theta) {
     const float dt = std::max(control_dt_, 1e-6f);
     const float safe_delta = std::max(delta_theta, 1e-5f);
-    // Estimate cycle time from phase rate and clamp to reasonable bounds.
-    cycle_time_seconds_ = std::clamp(dt / safe_delta, 0.02f, 2.0f);
+
+    // Instantaneous estimate from commanded phase increment.
+    const float inst_cycle = std::clamp(dt / safe_delta, 0.02f, 2.0f);
+    // printf("inst_cycle=%.3f\n", inst_cycle);
+    // Keep a smoothed copy so stance/swing durations do not jitter mid-cycle.
+    constexpr float kAlpha = 0.1f;
+    cycle_time_seconds_ =
+        (1.0f - kAlpha) * cycle_time_seconds_ + kAlpha * inst_cycle;
+
+    const float prev_theta = gait_.phase();
     gait_.advancePhase(delta_theta);
+    const float new_theta = gait_.phase();
+
+    // When the phase wraps, replace the estimate with the measured wall clock
+    // time spent in the cycle. This guards against any delta_theta skew.
+    time_into_cycle_ += dt;
+    if (new_theta < prev_theta) {
+      const float measured =
+          std::clamp(time_into_cycle_, 0.02f, 2.0f);
+      constexpr float kBeta = 0.5f;
+      cycle_time_seconds_ =
+          (1.0f - kBeta) * cycle_time_seconds_ + kBeta * measured;
+      time_into_cycle_ = 0.0f;
+    }
     updateStates();
   }
 
@@ -177,6 +198,7 @@ class LeggedGaitScheduler {
   float control_dt_{0.002f};
   ContinuousTimeGait gait_;
   float cycle_time_seconds_{0.08f};
+  float time_into_cycle_{0.0f};
   std::array<float, kNumLegs> contact_state_{{1.f, 1.f, 1.f, 1.f}};
   std::array<float, kNumLegs> contact_phase_{{0.0f, 0.0f, 0.0f, 0.0f}};
   std::array<float, kNumLegs> swing_phase_{{0.f, 0.f, 0.f, 0.f}};
