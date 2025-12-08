@@ -51,6 +51,7 @@ def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1
         num_envs=num_envs,
         seed=seed,
         render_mode=render_mode,
+        random_force_max=50.0,
         **env_config
     )
     

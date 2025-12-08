@@ -79,11 +79,24 @@ class MujocoEnv {
     mjtNum radius;
     std::array<float, 4> rgba;
   };
+  struct PendingArrow {
+    std::array<mjtNum, 3> pos;
+    std::array<mjtNum, 3> dir;
+    mjtNum length;
+    mjtNum radius;
+    mjtNum head_radius;
+    std::array<float, 4> rgba;
+  };
   std::vector<PendingSphere> pending_spheres_;
+  std::vector<PendingArrow> pending_arrows_;
 
   void AppendPendingSpheres();
   void QueueSphere(const std::array<mjtNum, 3>& pos, mjtNum radius,
                    const std::array<float, 4>& rgba);
+  void QueueArrow(const std::array<mjtNum, 3>& pos,
+                  const std::array<mjtNum, 3>& dir, mjtNum length,
+                  mjtNum radius, mjtNum head_radius,
+                  const std::array<float, 4>& rgba);
 
   void RenderInit();
   void RenderFrame();
@@ -109,6 +122,10 @@ class MujocoEnv {
       const std::vector<std::array<mjtNum, 3>>& foot_positions,
       mjtNum body_radius = 0.04, mjtNum joint_radius = 0.025,
       mjtNum foot_radius = 0.02);
+  void addArrow(const std::array<mjtNum, 3>& pos,
+                const std::array<mjtNum, 3>& dir, mjtNum length,
+                mjtNum radius = 0.01,
+                const std::array<float, 4>& rgba = {0.1f, 0.6f, 1.0f, 0.9f});
 };
 
 // ========================================================================
@@ -210,6 +227,21 @@ inline void MujocoEnv::QueueSphere(const std::array<mjtNum, 3>& pos,
   pending_spheres_.push_back(sphere);
 }
 
+inline void MujocoEnv::QueueArrow(const std::array<mjtNum, 3>& pos,
+                                  const std::array<mjtNum, 3>& dir,
+                                  mjtNum length, mjtNum radius,
+                                  mjtNum head_radius,
+                                  const std::array<float, 4>& rgba) {
+  PendingArrow arrow;
+  arrow.pos = pos;
+  arrow.dir = dir;
+  arrow.length = std::max<mjtNum>(1e-6, length);
+  arrow.radius = std::max<mjtNum>(1e-4, radius);
+  arrow.head_radius = std::max<mjtNum>(arrow.radius * 1.2, head_radius);
+  arrow.rgba = rgba;
+  pending_arrows_.push_back(arrow);
+}
+
 inline void MujocoEnv::addSpheres(
     const std::array<mjtNum, 3>& body_pos,
     const std::vector<std::array<mjtNum, 3>>& joint_positions,
@@ -240,10 +272,53 @@ inline void MujocoEnv::addSpheres(
       QueueSphere(foot, foot_radius, foot_color);
     }
   }
+
+}
+
+inline void MujocoEnv::addArrow(const std::array<mjtNum, 3>& pos,
+                                const std::array<mjtNum, 3>& dir,
+                                mjtNum length, mjtNum radius,
+                                const std::array<float, 4>& rgba) {
+  // Robust handling: treat `dir` as a force-like vector (can include magnitude).
+  // If `length` <= 0, derive arrow length from |dir| using a visual scale.
+  // If `radius` <= 0, derive thickness from the final length.
+  if (!std::isfinite(dir[0]) || !std::isfinite(dir[1]) || !std::isfinite(dir[2])) {
+    return;
+  }
+
+  const mjtNum n = std::sqrt(dir[0] * dir[0] + dir[1] * dir[1] + dir[2] * dir[2]);
+  if (n < std::numeric_limits<mjtNum>::epsilon()) {
+    return;  // no direction
+  }
+
+  // Default visual scales (tuned for typical MuJoCo units / forces)
+  // Feel free to tweak if arrows look too small/large in practice.
+  const mjtNum kLenScale = static_cast<mjtNum>(0.02);   // meters per Newton
+  const mjtNum kMinLen   = static_cast<mjtNum>(1e-4);
+  const mjtNum kMinRad   = static_cast<mjtNum>(1e-4);
+
+  // If caller didn't provide a positive length, compute one from |dir|.
+  mjtNum final_len = length;
+  if (!(final_len > std::numeric_limits<mjtNum>::epsilon())) {
+    final_len = std::max(kMinLen, n * kLenScale);
+  }
+
+  // If caller provides non-positive radius, derive from final length.
+  mjtNum final_rad = radius;
+  if (!(final_rad > kMinRad)) {
+    // Make radius scale gently with length for visibility.
+    final_rad = std::max(kMinRad, final_len * static_cast<mjtNum>(0.06));
+  }
+
+  // Slightly larger head radius for readability.
+  const mjtNum head_radius = std::max(final_rad * static_cast<mjtNum>(1.6), final_len * static_cast<mjtNum>(0.04));
+
+  // Pass through; orientation is computed in AppendPendingSpheres().
+  QueueArrow(pos, dir, final_len, final_rad, head_radius, rgba);
 }
 
 inline void MujocoEnv::AppendPendingSpheres() {
-  if (pending_spheres_.empty()) return;
+  if (pending_spheres_.empty() && pending_arrows_.empty()) return;
 
   for (const auto& sphere : pending_spheres_) {
     if (scn_.ngeom >= scn_.maxgeom) {
@@ -255,7 +330,60 @@ inline void MujocoEnv::AppendPendingSpheres() {
                  sphere.rgba.data());
     geom->emission = 0.8f;
   }
+  auto normalize_dir = [](const std::array<mjtNum, 3>& d,
+                          std::array<mjtNum, 3>& e1_out) {
+    const mjtNum n =
+        std::sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+    if (n < std::numeric_limits<mjtNum>::epsilon()) {
+      e1_out = {1, 0, 0};
+      return static_cast<mjtNum>(1.0);
+    }
+    e1_out = {d[0] / n, d[1] / n, d[2] / n};
+    return n;
+  };
+
+  for (const auto& arrow : pending_arrows_) {
+    if (scn_.ngeom >= scn_.maxgeom) {
+      break;
+    }
+    std::array<mjtNum, 3> e1{};
+    normalize_dir(arrow.dir, e1);
+
+    // Build an orthonormal frame with e1 as the x-axis.
+    std::array<mjtNum, 3> temp{0, 0, 1};
+    if (std::abs(e1[0]) < 1e-3 && std::abs(e1[1]) < 1e-3) {
+      temp = {0, 1, 0};
+    }
+    std::array<mjtNum, 3> e2{
+        e1[1] * temp[2] - e1[2] * temp[1],
+        e1[2] * temp[0] - e1[0] * temp[2],
+        e1[0] * temp[1] - e1[1] * temp[0]};
+    const mjtNum e2n =
+        std::sqrt(e2[0] * e2[0] + e2[1] * e2[1] + e2[2] * e2[2]);
+    if (e2n < std::numeric_limits<mjtNum>::epsilon()) {
+      e2 = {0, 1, 0};
+    } else {
+      e2 = {e2[0] / e2n, e2[1] / e2n, e2[2] / e2n};
+    }
+    std::array<mjtNum, 3> e3{
+        e1[1] * e2[2] - e1[2] * e2[1],
+        e1[2] * e2[0] - e1[0] * e2[2],
+        e1[0] * e2[1] - e1[1] * e2[0]};
+
+    mjvGeom* geom = scn_.geoms + scn_.ngeom++;
+    mjtNum size[3] = {arrow.radius, arrow.head_radius, arrow.length};
+    std::array<mjtNum, 3> center{
+        arrow.pos[0] + static_cast<mjtNum>(0.5) * arrow.length * e1[0],
+        arrow.pos[1] + static_cast<mjtNum>(0.5) * arrow.length * e1[1],
+        arrow.pos[2] + static_cast<mjtNum>(0.5) * arrow.length * e1[2]};
+    mjtNum mat[9] = {e1[0], e1[1], e1[2], e2[0], e2[1], e2[2],
+                     e3[0], e3[1], e3[2]};
+    mjv_initGeom(geom, mjGEOM_ARROW, size, center.data(), mat,
+                 arrow.rgba.data());
+    geom->emission = 0.8f;
+  }
   pending_spheres_.clear();
+  pending_arrows_.clear();
 }
 
 // --------------------- Rendering helpers ----------------------

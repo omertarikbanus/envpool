@@ -178,6 +178,10 @@ class HumanoidEnvFns {
         "terminate_when_unhealthy"_.Bind(true),
         "render_mode"_.Bind(false),
         "csv_logging_enabled"_.Bind(false), 
+        "random_force_enabled"_.Bind(true),
+        "random_force_min"_.Bind(0.0),
+        "random_force_max"_.Bind(50.0),
+        "random_force_hold_steps"_.Bind(20),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
@@ -241,6 +245,7 @@ using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
 class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
  protected:
   bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_, csv_logging_enabled_;
+  bool random_force_enabled_;
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
   mjtNum healthy_z_min_, healthy_z_max_;
   mjtNum contact_cost_weight_, contact_cost_max_;
@@ -273,6 +278,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   mjtNum cmd_tracking_weight_;
   mjtNum cmd_residual_linear_limit_;
   mjtNum cmd_residual_yaw_limit_;
+  mjtNum random_force_min_;
+  mjtNum random_force_max_;
+  int random_force_hold_steps_;
+  int random_force_steps_remaining_{0};
+  Eigen::Matrix<mjtNum, 6, 1> random_force_cached_{
+      Eigen::Matrix<mjtNum, 6, 1>::Zero()};
+  Eigen::Matrix<mjtNum, 6, 1> last_applied_wrench_{
+      Eigen::Matrix<mjtNum, 6, 1>::Zero()};
   std::array<mjtNum, 3> cmd_vel_target_body_{{0.0, 0.0, 0.0}};
   std::mt19937 cmd_rng_;
   std::vector<mjtNum> last_action_vector_;
@@ -292,6 +305,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
   std::string csv_filename_;
   std::string wbc_csv_filename_;
+  int base_body_id_{-1};  // MuJoCo body index for the floating base
   void UpdateMbcDebugMarkers();
 
  public:
@@ -307,6 +321,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         use_contact_force_(spec.config["use_contact_force"_]),
         render_mode_(spec.config["render_mode"_]),
         csv_logging_enabled_(spec.config["csv_logging_enabled"_]),
+        random_force_enabled_(spec.config["random_force_enabled"_]),
         ctrl_cost_weight_(spec.config["ctrl_cost_weight"_]),
         forward_reward_weight_(spec.config["forward_reward_weight"_]),
         healthy_reward_(spec.config["healthy_reward"_]),
@@ -314,6 +329,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         healthy_z_max_(spec.config["healthy_z_max"_]),
         contact_cost_weight_(spec.config["contact_cost_weight"_]),
         contact_cost_max_(spec.config["contact_cost_max"_]),
+        random_force_min_(spec.config["random_force_min"_]),
+        random_force_max_(spec.config["random_force_max"_]),
+        random_force_hold_steps_(spec.config["random_force_hold_steps"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]),
         mbc(),
@@ -340,6 +358,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         cmd_residual_yaw_limit_(spec.config["cmd_residual_yaw_limit"_]),
         cmd_rng_(std::random_device{}() + env_id) {
     mbc.setModel(model_);
+    base_body_id_ = mj_name2id(model_, mjOBJ_BODY, "demir/base_link_inertia");
+    if (base_body_id_ < 0 && env_id_ == 0) {
+      std::cerr << "[HumanoidEnv] Failed to find base body 'demir/base_link_inertia'." << std::endl;
+    }
     mbc.setCommandResidualLimits(static_cast<float>(cmd_residual_linear_limit_),
                                  static_cast<float>(cmd_residual_yaw_limit_));
     if (env_id_ == 0 ) {
@@ -348,7 +370,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
 
     if (render_mode_)
       EnableRender(true);
-  
+
+    random_force_hold_steps_ = std::max(1, random_force_hold_steps_);
+
   csv_filename_ = "/app/envpool/data/current/" + std::to_string(env_id_) + "_log.csv";
   wbc_csv_filename_ = "/app/envpool/data/current/" + std::to_string(env_id_) + "_wbc.csv";
   ClearCsvLogs();
@@ -414,6 +438,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     last_action_vector_.clear();
     prev_action_vector_.clear();
     last_observation_.clear();
+    random_force_steps_remaining_ = 0;
+    random_force_cached_.setZero();
+    last_applied_wrench_.setZero();
     last_penalties_.fill(static_cast<mjtNum>(0.0));
     last_smoothed_penalties_.fill(static_cast<mjtNum>(0.0));
     last_term_rewards_.fill(static_cast<mjtNum>(0.0));
@@ -489,6 +516,33 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     last_action_vector_.assign(act, act + action_count);
     // repeat frameskip times
     mjtNum ctrl_cost = 0.0;
+
+    if (random_force_enabled_) {
+      if (random_force_steps_remaining_ <= 0) {
+        random_force_cached_ =
+            SampleRandomForce(random_force_min_, random_force_max_);
+        // Ensure at least one step of hold.
+        random_force_steps_remaining_ =
+            std::max(1, random_force_hold_steps_);
+      }
+      applyForce(random_force_cached_);
+      --random_force_steps_remaining_;
+      if (render_mode_ && base_body_id_ >= 0 &&
+          base_body_id_ < model_->nbody) {
+        const Eigen::Matrix<mjtNum, 3, 1> f = random_force_cached_.head<3>();
+        const mjtNum norm = f.norm();
+        if (norm > std::numeric_limits<mjtNum>::epsilon()) {
+          const mjtNum length_scale = static_cast<mjtNum>(0.01);
+          std::array<mjtNum, 3> dir{f[0] / norm, f[1] / norm, f[2] / norm};
+          std::array<mjtNum, 3> pos{
+              data_->xpos[3 * base_body_id_ + 0],
+              data_->xpos[3 * base_body_id_ + 1],
+              data_->xpos[3 * base_body_id_ + 2]};
+          const mjtNum length = norm * length_scale;
+          addArrow(pos, dir, length);
+        }
+      }
+    }
 
     for (int i = 0; i < frame_skip_; ++i) {
       mbc.setAction(act, action_count);
@@ -590,6 +644,77 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
             (elapsed_step_ >= max_episode_steps_);
     WriteState(reward, base_lin_vel[0], base_lin_vel[1], ctrl_cost,
                contact_cost, base_pos[0], base_pos[1], last_healthy_reward_);
+  }
+
+  void applyForce(const Eigen::Matrix<mjtNum, 6, 1>& force_and_torque) {
+    if (base_body_id_ < 0 || base_body_id_ >= model_->nbody) {
+      if (env_id_ == 0) {
+        std::cerr << "[HumanoidEnv] Base body id invalid; cannot apply force."
+                  << std::endl;
+      }
+      return;
+    }
+
+    Eigen::Matrix<mjtNum, 6, 1> sanitized = force_and_torque;
+    bool invalid_input = false;
+    for (int i = 0; i < 6; ++i) {
+      if (!std::isfinite(static_cast<double>(sanitized[i]))) {
+        sanitized[i] = 0.0;
+        invalid_input = true;
+      }
+    }
+    if (invalid_input && env_id_ == 0) {
+      std::cerr << "[HumanoidEnv] Non-finite wrench provided to applyForce; "
+                   "replacing with zeros."
+                << std::endl;
+    }
+
+    const int offset = 6 * base_body_id_;
+    std::fill(data_->xfrc_applied + offset, data_->xfrc_applied + offset + 6,
+              static_cast<mjtNum>(0.0));
+    for (int i = 0; i < 6; ++i) {
+      data_->xfrc_applied[offset + i] = sanitized[i];
+    }
+    last_applied_wrench_ = sanitized;
+  }
+
+  Eigen::Matrix<mjtNum, 6, 1> SampleRandomForce(
+      mjtNum min_magnitude = static_cast<mjtNum>(20.0),
+      mjtNum max_magnitude = static_cast<mjtNum>(120.0)) {
+    if (max_magnitude < min_magnitude) {
+      std::swap(max_magnitude, min_magnitude);
+    }
+    min_magnitude = std::max(static_cast<mjtNum>(0.0), min_magnitude);
+    max_magnitude = std::max(static_cast<mjtNum>(0.0), max_magnitude);
+    max_magnitude = std::max(max_magnitude, min_magnitude);
+
+    // Uniform direction on the unit sphere
+    constexpr mjtNum kTwoPi =
+        static_cast<mjtNum>(6.283185307179586476925286766559);
+    std::uniform_real_distribution<mjtNum> azimuth_dist(
+        static_cast<mjtNum>(0.0), kTwoPi);
+    std::uniform_real_distribution<mjtNum> z_dist(
+        static_cast<mjtNum>(-1.0), static_cast<mjtNum>(1.0));
+    const mjtNum z = z_dist(cmd_rng_);
+    const mjtNum azimuth = azimuth_dist(cmd_rng_);
+    const mjtNum r_xy = std::sqrt(std::max(static_cast<mjtNum>(0.0),
+                                           static_cast<mjtNum>(1.0 - z * z)));
+    Eigen::Matrix<mjtNum, 3, 1> direction(
+        r_xy * std::cos(azimuth), r_xy * std::sin(azimuth), z);
+
+    std::uniform_real_distribution<mjtNum> magnitude_dist(min_magnitude,
+                                                          max_magnitude);
+    const mjtNum magnitude = magnitude_dist(cmd_rng_);
+    Eigen::Matrix<mjtNum, 6, 1> wrench;
+    wrench << direction * magnitude, Eigen::Matrix<mjtNum, 3, 1>::Zero();
+    return wrench;
+  }
+
+  void applyRandomForce(
+      mjtNum min_magnitude = static_cast<mjtNum>(20.0),
+      mjtNum max_magnitude = static_cast<mjtNum>(120.0)) {
+    random_force_cached_ = SampleRandomForce(min_magnitude, max_magnitude);
+    applyForce(random_force_cached_);
   }
 
  private:
@@ -794,6 +919,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                  << "ctrl_cost,contact_cost,is_healthy,"
                  << "x_position,y_position,x_velocity,y_velocity,"
                  << "pBody_des_z,desired_h,cmd_vel_x,cmd_vel_y,cmd_vel_yaw,"
+                 << "applied_fx,applied_fy,applied_fz,applied_tx,applied_ty,applied_tz,"
                  << "reward_base_xvel,reward_base_zvel,reward_base_zpos,reward_base_orientation,"
                  << "reward_base_straight,reward_base_linear_accel,reward_base_angular_vel,reward_action_smooth,reward_phase_delta";
       for (std::size_t i = 0; i < last_action_vector_.size(); ++i) {
@@ -835,7 +961,13 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                << ',' << static_cast<double>(desired_h)
                << ',' << static_cast<double>(cmd_vel_target_body_[0])
                << ',' << static_cast<double>(cmd_vel_target_body_[1])
-               << ',' << static_cast<double>(cmd_vel_target_body_[2]);
+               << ',' << static_cast<double>(cmd_vel_target_body_[2])
+               << ',' << static_cast<double>(last_applied_wrench_[0])
+               << ',' << static_cast<double>(last_applied_wrench_[1])
+               << ',' << static_cast<double>(last_applied_wrench_[2])
+               << ',' << static_cast<double>(last_applied_wrench_[3])
+               << ',' << static_cast<double>(last_applied_wrench_[4])
+               << ',' << static_cast<double>(last_applied_wrench_[5]);
 
     for (int i = 0; i < LocomotionReward::kNumTerms; ++i) {
       outputFile << ',' << static_cast<double>(last_term_rewards_[i]);

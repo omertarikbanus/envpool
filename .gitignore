@@ -154,3 +154,11 @@ data/tb_logs
 
 #vscode settings
 .vscode
+data/run_hurst/0_log.csv
+data/run_hurst/0_wbc.csv
+data/run_with_bad_rew_func/0_log.csv
+data/run_with_bad_rew_func/0_wbc.csv
+data/wbc_stand/20251019_072732/0_log.csv
+data/wbc_stand/20251019_072732/0_wbc.csv
+data/wbc_stand/20251019_100311/0_log.csv
+data/wbc_stand/20251019_100311/0_wbc.csv
