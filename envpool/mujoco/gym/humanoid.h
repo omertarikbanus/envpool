@@ -38,6 +38,7 @@ struct RewardWeights {
   mjtNum base_linear_accel{static_cast<mjtNum>(0.025)};
   mjtNum base_angular_vel{static_cast<mjtNum>(0.025)};
   mjtNum action_smooth{static_cast<mjtNum>(0.10)};
+  mjtNum phase_delta{static_cast<mjtNum>(0.05)};
 };
 
 struct ReferenceTargets {
@@ -54,7 +55,7 @@ struct RewardConfig {
 // Computes a Cassie-inspired locomotion reward from instantaneous penalties.
 class LocomotionReward {
  public:
-  static constexpr int kNumTerms = 8;
+  static constexpr int kNumTerms = 9;
   enum TermIndex {
     kBaseXVel = 0,
     kBaseZVel,
@@ -63,7 +64,8 @@ class LocomotionReward {
     kBaseStraight,
     kBaseLinearAccel,
     kBaseAngularVel,
-    kActionSmooth
+    kActionSmooth,
+    kPhaseDelta
   };
 
   struct Result {
@@ -117,6 +119,7 @@ class LocomotionReward {
     result.penalties[kBaseAngularVel] = base_ang_vel.squaredNorm();
     result.penalties[kActionSmooth] =
         ComputeActionSmoothPenalty(action, prev_action);
+    result.penalties[kPhaseDelta] = ComputePhaseDeltaPenalty(action);
 
     result.smoothed_penalties = result.penalties;  // Legacy field, now identical to raw penalties.
     for (int idx = 0; idx < kNumTerms; ++idx) {
@@ -131,7 +134,8 @@ class LocomotionReward {
                    w.base_straight * result.rewards[kBaseStraight] +
                    w.base_linear_accel * result.rewards[kBaseLinearAccel] +
                    w.base_angular_vel * result.rewards[kBaseAngularVel] +
-                   w.action_smooth * result.rewards[kActionSmooth];
+                   w.action_smooth * result.rewards[kActionSmooth] +
+                   w.phase_delta * result.rewards[kPhaseDelta];
     return result;
   }
 
@@ -148,6 +152,18 @@ class LocomotionReward {
       diff_sq_sum += diff * diff;
     }
     return static_cast<mjtNum>(3.0) * diff_sq_sum;
+  }
+
+  mjtNum ComputePhaseDeltaPenalty(const std::vector<mjtNum>& action) const {
+    if (action.size() <= ModelBasedControllerInterface::kPhaseDeltaIdx) {
+      return static_cast<mjtNum>(0.0);
+    }
+    // Linear penalty: zero cost when delta_theta <= -1, increasing linearly above that.
+    const mjtNum delta_theta = action[ModelBasedControllerInterface::kPhaseDeltaIdx];
+    if (delta_theta <= static_cast<mjtNum>(-1.0)) {
+      return static_cast<mjtNum>(0.0);
+    }
+    return delta_theta + static_cast<mjtNum>(1.0);
   }
 
   RewardConfig config_;
@@ -774,12 +790,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                  << "reward_total,healthy_reward,"
                  << "penalty_base_xvel,penalty_base_zvel,penalty_base_zpos,"
                  << "penalty_base_orientation,penalty_base_straight,"
-                 << "penalty_base_linear_accel,penalty_base_angular_vel,penalty_action_smooth,"
+                 << "penalty_base_linear_accel,penalty_base_angular_vel,penalty_action_smooth,penalty_phase_delta,"
                  << "ctrl_cost,contact_cost,is_healthy,"
                  << "x_position,y_position,x_velocity,y_velocity,"
                  << "pBody_des_z,desired_h,cmd_vel_x,cmd_vel_y,cmd_vel_yaw,"
                  << "reward_base_xvel,reward_base_zvel,reward_base_zpos,reward_base_orientation,"
-                 << "reward_base_straight,reward_base_linear_accel,reward_base_angular_vel,reward_action_smooth";
+                 << "reward_base_straight,reward_base_linear_accel,reward_base_angular_vel,reward_action_smooth,reward_phase_delta";
       for (std::size_t i = 0; i < last_action_vector_.size(); ++i) {
         outputFile << ",action_" << i;
       }
@@ -806,6 +822,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
                << ',' << static_cast<double>(last_smoothed_penalties_[LocomotionReward::kBaseLinearAccel])
                << ',' << static_cast<double>(last_smoothed_penalties_[LocomotionReward::kBaseAngularVel])
                << ',' << static_cast<double>(last_smoothed_penalties_[LocomotionReward::kActionSmooth])
+               << ',' << static_cast<double>(last_smoothed_penalties_[LocomotionReward::kPhaseDelta])
                << ',' << static_cast<double>(last_ctrl_cost_)
                << ',' << static_cast<double>(last_contact_cost_)
                << ',' << (last_is_healthy_ ? 1 : 0)
