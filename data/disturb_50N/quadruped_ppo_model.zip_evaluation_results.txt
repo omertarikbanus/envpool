@@ -1,0 +1,6 @@
+Evaluation Results for data/current/quadruped_ppo_model.zip
+Environment: Humanoid-v4
+Episodes: 3
+Mean reward: 766.18 ± 1.99
+Episode rewards: [np.float32(750.0118), np.float32(780.93115), np.float32(760.9599)]
+Episode lengths: [1000, 1000, 1000]
