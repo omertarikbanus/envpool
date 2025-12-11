@@ -26,6 +26,8 @@
 #include <cstdio>   // FILE*
 #include <cstring>  // std::memcpy
 #include <iostream>
+#include <limits>
+#include <random>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -349,37 +351,21 @@ inline void MujocoEnv::AppendPendingSpheres() {
     std::array<mjtNum, 3> e1{};
     normalize_dir(arrow.dir, e1);
 
-    // Build an orthonormal frame with e1 as the x-axis.
-    std::array<mjtNum, 3> temp{0, 0, 1};
-    if (std::abs(e1[0]) < 1e-3 && std::abs(e1[1]) < 1e-3) {
-      temp = {0, 1, 0};
-    }
-    std::array<mjtNum, 3> e2{
-        e1[1] * temp[2] - e1[2] * temp[1],
-        e1[2] * temp[0] - e1[0] * temp[2],
-        e1[0] * temp[1] - e1[1] * temp[0]};
-    const mjtNum e2n =
-        std::sqrt(e2[0] * e2[0] + e2[1] * e2[1] + e2[2] * e2[2]);
-    if (e2n < std::numeric_limits<mjtNum>::epsilon()) {
-      e2 = {0, 1, 0};
-    } else {
-      e2 = {e2[0] / e2n, e2[1] / e2n, e2[2] / e2n};
-    }
-    std::array<mjtNum, 3> e3{
-        e1[1] * e2[2] - e1[2] * e2[1],
-        e1[2] * e2[0] - e1[0] * e2[2],
-        e1[0] * e2[1] - e1[1] * e2[0]};
-
     mjvGeom* geom = scn_.geoms + scn_.ngeom++;
     mjtNum size[3] = {arrow.radius, arrow.head_radius, arrow.length};
-    std::array<mjtNum, 3> center{
-        arrow.pos[0] + static_cast<mjtNum>(0.5) * arrow.length * e1[0],
-        arrow.pos[1] + static_cast<mjtNum>(0.5) * arrow.length * e1[1],
-        arrow.pos[2] + static_cast<mjtNum>(0.5) * arrow.length * e1[2]};
-    mjtNum mat[9] = {e1[0], e1[1], e1[2], e2[0], e2[1], e2[2],
-                     e3[0], e3[1], e3[2]};
-    mjv_initGeom(geom, mjGEOM_ARROW, size, center.data(), mat,
+    std::array<mjtNum, 3> tail = arrow.pos;
+    std::array<mjtNum, 3> tip{
+        tail[0] + arrow.length * e1[0],
+        tail[1] + arrow.length * e1[1],
+        tail[2] + arrow.length * e1[2]};
+    mjv_initGeom(geom, mjGEOM_ARROW, size, tail.data(), nullptr,
                  arrow.rgba.data());
+    // Build connector so the arrow tail is anchored at `tail` and head at `tip`.
+    mjv_makeConnector(geom, mjGEOM_ARROW, arrow.radius, tail[0], tail[1],
+                      tail[2], tip[0], tip[1], tip[2]);
+    geom->size[0] = arrow.radius;
+    geom->size[1] = arrow.head_radius;
+    geom->size[2] = arrow.length;
     geom->emission = 0.8f;
   }
   pending_spheres_.clear();

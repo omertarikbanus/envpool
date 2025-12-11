@@ -180,7 +180,7 @@ class HumanoidEnvFns {
         "csv_logging_enabled"_.Bind(false), 
         "random_force_enabled"_.Bind(true),
         "random_force_min"_.Bind(0.0),
-        "random_force_max"_.Bind(50.0),
+        "random_force_max"_.Bind(.0),
         "random_force_hold_steps"_.Bind(20),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
@@ -530,17 +530,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
       if (render_mode_ && base_body_id_ >= 0 &&
           base_body_id_ < model_->nbody) {
         const Eigen::Matrix<mjtNum, 3, 1> f = random_force_cached_.head<3>();
-        const mjtNum norm = f.norm();
-        if (norm > std::numeric_limits<mjtNum>::epsilon()) {
-          const mjtNum length_scale = static_cast<mjtNum>(0.01);
-          std::array<mjtNum, 3> dir{f[0] / norm, f[1] / norm, f[2] / norm};
-          std::array<mjtNum, 3> pos{
-              data_->xpos[3 * base_body_id_ + 0],
-              data_->xpos[3 * base_body_id_ + 1],
-              data_->xpos[3 * base_body_id_ + 2]};
-          const mjtNum length = norm * length_scale;
-          addArrow(pos, dir, length);
-        }
+        std::array<mjtNum, 3> pos{
+            data_->xipos[3 * base_body_id_ + 0],
+            data_->xipos[3 * base_body_id_ + 1],
+            data_->xipos[3 * base_body_id_ + 2]};
+        std::array<mjtNum, 3> force_vec{f[0], f[1], f[2]};
+        // Let visualization derive arrow scale from the force magnitude.
+        addArrow(pos, force_vec, static_cast<mjtNum>(0.0),
+                 static_cast<mjtNum>(0.02));
       }
     }
 
@@ -688,19 +685,26 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     max_magnitude = std::max(static_cast<mjtNum>(0.0), max_magnitude);
     max_magnitude = std::max(max_magnitude, min_magnitude);
 
-    // Uniform direction on the unit sphere
-    constexpr mjtNum kTwoPi =
-        static_cast<mjtNum>(6.283185307179586476925286766559);
-    std::uniform_real_distribution<mjtNum> azimuth_dist(
-        static_cast<mjtNum>(0.0), kTwoPi);
-    std::uniform_real_distribution<mjtNum> z_dist(
-        static_cast<mjtNum>(-1.0), static_cast<mjtNum>(1.0));
-    const mjtNum z = z_dist(cmd_rng_);
-    const mjtNum azimuth = azimuth_dist(cmd_rng_);
-    const mjtNum r_xy = std::sqrt(std::max(static_cast<mjtNum>(0.0),
-                                           static_cast<mjtNum>(1.0 - z * z)));
-    Eigen::Matrix<mjtNum, 3, 1> direction(
-        r_xy * std::cos(azimuth), r_xy * std::sin(azimuth), z);
+    // Uniform direction on the unit sphere using normalized Gaussian noise.
+    std::normal_distribution<mjtNum> normal_dist(
+        static_cast<mjtNum>(0.0), static_cast<mjtNum>(1.0));
+    Eigen::Matrix<mjtNum, 3, 1> direction;
+    for (int attempt = 0; attempt < 8; ++attempt) {
+      direction << normal_dist(cmd_rng_), normal_dist(cmd_rng_),
+          normal_dist(cmd_rng_);
+      if (!std::isfinite(direction[0]) || !std::isfinite(direction[1]) ||
+          !std::isfinite(direction[2])) {
+        continue;
+      }
+      const mjtNum n = direction.norm();
+      if (n > std::numeric_limits<mjtNum>::epsilon()) {
+        direction /= n;
+        break;
+      }
+      if (attempt == 7) {
+        direction = Eigen::Matrix<mjtNum, 3, 1>::UnitX();
+      }
+    }
 
     std::uniform_real_distribution<mjtNum> magnitude_dist(min_magnitude,
                                                           max_magnitude);
