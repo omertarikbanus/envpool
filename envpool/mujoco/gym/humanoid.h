@@ -180,7 +180,7 @@ class HumanoidEnvFns {
         "csv_logging_enabled"_.Bind(false), 
         "random_force_enabled"_.Bind(true),
         "random_force_min"_.Bind(0.0),
-        "random_force_max"_.Bind(.0),
+         "random_force_max"_.Bind(30.0),
         "random_force_hold_steps"_.Bind(20),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
@@ -284,6 +284,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
   int random_force_steps_remaining_{0};
   Eigen::Matrix<mjtNum, 6, 1> random_force_cached_{
       Eigen::Matrix<mjtNum, 6, 1>::Zero()};
+  Eigen::Matrix<mjtNum, 6, 1> filtered_random_force_{
+      Eigen::Matrix<mjtNum, 6, 1>::Zero()};
+  mjtNum random_force_filter_tau_{static_cast<mjtNum>(0.01)};  // seconds
   Eigen::Matrix<mjtNum, 6, 1> last_applied_wrench_{
       Eigen::Matrix<mjtNum, 6, 1>::Zero()};
   std::array<mjtNum, 3> cmd_vel_target_body_{{0.0, 0.0, 0.0}};
@@ -440,6 +443,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
     last_observation_.clear();
     random_force_steps_remaining_ = 0;
     random_force_cached_.setZero();
+    filtered_random_force_.setZero();
     last_applied_wrench_.setZero();
     last_penalties_.fill(static_cast<mjtNum>(0.0));
     last_smoothed_penalties_.fill(static_cast<mjtNum>(0.0));
@@ -525,11 +529,21 @@ class HumanoidEnv : public Env<HumanoidEnvSpec>, public MujocoEnv {
         random_force_steps_remaining_ =
             std::max(1, random_force_hold_steps_);
       }
-      applyForce(random_force_cached_);
+      const mjtNum dt =
+          model_->opt.timestep * static_cast<mjtNum>(frame_skip_);
+      const mjtNum tau =
+          std::max(static_cast<mjtNum>(1e-4), random_force_filter_tau_);
+      const mjtNum alpha =
+          static_cast<mjtNum>(1.0) - std::exp(-dt / tau);
+      filtered_random_force_ =
+          filtered_random_force_ +
+          alpha * (random_force_cached_ - filtered_random_force_);
+      applyForce(filtered_random_force_);
       --random_force_steps_remaining_;
       if (render_mode_ && base_body_id_ >= 0 &&
           base_body_id_ < model_->nbody) {
-        const Eigen::Matrix<mjtNum, 3, 1> f = random_force_cached_.head<3>();
+        const Eigen::Matrix<mjtNum, 3, 1> f =
+            filtered_random_force_.head<3>();
         std::array<mjtNum, 3> pos{
             data_->xipos[3 * base_body_id_ + 0],
             data_->xipos[3 * base_body_id_ + 1],

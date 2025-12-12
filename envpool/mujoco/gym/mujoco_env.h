@@ -360,7 +360,6 @@ inline void MujocoEnv::AppendPendingSpheres() {
         tail[2] + arrow.length * e1[2]};
     mjv_initGeom(geom, mjGEOM_ARROW, size, tail.data(), nullptr,
                  arrow.rgba.data());
-    // Build connector so the arrow tail is anchored at `tail` and head at `tip`.
     mjv_makeConnector(geom, mjGEOM_ARROW, arrow.radius, tail[0], tail[1],
                       tail[2], tip[0], tip[1], tip[2]);
     geom->size[0] = arrow.radius;
