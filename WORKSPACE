@@ -7,6 +7,97 @@ new_local_repository(
     build_file = "//third_party/mujoco:mujoco.BUILD",
 )
 
+new_local_repository(
+    name = "quadcontrol",
+    path = "..",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "quadcontrol_rl",
+    srcs = [
+        "src/controllers/LegController.cpp",
+        "src/controllers/FootSwingTrajectory.cpp",
+        "src/controllers/wbc/ContactSet/SingleContact.cpp",
+        "src/controllers/wbc/LocomotionCtrl/LocomotionCtrl.cpp",
+        "src/controllers/wbc/TaskSet/BodyPosTask.cpp",
+        "src/controllers/wbc/TaskSet/BodyOriTask.cpp",
+        "src/controllers/wbc/TaskSet/LinkPosTask.cpp",
+        "src/controllers/wbc/WBIC/KinWBC.cpp",
+        "src/controllers/wbc/WBIC/WBIC.cpp",
+        "src/controllers/wbc/WBC_Ctrl.cpp",
+        "src/dynamics/QuadrupedSingleton.cc",
+        "src/dynamics/Quadruped.cpp",
+        "src/dynamics/FloatingBaseModel.cpp",
+        "src/dynamics/QuadrupedKinematics.cc",
+        "src/hardware/mujocohw/MdlSimDriver.cc",
+        "src/hardware/mujocohw/SimClockHW.cc",
+        "src/hardware/mujocohw/SimHW.cc",
+        "src/hardware/mujocohw/SimIMUHW.cc",
+        "src/hardware/mujocohw/SimMotorHW.cc",
+        "src/modules/MdlCtGaitScheduler.cc",
+        "src/modules/MdlFootstepPlanner.cc",
+        "src/modules/MdlRLLocomotionState.cc",
+        "src/modules/MdlWBIC.cc",
+        "src/supervisor/SupervisorStates.cc",
+        "src/utilities/Utilities_print.cpp",
+        "src/utilities/utilities.cpp",
+        "third-party/Goldfarb_Optimizer/Array.cc",
+        "third-party/Goldfarb_Optimizer/QuadProg++.cc",
+    ],
+    hdrs = glob([
+        "include/**/*.h",
+        "include/**/*.hh",
+        "include/**/*.hpp",
+        "src/hardware/mujocohw/*.hh",
+        "third-party/Goldfarb_Optimizer/*.h",
+        "third-party/Goldfarb_Optimizer/*.hh",
+    ]),
+    includes = [
+        "include",
+        "src/hardware/mujocohw",
+        "third-party",
+    ],
+    deps = [
+        "@eigen//:eigen",
+        "@mujoco//:mujoco_lib",
+        "@rtrobot//:rtcore",
+    ],
+)
+""",
+)
+
+new_local_repository(
+    name = "rtrobot",
+    path = "../rtrobot",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "rtcore",
+    srcs = [
+        "src/rtcore/ModuleManager.cc",
+        "src/rtcore/Module.cc",
+        "src/rtcore/ThreadUtil.cc",
+        "src/rtcore/ThreadedLoop.cc",
+        "src/rtcore/toml.c",
+        "src/rtcore/ConfigTable.cc",
+        "src/rtcore/ConfigInput.cc",
+        "src/rtcore/LogJob.cc",
+        "src/rtcore/LogServer.cc",
+        "src/rtcore/Profiler.cc",
+    ],
+    hdrs = glob([
+        "include/**/*.h",
+        "include/**/*.hh",
+    ]),
+    includes = [
+        "include",
+    ],
+)
+""",
+)
+
 load("//envpool:workspace0.bzl", workspace0 = "workspace")
 
 workspace0()
@@ -25,9 +116,23 @@ new_local_repository(
     path = local_qt_path(),
 )
 
-local_repository(
+new_local_repository(
     name = "eigen",
     path = "/usr/local/include/eigen3",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "eigen",
+    hdrs = glob([
+        "Eigen/**",
+        "unsupported/**",
+    ]),
+    includes = [
+        ".",
+    ],
+)
+""",
 )
 
 
