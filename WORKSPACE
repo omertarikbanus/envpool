@@ -9,7 +9,7 @@ new_local_repository(
 
 new_local_repository(
     name = "quadcontrol",
-    path = "..",
+    path = "../quadcontrol",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 
@@ -30,14 +30,18 @@ cc_library(
         "src/dynamics/Quadruped.cpp",
         "src/dynamics/FloatingBaseModel.cpp",
         "src/dynamics/QuadrupedKinematics.cc",
+        "src/estimators/StateEstimators.cc",
         "src/hardware/mujocohw/MdlSimDriver.cc",
         "src/hardware/mujocohw/SimClockHW.cc",
         "src/hardware/mujocohw/SimHW.cc",
         "src/hardware/mujocohw/SimIMUHW.cc",
         "src/hardware/mujocohw/SimMotorHW.cc",
+        "src/modules/MdlControlParams.cc",
         "src/modules/MdlCtGaitScheduler.cc",
         "src/modules/MdlFootstepPlanner.cc",
+        "src/modules/MdlLegController.cc",
         "src/modules/MdlRLLocomotionState.cc",
+        "src/modules/MdlStateEstimator.cc",
         "src/modules/MdlWBIC.cc",
         "src/supervisor/SupervisorStates.cc",
         "src/utilities/Utilities_print.cpp",
@@ -52,11 +56,23 @@ cc_library(
         "src/hardware/mujocohw/*.hh",
         "third-party/Goldfarb_Optimizer/*.h",
         "third-party/Goldfarb_Optimizer/*.hh",
+        "third-party/JCQP/*.h",
+        "third-party/JCQP/*.hh",
+        "third-party/JCQP/amd/include/*.h",
     ]),
     includes = [
         "include",
         "src/hardware/mujocohw",
         "third-party",
+    ],
+    copts = [
+        "-DMDL_SIM_OSMESA=1",
+    ],
+    linkopts = [
+        "-lOSMesa",
+        "-lGL",
+        "-ldl",
+        "-lm",
     ],
     deps = [
         "@eigen//:eigen",
@@ -118,7 +134,7 @@ new_local_repository(
 
 new_local_repository(
     name = "eigen",
-    path = "/usr/local/include/eigen3",
+    path = "/usr/include/eigen3",
     build_file_content = """
 package(default_visibility = ["//visibility:public"])
 

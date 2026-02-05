@@ -153,7 +153,6 @@ inline MujocoEnv::MujocoEnv(const std::string& xml, int frame_skip,
 
   std::memcpy(init_qpos_, data_->qpos, sizeof(mjtNum) * model_->nq);
   std::memcpy(init_qvel_, data_->qvel, sizeof(mjtNum) * model_->nv);
-  setenv("MUJOCO_GL", "osmesa", 1);
   if (render_enabled_) RenderInit();
 }
 
@@ -373,6 +372,7 @@ inline void MujocoEnv::AppendPendingSpheres() {
 
 // --------------------- Rendering helpers ----------------------
 inline void MujocoEnv::RenderInit() {
+  setenv("MUJOCO_GL", "osmesa", 1);
   ctx = OSMesaCreateContextExt(OSMESA_RGBA, /*depthBits=*/16, 0, 0, nullptr);
   if (!ctx) throw std::runtime_error("OSMesaCreateContextExt failed");
   if (!OSMesaMakeCurrent(ctx, fb, GL_UNSIGNED_BYTE, render_w_, render_h_))

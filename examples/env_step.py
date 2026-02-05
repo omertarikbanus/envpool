@@ -17,14 +17,11 @@ import numpy as np
 from packaging import version
 import time
 import envpool
-import os
-
-os.environ["MUJOCO_GL"] = "osmesa"
 is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 def gym_sync_step() -> None:
-  num_envs =1
-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=True, cmd_profile_mode="fixed", cmd_fixed_vx= 1.25,  cmd_fixed_vy= 0.0, cmd_fixed_yaw= 0.0, random_force_enabled= True)
+  num_envs =2
+  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=False, cmd_profile_mode="fixed", cmd_fixed_vx= 1.25,  cmd_fixed_vy= 0.0, cmd_fixed_yaw= 0.0, random_force_enabled= True)
   
   print("\n\n\nCreated envpool env Humanoid-v4 with : ", num_envs, " environments\n\n\n")
   print(f"Observation space: {env.observation_space}")

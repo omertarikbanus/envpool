@@ -365,10 +365,7 @@ run:
 	  exit 1; \
 	fi; \
 	echo "Installing wheel: $$WHEEL_PATH"; \
-	if ! pip3 uninstall envpool -y; then \
-	  echo "Error: Failed to uninstall envpool"; \
-	  exit 1; \
-	fi; \
+	pip3 uninstall envpool -y || true; \
 	if ! pip3 install "$$WHEEL_PATH" -v; then \
 	  echo "Error: Failed to install wheel"; \
 	  exit 1; \

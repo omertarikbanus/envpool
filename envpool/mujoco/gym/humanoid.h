@@ -3,12 +3,15 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>  // For std::sqrt, std::abs
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <random>
 #include <sstream>
 #include <string>
@@ -20,9 +23,10 @@
 #include <Eigen/Dense>
 
 #include "control/ControlMessages.hh"
-#include "core/Blackboard.hh"
+#include "control/LocomotionCtrlData.hh"
 #include "controllers/LegController.h"
 #include "estimators/StateEstimatorTypes.hh"
+#include "hardware/IMUHW.hh"
 #include "hardware/MotorHW.hh"
 #include "hardware/SimHW.hh"
 #include "modules/MdlControlParams.hh"
@@ -32,6 +36,8 @@
 #include "modules/MdlRLLocomotionState.hh"
 #include "modules/MdlStateEstimator.hh"
 #include "modules/MdlWBIC.hh"
+#include "rtcore/ClockHW.hh"
+#include "rtcore/ConfigTable.hh"
 #include "rtcore/ModuleManager.hh"
 #include "types/cppTypes.h"
 #include "MdlSimDriver.hh"
@@ -193,14 +199,21 @@ class HumanoidEnvFns {
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1),
         "terminate_when_unhealthy"_.Bind(true),
         "render_mode"_.Bind(false),
+        "video_record"_.Bind(-1),
+        "video_path"_.Bind(std::string("")),
+        "video_width"_.Bind(0),
+        "video_height"_.Bind(0),
+        "video_fps"_.Bind(0.0),
         "csv_logging_enabled"_.Bind(false), 
-        "random_force_enabled"_.Bind(true),
+        "random_force_enabled"_.Bind(false),
         "random_force_min"_.Bind(0.0),
         "random_force_max"_.Bind(30.0),
         "random_force_hold_steps"_.Bind(20),
-        "model_xml_path"_.Bind(std::string("../models/demir_1/scene.xml")),
-        "urdf_path"_.Bind(std::string("../models/demir_1/demir_1.urdf")),
-        "sim_config_path"_.Bind(std::string("../config/robots/sim/rl_sim.toml")),
+        "render_env_id"_.Bind(0),
+        "model_xml_path"_.Bind(std::string("/app/quadcontrol/models/demir_1/scene.xml")),
+        "urdf_path"_.Bind(std::string("/app/quadcontrol/models/demir_1/demir_1.urdf")),
+        "sim_config_path"_.Bind(std::string("/app/quadcontrol/config/robots/sim/rl_sim.toml")),
+        "robot_namespace"_.Bind(std::string("go2")),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
@@ -263,6 +276,27 @@ using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
 
 class HumanoidEnv : public Env<HumanoidEnvSpec> {
  protected:
+  struct HardwareThreadGuard {
+    HardwareThreadGuard(MotorHW* motor, IMUHW* imu, rtcore::ClockHW* clock)
+        : prev_motor_(MotorHW::threadInstance()),
+          prev_imu_(IMUHW::threadInstance()),
+          prev_clock_(rtcore::ClockHW::threadInstance()) {
+      MotorHW::setThreadInstance(motor);
+      IMUHW::setThreadInstance(imu);
+      rtcore::ClockHW::setThreadInstance(clock);
+    }
+
+    ~HardwareThreadGuard() {
+      MotorHW::setThreadInstance(prev_motor_);
+      IMUHW::setThreadInstance(prev_imu_);
+      rtcore::ClockHW::setThreadInstance(prev_clock_);
+    }
+
+    MotorHW* prev_motor_;
+    IMUHW* prev_imu_;
+    rtcore::ClockHW* prev_clock_;
+  };
+
   bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_, csv_logging_enabled_;
   bool random_force_enabled_;
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
@@ -281,18 +315,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   quadruped::MdlRLLocomotionState* rl_state_module_{nullptr};
   quadruped::MdlWBIC* wbic_{nullptr};
   MotorHW* motor_hw_{nullptr};
+  IMUHW* imu_hw_{nullptr};
+  rtcore::ClockHW* clock_hw_{nullptr};
+  SimHWContext* sim_hw_ctx_{nullptr};
 
-  mjModel* model_{nullptr};
-  mjData* data_{nullptr};
   int frame_skip_{};
   int max_episode_steps_{};
   int elapsed_step_{0};
   bool done_{true};
+  bool disabled_{false};
 
-  std::array<std::array<int, 3>, RLConstants::kNumLegs> joint_qpos_addr_{};
-  std::array<std::array<int, 3>, RLConstants::kNumLegs> joint_qvel_addr_{};
-  std::array<int, RLConstants::kNumLegs> foot_body_ids_{{-1, -1, -1, -1}};
-  std::array<int, RLConstants::kNumLegs> foot_geom_ids_{{-1, -1, -1, -1}};
   quadruped::GaitSchedule last_gait_schedule_{};
   quadruped::StateEstimate<float> last_state_est_{};
 
@@ -334,6 +366,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       Eigen::Matrix<mjtNum, 6, 1>::Zero()};
   std::array<mjtNum, 3> cmd_vel_target_body_{{0.0, 0.0, 0.0}};
   std::mt19937 cmd_rng_;
+  std::mt19937 reset_rng_;
   std::vector<mjtNum> last_action_vector_;
   std::vector<mjtNum> prev_action_vector_;
   std::vector<mjtNum> last_observation_;
@@ -348,10 +381,17 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   bool pending_reset_marker_{true};
   // Added: CSV logging switch (set to 1 manually to enable CSV writing)
   std::string csv_filename_;
+  std::string last_done_reason_{"init"};
   std::string model_xml_path_;
   std::string urdf_path_;
   std::string sim_config_path_;
-  int base_body_id_{-1};  // MuJoCo body index for the floating base
+  std::string robot_namespace_;
+  int render_env_id_{0};
+  int video_record_;
+  std::string video_path_;
+  int video_width_;
+  int video_height_;
+  double video_fps_;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -369,11 +409,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         healthy_z_max_(spec.config["healthy_z_max"_]),
         contact_cost_weight_(spec.config["contact_cost_weight"_]),
         contact_cost_max_(spec.config["contact_cost_max"_]),
-        random_force_min_(spec.config["random_force_min"_]),
-        random_force_max_(spec.config["random_force_max"_]),
-        random_force_hold_steps_(spec.config["random_force_hold_steps"_]),
         dist_(-spec.config["reset_noise_scale"_],
               spec.config["reset_noise_scale"_]),
+        frame_skip_(spec.config["frame_skip"_]),
+        max_episode_steps_(spec.config["max_episode_steps"_]),
         velocity_tracking_weight_(spec.config["velocity_tracking_weight"_]),
         yaw_tracking_weight_(spec.config["yaw_tracking_weight"_]),
         orientation_penalty_weight_(spec.config["orientation_penalty_weight"_]),
@@ -395,38 +434,73 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         cmd_tracking_weight_(spec.config["cmd_tracking_weight"_]),
         cmd_residual_linear_limit_(spec.config["cmd_residual_linear_limit"_]),
         cmd_residual_yaw_limit_(spec.config["cmd_residual_yaw_limit"_]),
-        frame_skip_(spec.config["frame_skip"_]),
-        max_episode_steps_(spec.config["max_episode_steps"_]),
+        random_force_min_(spec.config["random_force_min"_]),
+        random_force_max_(spec.config["random_force_max"_]),
+        random_force_hold_steps_(spec.config["random_force_hold_steps"_]),
+        cmd_rng_(std::random_device{}() + env_id),
+        reset_rng_(std::random_device{}() + env_id + 101),
         model_xml_path_(spec.config["model_xml_path"_]),
         urdf_path_(spec.config["urdf_path"_]),
         sim_config_path_(spec.config["sim_config_path"_]),
-        cmd_rng_(std::random_device{}() + env_id) {
-    if (env_id_ == 0 ) {
+        robot_namespace_(spec.config["robot_namespace"_]),
+        render_env_id_(spec.config["render_env_id"_]),
+        video_record_(spec.config["video_record"_]),
+        video_path_(spec.config["video_path"_]),
+        video_width_(spec.config["video_width"_]),
+        video_height_(spec.config["video_height"_]),
+        video_fps_(spec.config["video_fps"_]) {
+    if (env_id_ == 0 || env_id_ == 1) {
       csv_logging_enabled_ = true;
     }
+    const bool allow_render_env = (env_id_ == render_env_id_);
+    if (!allow_render_env) {
+      // Only the primary environment may render or record video.
+      render_mode_ = false;
+      video_record_ = 0;
+      video_path_.clear();
+      video_width_ = 0;
+      video_height_ = 0;
+      video_fps_ = 0.0;
+    }
+    // Disable external force application for stability.
+    random_force_enabled_ = false;
 
     random_force_hold_steps_ = std::max(1, random_force_hold_steps_);
 
     csv_filename_ = "/app/envpool/data/current/" + std::to_string(env_id_) + "_log.csv";
     ClearCsvLogs();
 
-    InitializeQuadcontrol();
-    ResetSimulation();
+    {
+      static std::mutex s_init_mutex;
+      std::lock_guard<std::mutex> lock(s_init_mutex);
+      InitializeQuadcontrol();
+      desired_h = 0.35;  // Set the desired height reference for reward shaping
+      ResetSimulation();
+    }
+    if (sim_driver_) {
+      sim_driver_->clearExternalWrench();
+    }
     done_ = false;
     elapsed_step_ = 0;
-
-    desired_h = 0.35;  // Set the desired height reference for reward shaping
     ResampleCommandVelocity();
     locomotion_reward_.Reset();
     UpdateRewardReferences();
-    CacheBlackboardState();
+    if (!disabled_) {
+      HardwareThreadGuard hw_guard(motor_hw_, imu_hw_, clock_hw_);
+      module_manager_.stepOnce();
+    }
+    CacheModuleState();
     prev_action_vector_.clear();
     writeDataToCSV(2);
   }
 
   ~HumanoidEnv() override {
+    if (disabled_) {
+      return;
+    }
+    HardwareThreadGuard hw_guard(motor_hw_, imu_hw_, clock_hw_);
     module_manager_.shutdown();
-    cleanupHardware();
+    cleanupHardware(&module_manager_);
     delete control_params_;
     delete state_estimator_;
     delete leg_controller_module_;
@@ -446,6 +520,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   bool IsDone() override { return done_; }
 
   void Reset() override {
+    if (disabled_) {
+      done_ = true;
+      return;
+    }
+    std::cout << "[HumanoidEnv] Reset env_id=" << env_id_
+              << " (prev reason=" << last_done_reason_
+              << ", elapsed_step=" << elapsed_step_ << ")\n";
+    HardwareThreadGuard hw_guard(motor_hw_, imu_hw_, clock_hw_);
     writeDataToCSV(1);
     last_action_vector_.clear();
     prev_action_vector_.clear();
@@ -462,16 +544,18 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       std::cout << "Resetting the environment..." << std::endl;
     done_ = false;
     elapsed_step_ = 0;
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_real_distribution<mjtNum> dis( 0.32, 0.4);
-    desired_h = dis(gen);
+    std::uniform_real_distribution<mjtNum> dis(0.32, 0.4);
+    desired_h = dis(reset_rng_);
     ResetModules();
     ResetSimulation();
+    if (sim_driver_) {
+      sim_driver_->clearExternalWrench();
+    }
+    module_manager_.stepOnce();
+    CacheModuleState();
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     ResampleCommandVelocity();
     UpdateRewardReferences();
-    CacheBlackboardState();
     if (csv_logging_enabled_) {
       pending_reset_marker_ = true;
     }
@@ -486,6 +570,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       if (!csv_filename_.empty()) {
         std::remove(csv_filename_.c_str());
       }
+      if (!csv_filename_.empty()) {
+        std::filesystem::path path(csv_filename_);
+        std::error_code ec;
+        std::filesystem::create_directories(path.parent_path(), ec);
+      }
       outputFile.open(csv_filename_.c_str(), std::ios::out | std::ios::trunc);
       if (!outputFile.is_open()) {
         std::cerr << "Error: Unable to recreate CSV log file at " << csv_filename_ << std::endl;
@@ -496,10 +585,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   }
 
   void Step(const Action& action) override {
-    if (!model_ || !data_) {
+    if (disabled_) {
       done_ = true;
       return;
     }
+    HardwareThreadGuard hw_guard(motor_hw_, imu_hw_, clock_hw_);
     auto action_array = action["action"_];
     auto* act = static_cast<mjtNum*>(action_array.Data());
     std::size_t action_count = action_array.size;
@@ -516,7 +606,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       std::cerr << "[HumanoidEnv] Non-finite action detected; replaced with zeros." << std::endl;
     }
     last_action_vector_.assign(act, act + action_count);
-    ParseActionToBlackboard(act, action_count);
+    ParseActionToModules(act, action_count);
 
     mjtNum ctrl_cost = 0.0;
 
@@ -539,22 +629,20 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
           alpha * (random_force_cached_ - filtered_random_force_);
       applyForce(filtered_random_force_);
       --random_force_steps_remaining_;
+    } else if (sim_driver_) {
+      sim_driver_->clearExternalWrench();
     }
 
     for (int i = 0; i < frame_skip_; ++i) {
       module_manager_.stepOnce();
-      CacheBlackboardState();
+      CacheModuleState();
       ctrl_cost += ComputeControlCost();
     }
 
     // Compute contact cost.
     mjtNum contact_cost = 0.0;
     if (use_contact_force_) {
-      for (int i = 0; i < 6 * model_->nbody; ++i) {
-        mjtNum x = data_->cfrc_ext[i];
-        contact_cost += contact_cost_weight_ * x * x;
-      }
-      contact_cost = std::min(contact_cost, contact_cost_max_);
+      contact_cost = 0.0;
     }
 
     // if(elapsed_step_ % frame_skip_ * 15 == 0){
@@ -569,15 +657,26 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     UpdateRewardReferences();
 
     const Eigen::Matrix<mjtNum, 3, 1> base_lin_vel(
-        data_->qvel[0], data_->qvel[1], data_->qvel[2]);
-    const Eigen::Matrix<mjtNum, 3, 1> base_pos(data_->qpos[0], data_->qpos[1],
-                                               data_->qpos[2]);
+        static_cast<mjtNum>(last_state_est_.vWorld[0]),
+        static_cast<mjtNum>(last_state_est_.vWorld[1]),
+        static_cast<mjtNum>(last_state_est_.vWorld[2]));
+    const Eigen::Matrix<mjtNum, 3, 1> base_pos(
+        static_cast<mjtNum>(last_state_est_.position[0]),
+        static_cast<mjtNum>(last_state_est_.position[1]),
+        static_cast<mjtNum>(last_state_est_.position[2]));
     const Eigen::Quaternion<mjtNum> base_quat(
-        data_->qpos[3], data_->qpos[4], data_->qpos[5], data_->qpos[6]);
+        static_cast<mjtNum>(last_state_est_.orientation[0]),
+        static_cast<mjtNum>(last_state_est_.orientation[1]),
+        static_cast<mjtNum>(last_state_est_.orientation[2]),
+        static_cast<mjtNum>(last_state_est_.orientation[3]));
     const Eigen::Matrix<mjtNum, 3, 1> base_lin_acc(
-        data_->qacc[0], data_->qacc[1], data_->qacc[2]);
+        static_cast<mjtNum>(last_state_est_.aWorld[0]),
+        static_cast<mjtNum>(last_state_est_.aWorld[1]),
+        static_cast<mjtNum>(last_state_est_.aWorld[2]));
     const Eigen::Matrix<mjtNum, 3, 1> base_ang_vel(
-        data_->qvel[3], data_->qvel[4], data_->qvel[5]);
+        static_cast<mjtNum>(last_state_est_.omegaBody[0]),
+        static_cast<mjtNum>(last_state_est_.omegaBody[1]),
+        static_cast<mjtNum>(last_state_est_.omegaBody[2]));
 
     const auto reward_result = locomotion_reward_.Compute(
         base_lin_vel, base_pos, base_quat, base_lin_acc, base_ang_vel,
@@ -591,6 +690,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         std::cerr << "[HumanoidEnv] Non-finite reward detected; forcing termination." << std::endl;
       }
       done_ = true;
+      last_done_reason_ = "nonfinite_reward";
       last_is_healthy_ = false;
       WriteState(-5.0, base_lin_vel[0], base_lin_vel[1], ctrl_cost,
                  contact_cost, base_pos[0], base_pos[1], 0.0);
@@ -612,21 +712,25 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     prev_action_vector_ = last_action_vector_;
 
     ++elapsed_step_;
-    done_ = done_ || (terminate_when_unhealthy_ ? !is_healthy : false) ||
-            (elapsed_step_ >= max_episode_steps_);
+    const bool hit_unhealthy = terminate_when_unhealthy_ ? !is_healthy : false;
+    const bool hit_timeout = (elapsed_step_ >= max_episode_steps_);
+    done_ = done_ || hit_unhealthy || hit_timeout;
+    if (done_) {
+      if (!std::isfinite(static_cast<double>(reward))) {
+        last_done_reason_ = "nonfinite_reward";
+      } else if (hit_unhealthy) {
+        last_done_reason_ = "unhealthy";
+      } else if (hit_timeout) {
+        last_done_reason_ = "timeout";
+      } else {
+        last_done_reason_ = "done";
+      }
+    }
     WriteState(reward, base_lin_vel[0], base_lin_vel[1], ctrl_cost,
                contact_cost, base_pos[0], base_pos[1], last_healthy_reward_);
   }
 
   void applyForce(const Eigen::Matrix<mjtNum, 6, 1>& force_and_torque) {
-    if (!model_ || !data_ || base_body_id_ < 0 || base_body_id_ >= model_->nbody) {
-      if (env_id_ == 0) {
-        std::cerr << "[HumanoidEnv] Base body id invalid; cannot apply force."
-                  << std::endl;
-      }
-      return;
-    }
-
     Eigen::Matrix<mjtNum, 6, 1> sanitized = force_and_torque;
     bool invalid_input = false;
     for (int i = 0; i < 6; ++i) {
@@ -640,12 +744,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
                    "replacing with zeros."
                 << std::endl;
     }
-
-    const int offset = 6 * base_body_id_;
-    std::fill(data_->xfrc_applied + offset, data_->xfrc_applied + offset + 6,
-              static_cast<mjtNum>(0.0));
-    for (int i = 0; i < 6; ++i) {
-      data_->xfrc_applied[offset + i] = sanitized[i];
+    if (sim_driver_) {
+      sim_driver_->setExternalWrench(sanitized.data());
     }
     last_applied_wrench_ = sanitized;
   }
@@ -698,8 +798,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
 
  private:
   void InitializeQuadcontrol() {
-    auto& blackboard = quadruped::Blackboard::instance();
+    if (disabled_) return;
 
+    module_manager_.clearConfig();
     if (!sim_config_path_.empty()) {
       if (!module_manager_.appendConfigFile(sim_config_path_.c_str()) &&
           env_id_ == 0) {
@@ -711,32 +812,76 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     {
       std::ostringstream cfg;
       cfg << "[simulation]\n";
-      cfg << "model_path = \"" << model_xml_path_ << "\"\n";
-      cfg << "urdf_path = \"" << urdf_path_ << "\"\n";
-      cfg << "headless = " << (render_mode_ ? "false" : "true") << "\n";
+      if (sim_config_path_.empty()) {
+        if (!model_xml_path_.empty()) {
+          cfg << "model_path = \"" << model_xml_path_ << "\"\n";
+        }
+        if (!urdf_path_.empty()) {
+          cfg << "urdf_path = \"" << urdf_path_ << "\"\n";
+        }
+      }
+      const bool allow_render = (env_id_ == render_env_id_);
+      const bool headless =
+          allow_render ? (!render_mode_ && video_record_ <= 0) : true;
+      cfg << "headless = " << (headless ? "true" : "false") << "\n";
       cfg << "realtime = false\n";
+      if (!allow_render) {
+        cfg << "video_record = false\n";
+        cfg << "video_path = \"\"\n";
+        cfg << "video_width = 0\n";
+        cfg << "video_height = 0\n";
+        cfg << "video_fps = 0.0\n";
+      } else {
+        if (video_record_ >= 0) {
+          cfg << "video_record = " << (video_record_ ? "true" : "false") << "\n";
+        }
+        if (!video_path_.empty()) {
+          cfg << "video_path = \"" << video_path_ << "\"\n";
+        }
+        if (video_width_ > 0) {
+          cfg << "video_width = " << video_width_ << "\n";
+        }
+        if (video_height_ > 0) {
+          cfg << "video_height = " << video_height_ << "\n";
+        }
+        if (video_fps_ > 0.0) {
+          cfg << "video_fps = " << video_fps_ << "\n";
+        }
+      }
       module_manager_.appendConfigString(cfg.str().c_str());
     }
 
-    initHardware(&module_manager_);
-    sim_driver_ = dynamic_cast<MdlSimDriver*>(
-        module_manager_.findModule(MDLSIMDRIVER_NAME, 0));
-    if (!sim_driver_) {
-      std::cerr << "[HumanoidEnv] MdlSimDriver not found." << std::endl;
-      return;
+    if (!module_manager_.finalizeConfig() && env_id_ == 0) {
+      std::cerr << "[HumanoidEnv] Failed to finalize config." << std::endl;
     }
 
-    model_ = sim_driver_->model();
-    data_ = sim_driver_->data();
-    if (!model_) {
-      std::cerr << "[HumanoidEnv] MdlSimDriver returned null model." << std::endl;
+    initHardware(&module_manager_, false);
+    sim_hw_ctx_ = getSimHWContext(&module_manager_);
+    if (!sim_hw_ctx_ || !sim_hw_ctx_->simdriver) {
+      std::cerr << "[HumanoidEnv] SimHW context not available." << std::endl;
+      cleanupHardware(&module_manager_);
+      disabled_ = true;
+      done_ = true;
       return;
     }
-    module_manager_.setStepPeriod(
-        static_cast<rtcore::CLOCK>(model_->opt.timestep * 1e6));
+    sim_driver_ = sim_hw_ctx_->simdriver;
+    motor_hw_ = sim_hw_ctx_->motorhw;
+    imu_hw_ = sim_hw_ctx_->imuhw;
+    clock_hw_ = sim_hw_ctx_->clockhw;
+    if (!motor_hw_ || !imu_hw_ || !clock_hw_) {
+      std::cerr << "[HumanoidEnv] SimHW hardware instances missing." << std::endl;
+      cleanupHardware(&module_manager_);
+      disabled_ = true;
+      done_ = true;
+      return;
+    }
+    HardwareThreadGuard hw_guard(motor_hw_, imu_hw_, clock_hw_);
+
+    const rtcore::CLOCK sim_period = sim_driver_->simStepPeriod();
+    if (sim_period > 0) {
+      module_manager_.setStepPeriod(sim_period);
+    }
     sim_driver_->setPeriod(module_manager_.getStepPeriod());
-
-    motor_hw_ = MotorHW::instance();
 
     static constexpr int kOrderControlParams = 100;
     static constexpr int kOrderGaitScheduler = 200;
@@ -774,50 +919,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     state_estimator_ = new quadruped::MdlStateEstimator();
     module_manager_.addModule(state_estimator_, 1, 0, kOrderStateEstimator);
     module_manager_.activateModule(state_estimator_);
-
-    quadruped::ModeCommand mode_cmd{};
-    mode_cmd.mode = quadruped::ControlMode::kRlLocomotion;
-    blackboard.modeCommand().publish(mode_cmd);
-
-    static constexpr std::array<std::array<const char*, 3>,
-                                RLConstants::kNumLegs>
-        kJointNames{{{"demir/abad_1_joint", "demir/hip_1_joint",
-                      "demir/knee_1_joint"},
-                     {"demir/abad_2_joint", "demir/hip_2_joint",
-                      "demir/knee_2_joint"},
-                     {"demir/abad_3_joint", "demir/hip_3_joint",
-                      "demir/knee_3_joint"},
-                     {"demir/abad_4_joint", "demir/hip_4_joint",
-                      "demir/knee_4_joint"}}};
-    for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
-      for (int joint = 0; joint < 3; ++joint) {
-        int jnt_id =
-            mj_name2id(model_, mjOBJ_JOINT, kJointNames[leg][joint]);
-        if (jnt_id >= 0) {
-          joint_qpos_addr_[leg][joint] = model_->jnt_qposadr[jnt_id];
-          joint_qvel_addr_[leg][joint] = model_->jnt_dofadr[jnt_id];
-        } else {
-          joint_qpos_addr_[leg][joint] = -1;
-          joint_qvel_addr_[leg][joint] = -1;
-        }
-      }
-    }
-
-    static constexpr std::array<const char*, RLConstants::kNumLegs>
-        kFootBodyNames{{"demir/knee_1", "demir/knee_2", "demir/knee_3",
-                        "demir/knee_4"}};
-    static constexpr std::array<const char*, RLConstants::kNumLegs>
-        kFootGeomNames{{"ROBOT_FOOT_1", "ROBOT_FOOT_2", "ROBOT_FOOT_3",
-                        "ROBOT_FOOT_4"}};
-    for (int i = 0; i < RLConstants::kNumLegs; ++i) {
-      foot_body_ids_[i] = mj_name2id(model_, mjOBJ_BODY, kFootBodyNames[i]);
-      foot_geom_ids_[i] = mj_name2id(model_, mjOBJ_GEOM, kFootGeomNames[i]);
-    }
-
-    base_body_id_ = mj_name2id(model_, mjOBJ_BODY, "demir/base_link_inertia");
-    if (base_body_id_ < 0 && env_id_ == 0) {
-      std::cerr << "[HumanoidEnv] Failed to find base body 'demir/base_link_inertia'."
-                << std::endl;
+    if (control_params_) {
+      control_params_->setControlMode(quadruped::ControlMode::kRlLocomotion);
     }
   }
 
@@ -827,6 +930,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         !state_estimator_) {
       return;
     }
+    HardwareThreadGuard hw_guard(motor_hw_, imu_hw_, clock_hw_);
     module_manager_.deactivateModule(control_params_);
     module_manager_.deactivateModule(ct_gait_scheduler_);
     module_manager_.deactivateModule(footstep_planner_);
@@ -842,49 +946,64 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     module_manager_.activateModule(wbic_);
     module_manager_.activateModule(leg_controller_module_);
     module_manager_.activateModule(state_estimator_);
+    control_params_->setControlMode(quadruped::ControlMode::kRlLocomotion);
+    rl_state_module_->resetState();
   }
 
   void ResetSimulation() {
-    if (!model_ || !data_) return;
-    mj_resetData(model_, data_);
-    ApplyInitialPose();
-    mj_forward(model_, data_);
+    if (!sim_driver_) return;
+    sim_driver_->resetSimulation();
+
+    rtcore::ConfigTable simConfig;
+    bool has_sim = module_manager_.getConfigTable("simulation", simConfig);
+
+    double base_x = 0.0;
+    double base_y = 0.0;
+    double base_z = desired_h;
+    if (has_sim) {
+      rtcore::ConfigArray posArray;
+      if (simConfig.getArray("initial_position", posArray) &&
+          posArray.size() >= 3) {
+        base_x = posArray.getDoubleAt(0, base_x);
+        base_y = posArray.getDoubleAt(1, base_y);
+        base_z = posArray.getDoubleAt(2, base_z);
+      }
+    }
+    const double min_z = static_cast<double>(healthy_z_min_) + 1e-3;
+    const double max_z = static_cast<double>(healthy_z_max_) - 1e-3;
+    if (min_z < max_z) {
+      base_z = std::clamp(base_z, min_z, max_z);
+    }
+    sim_driver_->setBasePosition(static_cast<mjtNum>(base_x),
+                                 static_cast<mjtNum>(base_y),
+                                 static_cast<mjtNum>(base_z));
+
+    double abad = 10.0;
+    double hip = -80.0;
+    double knee = 130.0;
+    if (has_sim) {
+      rtcore::ConfigArray legArray;
+      if (simConfig.getArray("initial_leg_joint_deg", legArray) &&
+          legArray.size() >= 3) {
+        abad = legArray.getDoubleAt(0, abad);
+        hip = legArray.getDoubleAt(1, hip);
+        knee = legArray.getDoubleAt(2, knee);
+      }
+    }
+    sim_driver_->setLegJointAnglesDeg(abad, hip, knee);
   }
 
-  void ApplyInitialPose() {
-    if (!model_ || !data_) return;
-    int kSideSign_[4] = {-1, 1, -1, 1};
-    const double minHeight = 0.24;
-    const double maxHeight = 0.25;
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> distribution(minHeight, maxHeight);
-    data_->qpos[2] = distribution(gen);
+  void CacheModuleState() {
+    if (ct_gait_scheduler_ && ct_gait_scheduler_->hasSchedule()) {
+      last_gait_schedule_ = ct_gait_scheduler_->gaitSchedule();
+    }
 
-    for (int leg = 0; leg < 4; leg++) {
-      data_->qpos[(leg) * 3 + 0 + 7] =
-          10 * (M_PI / 180) *
-          kSideSign_[leg];
-      data_->qpos[(leg) * 3 + 1 + 7] = -80 * (M_PI / 180);
-      data_->qpos[(leg) * 3 + 2 + 7] = 130 * (M_PI / 180);
+    if (state_estimator_) {
+      last_state_est_ = state_estimator_->getCheetahStateEstimate();
     }
   }
 
-  void CacheBlackboardState() {
-    auto& blackboard = quadruped::Blackboard::instance();
-    quadruped::GaitSchedule gait{};
-    if (blackboard.rlGaitSchedule().read(gait)) {
-      last_gait_schedule_ = gait;
-    }
-
-    quadruped::StateEstimate<float> state{};
-    if (blackboard.stateEstimate().read(state)) {
-      last_state_est_ = state;
-    }
-  }
-
-  void ParseActionToBlackboard(const mjtNum* act, std::size_t action_count) {
-    auto& blackboard = quadruped::Blackboard::instance();
+  void ParseActionToModules(const mjtNum* act, std::size_t action_count) {
 
     auto map_to_range = [](mjtNum input, mjtNum in_min, mjtNum in_max,
                            mjtNum out_min, mjtNum out_max) -> mjtNum {
@@ -914,7 +1033,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
                                                   residual_vy);
     desired.body_velocity[2] = static_cast<float>(cmd_vel_target_body_[2] +
                                                   residual_yaw);
-    blackboard.rlDesiredVelocity().publish(desired);
+    if (footstep_planner_) {
+      footstep_planner_->setDesiredVelocity(desired);
+    }
+    if (rl_state_module_) {
+      rl_state_module_->setDesiredVelocity(desired);
+    }
 
     quadruped::FootForceTargets forces{};
     forces.reset();
@@ -936,8 +1060,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         residuals.offsets[leg][2] = 0.0f;
       }
     }
-    blackboard.rlFootForces().publish(forces);
-    blackboard.rlFootstepResiduals().publish(residuals);
+    if (rl_state_module_) {
+      rl_state_module_->setFootForces(forces);
+    }
+    if (footstep_planner_) {
+      footstep_planner_->setFootstepResiduals(residuals);
+    }
 
     mjtNum delta_theta = 0.0;
     if (action_count > RLConstants::kPhaseDeltaIdx) {
@@ -945,11 +1073,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
                                  0.0,
                                  quadruped::MdlCtGaitScheduler::kMaxPhaseDelta);
     }
-    blackboard.rlPhaseDelta().publish(static_cast<float>(delta_theta));
-
-    quadruped::ModeCommand mode_cmd{};
-    mode_cmd.mode = quadruped::ControlMode::kRlLocomotion;
-    blackboard.modeCommand().publish(mode_cmd);
+    if (ct_gait_scheduler_) {
+      ct_gait_scheduler_->setPhaseDelta(static_cast<float>(delta_theta));
+    }
+    if (control_params_) {
+      control_params_->setControlMode(quadruped::ControlMode::kRlLocomotion);
+    }
   }
 
   mjtNum ComputeControlCost() {
@@ -967,7 +1096,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   }
 
   void FillObservation(mjtNum* obs, std::size_t obs_count) {
-    if (!obs || obs_count == 0 || !data_) {
+    if (!obs || obs_count == 0) {
       return;
     }
 
@@ -993,16 +1122,25 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       write_value(static_cast<mjtNum>(last_state_est_.rpy[i]));
     }
 
-    for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
-      for (int joint = 0; joint < 3; ++joint) {
-        const int qpos_addr = joint_qpos_addr_[leg][joint];
-        write_value((qpos_addr >= 0) ? data_->qpos[qpos_addr] : 0.0);
+    auto* leg_controller =
+        leg_controller_module_ ? leg_controller_module_->legController()
+                               : nullptr;
+    if (leg_controller) {
+      for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
+        const auto& data = leg_controller->datas[leg];
+        for (int joint = 0; joint < 3; ++joint) {
+          write_value(static_cast<mjtNum>(data.q[joint]));
+        }
       }
-    }
-    for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
-      for (int joint = 0; joint < 3; ++joint) {
-        const int qvel_addr = joint_qvel_addr_[leg][joint];
-        write_value((qvel_addr >= 0) ? data_->qvel[qvel_addr] : 0.0);
+      for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
+        const auto& data = leg_controller->datas[leg];
+        for (int joint = 0; joint < 3; ++joint) {
+          write_value(static_cast<mjtNum>(data.qd[joint]));
+        }
+      }
+    } else {
+      for (int i = 0; i < RLConstants::kNumLegs * 6; ++i) {
+        write_value(static_cast<mjtNum>(0.0));
       }
     }
     for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
@@ -1014,23 +1152,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     }
 
     std::array<std::array<mjtNum, 3>, RLConstants::kNumLegs> foot_pos_body{};
-    for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
-      const int geom_id = foot_geom_ids_[leg];
-      if (geom_id >= 0) {
-        Eigen::Matrix<mjtNum, 3, 1> foot_world;
-        foot_world << data_->geom_xpos[3 * geom_id + 0],
-            data_->geom_xpos[3 * geom_id + 1],
-            data_->geom_xpos[3 * geom_id + 2];
-        Eigen::Matrix<mjtNum, 3, 1> base_world;
-        base_world << last_state_est_.position[0],
-            last_state_est_.position[1],
-            last_state_est_.position[2];
-        Eigen::Matrix<mjtNum, 3, 1> foot_body =
-            last_state_est_.rBody.cast<mjtNum>() * (foot_world - base_world);
-        foot_pos_body[leg][0] = foot_body[0];
-        foot_pos_body[leg][1] = foot_body[1];
-        foot_pos_body[leg][2] = foot_body[2];
-      } else {
+    if (leg_controller) {
+      for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
+        const auto& data = leg_controller->datas[leg];
+        Eigen::Matrix<mjtNum, 3, 1> hip = Eigen::Matrix<mjtNum, 3, 1>::Zero();
+        if (data.quadruped) {
+          const auto hip_loc = data.quadruped->getHipLocation(leg);
+          hip[0] = hip_loc[0];
+          hip[1] = hip_loc[1];
+          hip[2] = hip_loc[2];
+        }
+        foot_pos_body[leg][0] = hip[0] + static_cast<mjtNum>(data.p[0]);
+        foot_pos_body[leg][1] = hip[1] + static_cast<mjtNum>(data.p[1]);
+        foot_pos_body[leg][2] = hip[2] + static_cast<mjtNum>(data.p[2]);
+      }
+    } else {
+      for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
         foot_pos_body[leg].fill(static_cast<mjtNum>(0.0));
       }
     }
@@ -1054,34 +1191,23 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   }
 
   bool IsHealthy() {
-    if (!data_) return false;
-    bool healthy =
-        (healthy_z_min_ < data_->qpos[2]) && (data_->qpos[2] < healthy_z_max_);
+    const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
+    bool healthy = (healthy_z_min_ < z) && (z < healthy_z_max_);
     if (!healthy && render_mode_) {
       std::cout << "[IsHealthy] Unhealthy state detected: "
-                << "z position = " << data_->qpos[2]
+                << "z position = " << z
                 << ", healthy_z_min = " << healthy_z_min_
                 << ", healthy_z_max = " << healthy_z_max_ << std::endl;
     }
     return healthy;
   }
 
-  std::array<mjtNum, 2> GetMassCenter() {
-    mjtNum mass_sum = 0.0;
-    mjtNum mass_x = 0.0;
-    mjtNum mass_y = 0.0;
-    for (int i = 0; i < model_->nbody; ++i) {
-      mjtNum mass = model_->body_mass[i];
-      mass_sum += mass;
-      mass_x += mass * data_->xipos[i * 3 + 0];
-      mass_y += mass * data_->xipos[i * 3 + 1];
-    }
-    return {mass_x / mass_sum, mass_y / mass_sum};
-  }
-
   mjtNum ComputeOrientationPenalty() const {
-    Eigen::Quaternion<mjtNum> q(data_->qpos[3], data_->qpos[4], data_->qpos[5],
-                                data_->qpos[6]);
+    Eigen::Quaternion<mjtNum> q(
+        static_cast<mjtNum>(last_state_est_.orientation[0]),
+        static_cast<mjtNum>(last_state_est_.orientation[1]),
+        static_cast<mjtNum>(last_state_est_.orientation[2]),
+        static_cast<mjtNum>(last_state_est_.orientation[3]));
     Eigen::Vector3<mjtNum> eul = q.toRotationMatrix().eulerAngles(0, 1, 2);
     mjtNum roll = eul[0];
     mjtNum pitch = eul[1];
@@ -1089,7 +1215,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   }
 
   mjtNum ComputeHeightPenalty() const {
-    const mjtNum height = data_->qpos[2];
+    const mjtNum height = static_cast<mjtNum>(last_state_est_.position[2]);
     const mjtNum desired = static_cast<mjtNum>(desired_h);
     const mjtNum err = height - desired;
     return height_penalty_weight_ * err * err;
@@ -1097,7 +1223,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
 
   mjtNum ComputeFootSlipPenalty() {
     mjtNum slip_cost = 0.0;
-    auto* leg_ctrl = quadruped::Blackboard::instance().legController();
+    auto* leg_ctrl =
+        leg_controller_module_ ? leg_controller_module_->legController()
+                               : nullptr;
     if (!leg_ctrl) {
       return 0.0;
     }
@@ -1193,16 +1321,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     // Add this to WriteState() after filling all observations
     // std::cout << "Filled " << static_cast<int>(obs_end - obs_start) << " elements in observation
     // array" << std::endl;
-    // state["info:reward_linvel"_] = xv * forward_reward_weight_;
-    // state["info:reward_quadctrl"_] = -ctrl_cost;
-    // state["info:reward_alive"_] = healthy_reward;
-    // state["info:reward_impact"_] = -contact_cost;
-    // state["info:x_position"_] = x_after;
-    // state["info:y_position"_] = y_after;
-    // state["info:distance_from_origin"_] =
-    //     std::sqrt(x_after * x_after + y_after * y_after);
-    // state["info:x_velocity"_] = xv;
-    // state["info:y_velocity"_] = yv;
+    state["info:reward_linvel"_] = xv * forward_reward_weight_;
+    state["info:reward_quadctrl"_] = -ctrl_cost;
+    state["info:reward_alive"_] = healthy_reward;
+    state["info:reward_impact"_] = -contact_cost;
+    state["info:x_position"_] = x_after;
+    state["info:y_position"_] = y_after;
+    state["info:distance_from_origin"_] =
+        std::sqrt(x_after * x_after + y_after * y_after);
+    state["info:x_velocity"_] = xv;
+    state["info:y_velocity"_] = yv;
 
     lastReward = reward;
     writeDataToCSV();
@@ -1258,14 +1386,29 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     const bool reset_marker = pending_reset_marker_;
     pending_reset_marker_ = false;
     mjtNum body_des_z = desired_h;
-    quadruped::LocomotionCtrlData<float> wbc_cmd{};
-    if (quadruped::Blackboard::instance().wbcCommand().read(wbc_cmd)) {
-      body_des_z = static_cast<mjtNum>(wbc_cmd.pBody_des[2]);
+    if (wbic_ && wbic_->wbcData()) {
+      body_des_z = static_cast<mjtNum>(wbic_->wbcData()->pBody_des[2]);
     }
 
     outputFile << elapsed_step_ << ',' << (reset_marker ? 1 : 0);
-    for (int i = 0; i < 19; ++i) {
-      outputFile << ',' << static_cast<double>(data_->qpos[i]);
+    outputFile << ',' << static_cast<double>(last_state_est_.position[0])
+               << ',' << static_cast<double>(last_state_est_.position[1])
+               << ',' << static_cast<double>(last_state_est_.position[2])
+               << ',' << static_cast<double>(last_state_est_.orientation[0])
+               << ',' << static_cast<double>(last_state_est_.orientation[1])
+               << ',' << static_cast<double>(last_state_est_.orientation[2])
+               << ',' << static_cast<double>(last_state_est_.orientation[3]);
+    auto* leg_controller =
+        leg_controller_module_ ? leg_controller_module_->legController()
+                               : nullptr;
+    for (int leg = 0; leg < 4; ++leg) {
+      for (int joint = 0; joint < 3; ++joint) {
+        double q = 0.0;
+        if (leg_controller) {
+          q = static_cast<double>(leg_controller->datas[leg].q[joint]);
+        }
+        outputFile << ',' << q;
+      }
     }
     outputFile << ',' << static_cast<double>(lastReward)
                << ',' << static_cast<double>(last_healthy_reward_)

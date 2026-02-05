@@ -176,6 +176,7 @@ def workspace():
         strip_prefix = "opencv-4.8.1",
         urls = [
             "https://github.com/opencv/opencv/archive/refs/tags/4.8.1.tar.gz",
+            "https://codeload.github.com/opencv/opencv/tar.gz/refs/tags/4.8.1",
             "https://ml.cs.tsinghua.edu.cn/~jiayi/envpool/opencv/opencv/4.8.1.tar.gz",
         ],
         build_file = "//third_party/opencv:opencv.BUILD",
@@ -372,6 +373,7 @@ def workspace():
         strip_prefix = "dm_control-1.0.9/dm_control",
         urls = [
             "https://github.com/deepmind/dm_control/archive/refs/tags/1.0.9.tar.gz",
+            "https://codeload.github.com/deepmind/dm_control/tar.gz/refs/tags/1.0.9",
             "https://ml.cs.tsinghua.edu.cn/~jiayi/envpool/deepmind/dm_control/1.0.9.tar.gz",
         ],
         build_file = "//third_party/mujoco_dmc_xml:mujoco_dmc_xml.BUILD",
