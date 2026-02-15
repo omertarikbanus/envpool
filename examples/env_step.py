@@ -20,8 +20,11 @@ import envpool
 is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 def gym_sync_step() -> None:
-  num_envs =2
-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs, render_mode=False, cmd_profile_mode="fixed", cmd_fixed_vx= 1.25,  cmd_fixed_vy= 0.0, cmd_fixed_yaw= 0.0, random_force_enabled= True)
+  num_envs =4
+  env = envpool.make_gym(
+      "Humanoid-v4",
+      num_envs=num_envs,
+  )
   
   print("\n\n\nCreated envpool env Humanoid-v4 with : ", num_envs, " environments\n\n\n")
   print(f"Observation space: {env.observation_space}")
@@ -30,18 +33,31 @@ def gym_sync_step() -> None:
   action= np.zeros((num_envs, env.action_space.shape[0]), dtype=np.float32)
   for env_id in range(num_envs):
     action[env_id][0]= 0.0
-    
+    # Contiguous force block layout in Humanoid-v4:
+    # [3..14] -> per-leg [fx, fy, fz], so z-force indices are 5, 8, 11, 14.
     action[env_id][5]= 0.5
     action[env_id][8]= 0.5
     action[env_id][11]= 0.5
     action[env_id][14]= 0.5
     action[env_id][23]= 0.0
 
-  for _ in range(5000):
+  # Ensure a clean initial episode state before stepping.
+  try:
     if is_legacy_gym:
-      obs, rew, done, info = env.step(action)
+      env.reset()
     else:
-      obs, rew, term, trunc, info = env.step(action)
+      env.reset()
+
+    for _ in range(5000):
+      if is_legacy_gym:
+        obs, rew, done, info = env.step(action)
+      else:
+        obs, rew, term, trunc, info = env.step(action)
+  except KeyboardInterrupt:
+    print("Interrupted. Closing env to flush logs/video cleanly.")
+    raise
+  finally:
+    env.close()
    
 
 

@@ -18,7 +18,6 @@ from stable_baselines3.common.evaluation import evaluate_policy
 # Import refactored common modules
 from common import (
     setup_environment,
-    build_cmd_profile_config,
     create_policy_kwargs,
     setup_logging,
     create_or_load_model,
@@ -45,22 +44,11 @@ def parse_args():
     parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
     parser.add_argument("--tb-log-dir", type=str, default="./logs", help="TensorBoard log directory")
     parser.add_argument("--model-save-path", type=str, default="./data/current/quadruped_ppo_model", help="Model save path")
-    parser.add_argument("--render-mode", type=bool, default=False, help="Render mode")
     parser.add_argument("--continue-training", action="store_true", help="Continue training from existing model if available")
     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
     parser.add_argument("--use-vecnormalize", dest="use_vecnormalize", action="store_true", help="Enable VecNormalize wrapper (normalize observations and rewards)")
     parser.add_argument("--no-vecnormalize", dest="use_vecnormalize", action="store_false", help="Disable VecNormalize wrapper")
     parser.set_defaults(use_vecnormalize=True)
-    parser.add_argument("--cmd-profile", type=str, default="random_episode", choices=["random_episode", "fixed"], help="Command sampling strategy")
-    parser.add_argument("--cmd-fixed-vx", type=float, default=None, help="Fixed command in body X (m/s)")
-    parser.add_argument("--cmd-fixed-vy", type=float, default=None, help="Fixed command in body Y (m/s)")
-    parser.add_argument("--cmd-fixed-yaw", type=float, default=None, help="Fixed yaw-rate command (rad/s)")
-    parser.add_argument("--cmd-rand-vx-min", type=float, default=None, help="Minimum random body X command (m/s)")
-    parser.add_argument("--cmd-rand-vx-max", type=float, default=None, help="Maximum random body X command (m/s)")
-    parser.add_argument("--cmd-rand-vy-min", type=float, default=None, help="Minimum random body Y command (m/s)")
-    parser.add_argument("--cmd-rand-vy-max", type=float, default=None, help="Maximum random body Y command (m/s)")
-    parser.add_argument("--cmd-rand-yaw-min", type=float, default=None, help="Minimum random yaw-rate command (rad/s)")
-    parser.add_argument("--cmd-rand-yaw-max", type=float, default=None, help="Maximum random yaw-rate command (rad/s)")
     return parser.parse_args()
 
 
@@ -86,9 +74,7 @@ def main():
         env_name=args.env_name,
         num_envs=args.num_envs,
         seed=args.seed,
-        render_mode=args.render_mode,
-        stack_frames=args.stack_frames,
-        env_config=build_cmd_profile_config(args)
+        stack_frames=args.stack_frames
     )
     
     # Apply VecNormalize if requested (BEFORE VecMonitor)

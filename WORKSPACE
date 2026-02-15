@@ -31,6 +31,7 @@ cc_library(
         "src/dynamics/FloatingBaseModel.cpp",
         "src/dynamics/QuadrupedKinematics.cc",
         "src/estimators/StateEstimators.cc",
+        "src/core/RLPipelineRuntime.cc",
         "src/hardware/mujocohw/MdlSimDriver.cc",
         "src/hardware/mujocohw/SimClockHW.cc",
         "src/hardware/mujocohw/SimHW.cc",
@@ -40,6 +41,7 @@ cc_library(
         "src/modules/MdlCtGaitScheduler.cc",
         "src/modules/MdlFootstepPlanner.cc",
         "src/modules/MdlLegController.cc",
+        "src/modules/MdlRLCommandSource.cc",
         "src/modules/MdlRLLocomotionState.cc",
         "src/modules/MdlStateEstimator.cc",
         "src/modules/MdlWBIC.cc",
@@ -78,6 +80,7 @@ cc_library(
         "@eigen//:eigen",
         "@mujoco//:mujoco_lib",
         "@rtrobot//:rtcore",
+        "@rtrobot//:rtclient",
     ],
 )
 """,
@@ -109,6 +112,30 @@ cc_library(
     ]),
     includes = [
         "include",
+    ],
+)
+
+cc_library(
+    name = "rtclient",
+    srcs = [
+        "src/rtclient/LogClient.cc",
+        "src/rtclient/WriteASCII.cc",
+        "src/rtclient/WriteRaw.cc",
+        "src/rtclient/WriteML.cc",
+        "src/rtclient/WriteCSV.cc",
+    ],
+    hdrs = glob([
+        "include/**/*.h",
+        "include/**/*.hh",
+    ]),
+    includes = [
+        "include",
+    ],
+    deps = [
+        ":rtcore",
+    ],
+    linkopts = [
+        "-lpthread",
     ],
 )
 """,

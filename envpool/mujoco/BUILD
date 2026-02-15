@@ -140,6 +140,7 @@ cc_library(
         "@mujoco//:mujoco_lib",
         "@quadcontrol//:quadcontrol_rl",
         "@rtrobot//:rtcore",
+        "@rtrobot//:rtclient",
 
     ],
     linkopts = ["-ltinyxml2 -lpthread -lOSMesa -lGL -ldl -lm -lEGL -lglfw "],

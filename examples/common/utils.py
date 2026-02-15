@@ -45,13 +45,14 @@ def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1
     """Set up the environment with proper wrappers."""
     # Create EnvPool environment
     env_config = env_config or {}
+    if render_mode is not None:
+        env_config = dict(env_config)
+        env_config["render_mode"] = render_mode
     env = envpool.make(
         env_name,
         env_type="gym",
         num_envs=num_envs,
         seed=seed,
-        render_mode=render_mode,
-        random_force_max=50.0,
         **env_config
     )
     
