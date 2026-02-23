@@ -148,6 +148,7 @@ _vizdoom*
 #LOGS
 data/current/
 data/tb_logs
+MUJOCO_LOG.TXT
 
 #symlink to another repo
 /envpool/mujoco/legged-sim
@@ -162,3 +163,4 @@ data/wbc_stand/20251019_072732/0_log.csv
 data/wbc_stand/20251019_072732/0_wbc.csv
 data/wbc_stand/20251019_100311/0_log.csv
 data/wbc_stand/20251019_100311/0_wbc.csv
+*.lock

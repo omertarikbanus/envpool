@@ -16,32 +16,10 @@ from datetime import datetime
 
 from .vec_adapter import VecAdapter
 
-
-def build_cmd_profile_config(args):
-    """Convert command-profile CLI args to EnvPool config entries."""
-    config = {}
-    profile = getattr(args, "cmd_profile", None)
-    if profile:
-        config["cmd_profile_mode"] = profile
-    arg_map = [
-        ("cmd_fixed_vx", "cmd_fixed_vx"),
-        ("cmd_fixed_vy", "cmd_fixed_vy"),
-        ("cmd_fixed_yaw", "cmd_fixed_yaw"),
-        ("cmd_rand_vx_min", "cmd_rand_vx_min"),
-        ("cmd_rand_vx_max", "cmd_rand_vx_max"),
-        ("cmd_rand_vy_min", "cmd_rand_vy_min"),
-        ("cmd_rand_vy_max", "cmd_rand_vy_max"),
-        ("cmd_rand_yaw_min", "cmd_rand_yaw_min"),
-        ("cmd_rand_yaw_max", "cmd_rand_yaw_max"),
-    ]
-    for attr_name, config_key in arg_map:
-        value = getattr(args, attr_name, None)
-        if value is not None:
-            config[config_key] = value
-    return config
+FIXED_LEARNING_RATE = 1e-5
 
 
-def setup_environment(env_name, num_envs, seed, render_mode=None, stack_frames=1, env_config=None):
+def setup_environment(env_name, num_envs, seed, render_mode=None, env_config=None):
     """Set up the environment with proper wrappers."""
     # Create EnvPool environment
     env_config = env_config or {}
@@ -84,7 +62,7 @@ def create_ppo_model(env, policy_kwargs):
         policy="MlpPolicy",
         env=env,
         # PPO hyper-parameters
-        learning_rate=1e-5,
+        learning_rate=FIXED_LEARNING_RATE,
         clip_range=0.1,
         target_kl=0.01,
         n_steps=512,
@@ -194,7 +172,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         # model.n_epochs = 5
 
         # Update learning rate; also refresh PPO's lr schedule so it is not overwritten
-        new_learning_rate =5e-6
+        new_learning_rate = FIXED_LEARNING_RATE
         model.learning_rate = new_learning_rate
         model.lr_schedule = get_schedule_fn(new_learning_rate)
         for param_group in model.policy.optimizer.param_groups:

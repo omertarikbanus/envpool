@@ -181,6 +181,8 @@ class HumanoidEnvFns {
         "frame_skip"_.Bind(5), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1),
         "terminate_when_unhealthy"_.Bind(true),
+        "sim_config_path"_.Bind(
+            std::string("/app/quadcontrol/config/robots/sim/envpool.toml")),
         "render_mode"_.Bind(false),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
@@ -299,6 +301,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         locomotion_reward_config_(),
         locomotion_reward_(locomotion_reward_config_),
         reset_body_height_(spec.config["reset_body_height"_]) {
+    const std::string cfg_sim_path = spec.config["sim_config_path"_];
+    if (!cfg_sim_path.empty()) {
+      sim_config_path_ = cfg_sim_path;
+    }
 
     desired_h = static_cast<mjtNum>(0.35);
     {
@@ -350,9 +356,32 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     // episodes caused by mismatched reset heights across modules.
     desired_h = reset_body_height_;
     if (runtime_) {
-      runtime_->resetEpisode();
-      last_state_est_ = runtime_->stateEstimate();
-      last_gait_schedule_ = runtime_->gaitSchedule();
+      constexpr int kMaxResetAttempts = 3;
+      int reset_attempt = 0;
+      for (; reset_attempt < kMaxResetAttempts; ++reset_attempt) {
+        runtime_->resetEpisode();
+        runtime_->setPolicyAction(nullptr, 0);
+        last_state_est_ = runtime_->stateEstimate();
+        last_gait_schedule_ = runtime_->gaitSchedule();
+        const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
+        if ((healthy_z_min_ < z) && (z < healthy_z_max_)) {
+          break;
+        }
+        if (env_id_ == 0) {
+          std::cerr << "[HumanoidEnv] Reset health retry " << (reset_attempt + 1)
+                    << "/" << kMaxResetAttempts
+                    << " (z=" << z << ", bounds=[" << healthy_z_min_ << ", "
+                    << healthy_z_max_ << "])\n";
+        }
+      }
+      if (env_id_ == 0) {
+        const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
+        std::cout << "[HumanoidEnv] Reset state env_id=" << env_id_
+                  << " z=" << z
+                  << " rpy=[" << static_cast<mjtNum>(last_state_est_.rpy[0]) << ", "
+                  << static_cast<mjtNum>(last_state_est_.rpy[1]) << ", "
+                  << static_cast<mjtNum>(last_state_est_.rpy[2]) << "]\n";
+      }
     }
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     UpdateRewardReferences();
@@ -475,6 +504,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         last_done_reason_ = "nonfinite_reward";
       } else if (hit_unhealthy) {
         last_done_reason_ = "unhealthy";
+        if (env_id_ == 0) {
+          std::cerr << "[HumanoidEnv] unhealthy terminate at step=" << elapsed_step_
+                    << " z=" << static_cast<mjtNum>(last_state_est_.position[2])
+                    << " rpy=[" << static_cast<mjtNum>(last_state_est_.rpy[0]) << ", "
+                    << static_cast<mjtNum>(last_state_est_.rpy[1]) << ", "
+                    << static_cast<mjtNum>(last_state_est_.rpy[2]) << "]"
+                    << " v_body=[" << static_cast<mjtNum>(last_state_est_.vBody[0]) << ", "
+                    << static_cast<mjtNum>(last_state_est_.vBody[1]) << ", "
+                    << static_cast<mjtNum>(last_state_est_.vBody[2]) << "]\n";
+        }
       } else if (hit_timeout) {
         last_done_reason_ = "timeout";
       } else {
@@ -644,6 +683,57 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     locomotion_reward_.SetReferences(locomotion_reward_config_.refs);
   }
 
+  int EncodeDoneReason() const {
+    if (!done_) return 0;
+    if (last_done_reason_ == "unhealthy") return 1;
+    if (last_done_reason_ == "timeout") return 2;
+    if (last_done_reason_ == "nonfinite_reward") return 3;
+    return 4;
+  }
+
+  void PublishDebugFrame(const mjtNum* obs, std::size_t obs_count, mjtNum reward,
+                         mjtNum ctrl_cost, mjtNum contact_cost,
+                         mjtNum healthy_reward) {
+    if (!runtime_ || env_id_ != 0) {
+      return;
+    }
+
+    quadruped::RLPipelineRuntime::EnvDebugFrame frame;
+    frame.env_id = env_id_;
+    frame.step = elapsed_step_;
+    frame.done = done_ ? 1 : 0;
+    frame.done_reason = EncodeDoneReason();
+    frame.is_healthy = last_is_healthy_ ? 1 : 0;
+    frame.reward_total = static_cast<float>(reward);
+    frame.ctrl_cost = static_cast<float>(ctrl_cost);
+    frame.contact_cost = static_cast<float>(contact_cost);
+    frame.healthy_reward = static_cast<float>(healthy_reward);
+
+    const std::size_t action_n =
+        std::min(last_action_vector_.size(), frame.action.size());
+    for (std::size_t i = 0; i < action_n; ++i) {
+      frame.action[i] = static_cast<float>(last_action_vector_[i]);
+    }
+
+    if (obs) {
+      const std::size_t obs_n = std::min(obs_count, frame.observation.size());
+      for (std::size_t i = 0; i < obs_n; ++i) {
+        frame.observation[i] = static_cast<float>(obs[i]);
+      }
+    }
+
+    for (std::size_t i = 0; i < frame.reward_terms.size(); ++i) {
+      frame.reward_terms[i] = static_cast<float>(last_term_rewards_[i]);
+      frame.reward_penalties[i] = static_cast<float>(last_penalties_[i]);
+    }
+    for (int i = 0; i < 3; ++i) {
+      frame.base_pos[i] = static_cast<float>(last_state_est_.position[i]);
+      frame.base_vel_world[i] = static_cast<float>(last_state_est_.vWorld[i]);
+    }
+
+    runtime_->setEnvDebugFrame(frame);
+  }
+
   // ------------------------------------------------------------------------
 
   void WriteState(float reward, mjtNum xv, mjtNum yv, mjtNum ctrl_cost,
@@ -697,6 +787,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     state["info:x_velocity"_] = xv;
     state["info:y_velocity"_] = yv;
 
+    PublishDebugFrame(obs, obs_array.size, reward, ctrl_cost, contact_cost,
+                      healthy_reward);
     lastReward = reward;
   }
 };

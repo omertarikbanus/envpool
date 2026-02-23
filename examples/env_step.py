@@ -20,10 +20,11 @@ import envpool
 is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 def gym_sync_step() -> None:
-  num_envs =4
+  num_envs = 1
   env = envpool.make_gym(
       "Humanoid-v4",
       num_envs=num_envs,
+      sim_config_path="/app/quadcontrol/config/robots/sim/envpool.toml",
   )
   
   print("\n\n\nCreated envpool env Humanoid-v4 with : ", num_envs, " environments\n\n\n")

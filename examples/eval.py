@@ -16,7 +16,6 @@ import sys
 try:
     from .common import (
         setup_environment,
-        build_cmd_profile_config,
         load_model_and_normalization,
         detailed_evaluation,
         print_evaluation_results,
@@ -28,7 +27,6 @@ except ImportError:
         sys.path.insert(0, CURRENT_DIR)
     from common import (  # type: ignore  # noqa: F401
         setup_environment,
-        build_cmd_profile_config,
         load_model_and_normalization,
         detailed_evaluation,
         print_evaluation_results,
@@ -44,8 +42,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Evaluate trained PPO models with EnvPool.")
     parser.add_argument("--model-path", type=str, default="data/current/quadruped_ppo_model.zip", help="Path to the saved model (without .zip extension)")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
+    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
     parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel evaluation environments")
-    parser.add_argument("--stack-frames", type=int, default=3, help="Observation frames to stack during evaluation")
     parser.add_argument("--n-eval-episodes", type=int, default=3, help="Number of episodes for evaluation")
     parser.add_argument("--seed", type=int, default=0, help="Random seed for evaluation")
     parser.add_argument("--render", action="store_true", help="Render the environment during evaluation")
@@ -65,29 +63,22 @@ def parse_args():
     parser.add_argument("--auto-detect-vecnorm", action="store_true", default=True, help="Automatically detect and load VecNormalize statistics based on model path")
     parser.add_argument("--no-auto-detect-vecnorm", dest="auto_detect_vecnorm", action="store_false", help="Disable automatic VecNormalize detection")
     parser.add_argument("--vecnormalize-path", type=str, default=None, help="Explicit path to VecNormalize statistics file (overrides auto-detection)")
-    parser.add_argument("--cmd-profile", type=str, default="fixed", choices=["random_episode", "fixed"], help="Command sampling strategy")
-    parser.add_argument("--cmd-fixed-vx", type=float, default=3, help="Fixed command in body X (m/s)")
-    parser.add_argument("--cmd-fixed-vy", type=float, default=0, help="Fixed command in body Y (m/s)")
-    parser.add_argument("--cmd-fixed-yaw", type=float, default=0, help="Fixed yaw-rate command (rad/s)")
-    parser.add_argument("--cmd-rand-vx-min", type=float, default=None, help="Minimum random body X command (m/s)")
-    parser.add_argument("--cmd-rand-vx-max", type=float, default=None, help="Maximum random body X command (m/s)")
-    parser.add_argument("--cmd-rand-vy-min", type=float, default=None, help="Minimum random body Y command (m/s)")
-    parser.add_argument("--cmd-rand-vy-max", type=float, default=None, help="Maximum random body Y command (m/s)")
-    parser.add_argument("--cmd-rand-yaw-min", type=float, default=None, help="Minimum random yaw-rate command (rad/s)")
-    parser.add_argument("--cmd-rand-yaw-max", type=float, default=None, help="Maximum random yaw-rate command (rad/s)")
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
     return parser.parse_args()
 
 
 def setup_evaluation_environment(args):
     """Set up the evaluation environment with proper wrappers."""
+    env_config = {}
+    if args.env_name.startswith("Humanoid"):
+        env_config["sim_config_path"] = args.sim_config_path
+
     return setup_environment(
         env_name=args.env_name,
         num_envs=args.num_envs,
         seed=args.seed,
         render_mode=True if args.render else None,
-        stack_frames=args.stack_frames,
-        env_config=build_cmd_profile_config(args)
+        env_config=env_config
     )
 
 def main():
