@@ -339,9 +339,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       done_ = true;
       return;
     }
-    std::cout << "[HumanoidEnv] Reset env_id=" << env_id_
-              << " (prev reason=" << last_done_reason_
-              << ", elapsed_step=" << elapsed_step_ << ")\n";
     last_action_vector_.clear();
     prev_action_vector_.clear();
     last_penalties_.fill(static_cast<mjtNum>(0.0));
