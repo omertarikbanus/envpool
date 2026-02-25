@@ -1,0 +1,1212 @@
+running bdist_wheel
+running build
+running build_py
+running build_ext
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/envpool
+creating build/bdist.linux-x86_64/wheel/envpool/toy_text
+copying build/lib/envpool/toy_text/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/toy_text
+copying build/lib/envpool/toy_text/toy_text_envpool.so -> build/bdist.linux-x86_64/wheel/envpool/toy_text
+copying build/lib/envpool/toy_text/registration.py -> build/bdist.linux-x86_64/wheel/envpool/toy_text
+copying build/lib/envpool/entry.py -> build/bdist.linux-x86_64/wheel/envpool
+creating build/bdist.linux-x86_64/wheel/envpool/mujoco
+creating build/bdist.linux-x86_64/wheel/envpool/mujoco/gym
+copying build/lib/envpool/mujoco/gym/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/mujoco/gym
+copying build/lib/envpool/mujoco/gym/registration.py -> build/bdist.linux-x86_64/wheel/envpool/mujoco/gym
+creating build/bdist.linux-x86_64/wheel/envpool/mujoco/dmc
+copying build/lib/envpool/mujoco/dmc/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/mujoco/dmc
+copying build/lib/envpool/mujoco/dmc/registration.py -> build/bdist.linux-x86_64/wheel/envpool/mujoco/dmc
+copying build/lib/envpool/mujoco/mujoco_gym_envpool.so -> build/bdist.linux-x86_64/wheel/envpool/mujoco
+copying build/lib/envpool/mujoco/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/mujoco
+creating build/bdist.linux-x86_64/wheel/envpool/mujoco/assets_dmc
+creating build/bdist.linux-x86_64/wheel/envpool/mujoco/assets_dmc/common
+copying build/lib/envpool/mujoco/assets_dmc/common/skybox.xml -> build/bdist.linux-x86_64/wheel/envpool/mujoco/assets_dmc/common
+copying build/lib/envpool/mujoco/assets_dmc/common/visual.xml -> build/bdist.linux-x86_64/wheel/envpool/mujoco/assets_dmc/common
+copying build/lib/envpool/mujoco/assets_dmc/common/materials.xml -> build/bdist.linux-x86_64/wheel/envpool/mujoco/assets_dmc/common
+copying build/lib/envpool/mujoco/mujoco_dmc_envpool.so -> build/bdist.linux-x86_64/wheel/envpool/mujoco
+creating build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/dm_envpool.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/utils.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/data.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/protocol.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/env_spec.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/api.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/xla_template.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/envpool.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/lax.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/gym_envpool.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/python/gymnasium_envpool.py -> build/bdist.linux-x86_64/wheel/envpool/python
+copying build/lib/envpool/__init__.py -> build/bdist.linux-x86_64/wheel/envpool
+creating build/bdist.linux-x86_64/wheel/envpool/procgen
+copying build/lib/envpool/procgen/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/procgen
+copying build/lib/envpool/procgen/procgen_envpool.so -> build/bdist.linux-x86_64/wheel/envpool/procgen
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/explosion4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFlying_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFlying_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tile_bricksGrey.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fruit3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_green_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/genericItem_color_002.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_blue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/finish2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/saw.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_green_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/gemYellow.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyWalking_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip3_green.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_green_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character13.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_red_5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_yellow_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_green.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fruit6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/towerDefense_tile203.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ufoRed.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/bunny2_walk1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_003.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipGreen5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/blockRed.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_green_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/powerupRed_star.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_blue_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip1_orange.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/genericItem_color_001.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ufoRed2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/roadTile6b.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip3_red.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemySpikey_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/laserBlue02.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/present3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemySpikey_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_black_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_009.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceStation_018.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip1_red.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/frog6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_black_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFloating_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fire_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/yellowCrystal.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/food4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tile_bricksGrown.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_blue_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/present1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/finish.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character9.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceStation_019.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_yellow_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fire_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipGreen3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFlying_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlue5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tile_318.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/manBlue_silencer.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/elementWood044.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/lock_blue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_006.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemySpikey_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/elementStone007.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/frog7.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/dirt.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipRed2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_sand.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlue1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/terrainTile6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlack2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlack5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/bomb.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorBrown_big3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipRed4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tileStone_slope.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ship_6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/bunny2_stand.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/window.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceRockets_004.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_002.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ship_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/gemBlue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlack4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ball_volley2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fire1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipRed5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/lockRed2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyWalking_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/iconCircle_white.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipRed3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_red_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyWalking_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/explosion2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/food1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_blue_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_red_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_bigRed.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyWalking_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/laserBlue09.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_black_5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/frog1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip2_green.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_yellow_5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/present2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ufoGreen.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip1_blue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/food3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/frog3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/laserRed11.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ladder_small.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemySpikey_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorBrown_big1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorGrey_big1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/roadTile6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipGreen1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fire_5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fishTile_080.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFlying_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spikeMan_stand.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/keyRed2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFloating_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect8.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_black_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/towerDefense_tile298.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ball_soccer2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fruit5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ship_5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip2_blue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/groundA.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/cannonBall.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorGrey_big2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceAstronauts_008.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ship_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceMeteors_002.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/food2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/food6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceRockets_001.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/lock_green.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/bunny2_jump.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character7.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlue2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fishTile_076.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/towerDefense_tile296.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyWalking_1b.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/genericItem_color_006.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/lock_red.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip3_blue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/frog2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tileStone_slope2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/keyRed.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlue4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/explosion1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character11.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceMeteors_001.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/keyBlue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fenceYellow.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/bunny2_ready.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/food5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_005.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fishTile_074.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/bunny2_walk2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect7.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceRockets_002.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/frog4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/robot_3Dblue.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceEffect9.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipGreen4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/shield2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/towerDefense_tile297.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ship_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_huge.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/panel_wood.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/laserGreen14.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/zombie2_silencer.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipGreen2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/cheese.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorGrey_big4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFloating_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/groundC.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_blue_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tile_bricksRed.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/keyGreen.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ufoGreen2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/dirt_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorGrey_big3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlue3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceMeteors_004.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fishTile_072.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character10.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_red.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/robot_greenDrive1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_001.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/explosion3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tile_316.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_007.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceRockets_003.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip2_orange.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/explosion5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/groundB.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/doorOpen_mid.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/carrot.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemySpikey_1b.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_dark.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlack3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fruit1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fruit2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ball_soccer1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_red_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipBlack1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/genericItem_color_004.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFloating_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip1_green.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fire_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fence_single.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorBrown_big4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/meteorBrown_big2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceMeteors_003.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_blue_5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ship_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/blockGreen.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/tank_darkLarge.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character12.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fire_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/frog5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fishTile_078.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/doorOpen_top.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fruit4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/target_red2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_red_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_008.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/towerDefense_tile295.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyShipRed1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/enemyFloating_1b.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/genericItem_color_005.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_yellow_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip3_orange.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/spaceShips_004.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_green_5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/genericItem_color_003.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/towerDefense_tile270.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_black_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fireball.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/car_yellow_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/playerShip2_red.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/ball_tennis1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/fire_6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+copying build/lib/envpool/procgen/assets/misc_assets/character8.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/misc_assets
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_up3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_fall.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_dead.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/greenCrystal.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_stand.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_up2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_swim2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_roll.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_switch1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_switch2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_duck.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_dead.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_walk1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_walk5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_walk2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_hit.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_switch1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_walk4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_stand.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/yellowCrystal.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_up3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/shroom6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/zombie_idle.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_walk2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_stand.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileGreen_08.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/shroom5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileBrown_09.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_duck.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileYellow_06.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_up1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/enemySwimming_3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_walk1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_walk1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_up3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_fall.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_walk3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/shroom4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/zombie_jump.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_duck.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/zombie_walk2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_roll.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_switch1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/enemySwimming_1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_walk3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_fall.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileBlue_05.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_walk3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_swim2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/blueCrystal.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_hit.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_swim2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_swim1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_roll.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_stand.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_dead.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/enemySwimming_2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_up1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileBrown_06.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_up2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_up1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_swim2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_walk5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileBlue_08.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_switch1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_swim1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_fall.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_hit.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_up3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_dead.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/zombie_walk1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/shroom3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_swim1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_walk5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_walk3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_up1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_swim1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_up2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_walk4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/shroom1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_walk2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_walk5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_hit.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_walk4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_walk1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_up2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGreen_walk2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileYellow_09.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_duck.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/redCrystal.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerGrey_switch2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_roll.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/tileGreen_05.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_walk4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerBlue_switch2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/playerRed_switch2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/fireball.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/enemySwimming_4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+copying build/lib/envpool/procgen/assets/platformer/shroom2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platformer
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/parallax-space-backgound.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/Background-1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/Background-3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/deep_sky_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/meyespace_v1_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/Background-4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/milky_way_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/eye_nebula_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/Background-2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/deep_space_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/spacegen_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/ez_space_lite_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+copying build/lib/envpool/procgen/assets/space_backgrounds/space_nebula_01.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/space_backgrounds
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+copying build/lib/envpool/procgen/assets/water_backgrounds/water2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+copying build/lib/envpool/procgen/assets/water_backgrounds/underwater3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+copying build/lib/envpool/procgen/assets/water_backgrounds/water4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+copying build/lib/envpool/procgen/assets/water_backgrounds/underwater2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+copying build/lib/envpool/procgen/assets/water_backgrounds/water1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+copying build/lib/envpool/procgen/assets/water_backgrounds/water3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+copying build/lib/envpool/procgen/assets/water_backgrounds/underwater1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/water_backgrounds
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/living_tissue_bg.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/colored_grass.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/parallax_forest.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/blue_desert.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/landscape1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback9.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/colored_land.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/colored_desert.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/scifi_bg.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/landscape4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/airadventurelevel1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/another_world_bg.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/blue_land.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/airadventurelevel2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/airadventurelevel3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/cave_background.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/caverns.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback10.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/blue_shroom.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/cyberpunk_bg.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/blue_grass.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/back_cave.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/colored_shroom.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/landscape3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/sunrise.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback7.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/scifi2_bg.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/battleback8.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/alien_bg.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/airadventurelevel4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+copying build/lib/envpool/procgen/assets/platform_backgrounds/landscape2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed8.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed7.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed5.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/floortiles.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed6.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+copying build/lib/envpool/procgen/assets/topdown_backgrounds/backgrounddetailed2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/topdown_backgrounds
+creating build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/beach4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/beach2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/candy4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/fantasy2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/fantasy1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/beach1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/candy1.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/fantasy4.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/fantasy3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/candy2.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/candy3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/assets/platform_backgrounds_2/beach3.png -> build/bdist.linux-x86_64/wheel/envpool/procgen/assets/platform_backgrounds_2
+copying build/lib/envpool/procgen/registration.py -> build/bdist.linux-x86_64/wheel/envpool/procgen
+creating build/bdist.linux-x86_64/wheel/envpool/box2d
+copying build/lib/envpool/box2d/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/box2d
+copying build/lib/envpool/box2d/box2d_envpool.so -> build/bdist.linux-x86_64/wheel/envpool/box2d
+copying build/lib/envpool/box2d/registration.py -> build/bdist.linux-x86_64/wheel/envpool/box2d
+creating build/bdist.linux-x86_64/wheel/envpool/classic_control
+copying build/lib/envpool/classic_control/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/classic_control
+copying build/lib/envpool/classic_control/classic_control_envpool.so -> build/bdist.linux-x86_64/wheel/envpool/classic_control
+copying build/lib/envpool/classic_control/registration.py -> build/bdist.linux-x86_64/wheel/envpool/classic_control
+copying build/lib/envpool/registration.py -> build/bdist.linux-x86_64/wheel/envpool
+creating build/bdist.linux-x86_64/wheel/envpool/atari
+copying build/lib/envpool/atari/__init__.py -> build/bdist.linux-x86_64/wheel/envpool/atari
+creating build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/turmoil.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/tetris.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/tutankham.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/montezuma_revenge.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/flag_capture.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/yars_revenge.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/blackjack.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/gopher.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/donkey_kong.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/kangaroo.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/asterix.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/freeway.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/othello.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/video_pinball.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/amidar.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/trondead.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/demon_attack.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/laser_gates.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/pooyan.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/atlantis2.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/gravitar.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/enduro.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/bank_heist.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/venture.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/carnival.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/earthworld.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/private_eye.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/double_dunk.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/breakout.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/galaxian.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/video_checkers.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/hero.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/lost_luggage.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/miniature_golf.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/space_war.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/atlantis.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/qbert.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/bowling.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/haunted_house.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/pitfall2.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/seaquest.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/riverraid.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/space_invaders.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/alien.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/boxing.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/klax.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/robotank.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/entombed.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/frostbite.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/time_pilot.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/pacman.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/air_raid.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/asteroids.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/sir_lancelot.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/surround.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/superman.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/crazy_climber.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/zaxxon.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/basic_math.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/video_cube.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/chopper_command.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/keystone_kapers.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/word_zapper.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/berzerk.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/name_this_game.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/fishing_derby.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/ms_pacman.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/journey_escape.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/elevator_action.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/up_n_down.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/road_runner.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/pong.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/tennis.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/casino.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/koolaid.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/human_cannonball.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/frogger.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/et.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/ice_hockey.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/adventure.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/skiing.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/wizard_of_wor.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/centipede.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/jamesbond.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/pitfall.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/king_kong.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/mr_do.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/video_chess.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/crossbow.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/hangman.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/krull.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/phoenix.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/solaris.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/assault.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/backgammon.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/tic_tac_toe_3d.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/darkchambers.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/beam_rider.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/kaboom.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/battle_zone.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/kung_fu_master.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/star_gunner.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/mario_bros.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/roms/defender.bin -> build/bdist.linux-x86_64/wheel/envpool/atari/roms
+copying build/lib/envpool/atari/registration.py -> build/bdist.linux-x86_64/wheel/envpool/atari
+copying build/lib/envpool/atari/atari_envpool.so -> build/bdist.linux-x86_64/wheel/envpool/atari
+running install_egg_info
+running egg_info
+writing envpool.egg-info/PKG-INFO
+writing dependency_links to envpool.egg-info/dependency_links.txt
+writing requirements to envpool.egg-info/requires.txt
+writing top-level names to envpool.egg-info/top_level.txt
+reading manifest file 'envpool.egg-info/SOURCES.txt'
+writing manifest file 'envpool.egg-info/SOURCES.txt'
+Copying envpool.egg-info to build/bdist.linux-x86_64/wheel/envpool-0.8.4.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/envpool-0.8.4.dist-info/WHEEL
+creating 'dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'envpool/__init__.py'
+adding 'envpool/entry.py'
+adding 'envpool/registration.py'
+adding 'envpool/atari/__init__.py'
+adding 'envpool/atari/atari_envpool.so'
+adding 'envpool/atari/registration.py'
+adding 'envpool/atari/roms/adventure.bin'
+adding 'envpool/atari/roms/air_raid.bin'
+adding 'envpool/atari/roms/alien.bin'
+adding 'envpool/atari/roms/amidar.bin'
+adding 'envpool/atari/roms/assault.bin'
+adding 'envpool/atari/roms/asterix.bin'
+adding 'envpool/atari/roms/asteroids.bin'
+adding 'envpool/atari/roms/atlantis.bin'
+adding 'envpool/atari/roms/atlantis2.bin'
+adding 'envpool/atari/roms/backgammon.bin'
+adding 'envpool/atari/roms/bank_heist.bin'
+adding 'envpool/atari/roms/basic_math.bin'
+adding 'envpool/atari/roms/battle_zone.bin'
+adding 'envpool/atari/roms/beam_rider.bin'
+adding 'envpool/atari/roms/berzerk.bin'
+adding 'envpool/atari/roms/blackjack.bin'
+adding 'envpool/atari/roms/bowling.bin'
+adding 'envpool/atari/roms/boxing.bin'
+adding 'envpool/atari/roms/breakout.bin'
+adding 'envpool/atari/roms/carnival.bin'
+adding 'envpool/atari/roms/casino.bin'
+adding 'envpool/atari/roms/centipede.bin'
+adding 'envpool/atari/roms/chopper_command.bin'
+adding 'envpool/atari/roms/crazy_climber.bin'
+adding 'envpool/atari/roms/crossbow.bin'
+adding 'envpool/atari/roms/darkchambers.bin'
+adding 'envpool/atari/roms/defender.bin'
+adding 'envpool/atari/roms/demon_attack.bin'
+adding 'envpool/atari/roms/donkey_kong.bin'
+adding 'envpool/atari/roms/double_dunk.bin'
+adding 'envpool/atari/roms/earthworld.bin'
+adding 'envpool/atari/roms/elevator_action.bin'
+adding 'envpool/atari/roms/enduro.bin'
+adding 'envpool/atari/roms/entombed.bin'
+adding 'envpool/atari/roms/et.bin'
+adding 'envpool/atari/roms/fishing_derby.bin'
+adding 'envpool/atari/roms/flag_capture.bin'
+adding 'envpool/atari/roms/freeway.bin'
+adding 'envpool/atari/roms/frogger.bin'
+adding 'envpool/atari/roms/frostbite.bin'
+adding 'envpool/atari/roms/galaxian.bin'
+adding 'envpool/atari/roms/gopher.bin'
+adding 'envpool/atari/roms/gravitar.bin'
+adding 'envpool/atari/roms/hangman.bin'
+adding 'envpool/atari/roms/haunted_house.bin'
+adding 'envpool/atari/roms/hero.bin'
+adding 'envpool/atari/roms/human_cannonball.bin'
+adding 'envpool/atari/roms/ice_hockey.bin'
+adding 'envpool/atari/roms/jamesbond.bin'
+adding 'envpool/atari/roms/journey_escape.bin'
+adding 'envpool/atari/roms/kaboom.bin'
+adding 'envpool/atari/roms/kangaroo.bin'
+adding 'envpool/atari/roms/keystone_kapers.bin'
+adding 'envpool/atari/roms/king_kong.bin'
+adding 'envpool/atari/roms/klax.bin'
+adding 'envpool/atari/roms/koolaid.bin'
+adding 'envpool/atari/roms/krull.bin'
+adding 'envpool/atari/roms/kung_fu_master.bin'
+adding 'envpool/atari/roms/laser_gates.bin'
+adding 'envpool/atari/roms/lost_luggage.bin'
+adding 'envpool/atari/roms/mario_bros.bin'
+adding 'envpool/atari/roms/miniature_golf.bin'
+adding 'envpool/atari/roms/montezuma_revenge.bin'
+adding 'envpool/atari/roms/mr_do.bin'
+adding 'envpool/atari/roms/ms_pacman.bin'
+adding 'envpool/atari/roms/name_this_game.bin'
+adding 'envpool/atari/roms/othello.bin'
+adding 'envpool/atari/roms/pacman.bin'
+adding 'envpool/atari/roms/phoenix.bin'
+adding 'envpool/atari/roms/pitfall.bin'
+adding 'envpool/atari/roms/pitfall2.bin'
+adding 'envpool/atari/roms/pong.bin'
+adding 'envpool/atari/roms/pooyan.bin'
+adding 'envpool/atari/roms/private_eye.bin'
+adding 'envpool/atari/roms/qbert.bin'
+adding 'envpool/atari/roms/riverraid.bin'
+adding 'envpool/atari/roms/road_runner.bin'
+adding 'envpool/atari/roms/robotank.bin'
+adding 'envpool/atari/roms/seaquest.bin'
+adding 'envpool/atari/roms/sir_lancelot.bin'
+adding 'envpool/atari/roms/skiing.bin'
+adding 'envpool/atari/roms/solaris.bin'
+adding 'envpool/atari/roms/space_invaders.bin'
+adding 'envpool/atari/roms/space_war.bin'
+adding 'envpool/atari/roms/star_gunner.bin'
+adding 'envpool/atari/roms/superman.bin'
+adding 'envpool/atari/roms/surround.bin'
+adding 'envpool/atari/roms/tennis.bin'
+adding 'envpool/atari/roms/tetris.bin'
+adding 'envpool/atari/roms/tic_tac_toe_3d.bin'
+adding 'envpool/atari/roms/time_pilot.bin'
+adding 'envpool/atari/roms/trondead.bin'
+adding 'envpool/atari/roms/turmoil.bin'
+adding 'envpool/atari/roms/tutankham.bin'
+adding 'envpool/atari/roms/up_n_down.bin'
+adding 'envpool/atari/roms/venture.bin'
+adding 'envpool/atari/roms/video_checkers.bin'
+adding 'envpool/atari/roms/video_chess.bin'
+adding 'envpool/atari/roms/video_cube.bin'
+adding 'envpool/atari/roms/video_pinball.bin'
+adding 'envpool/atari/roms/wizard_of_wor.bin'
+adding 'envpool/atari/roms/word_zapper.bin'
+adding 'envpool/atari/roms/yars_revenge.bin'
+adding 'envpool/atari/roms/zaxxon.bin'
+adding 'envpool/box2d/__init__.py'
+adding 'envpool/box2d/box2d_envpool.so'
+adding 'envpool/box2d/registration.py'
+adding 'envpool/classic_control/__init__.py'
+adding 'envpool/classic_control/classic_control_envpool.so'
+adding 'envpool/classic_control/registration.py'
+adding 'envpool/mujoco/__init__.py'
+adding 'envpool/mujoco/mujoco_dmc_envpool.so'
+adding 'envpool/mujoco/mujoco_gym_envpool.so'
+adding 'envpool/mujoco/assets_dmc/common/materials.xml'
+adding 'envpool/mujoco/assets_dmc/common/skybox.xml'
+adding 'envpool/mujoco/assets_dmc/common/visual.xml'
+adding 'envpool/mujoco/dmc/__init__.py'
+adding 'envpool/mujoco/dmc/registration.py'
+adding 'envpool/mujoco/gym/__init__.py'
+adding 'envpool/mujoco/gym/registration.py'
+adding 'envpool/procgen/__init__.py'
+adding 'envpool/procgen/procgen_envpool.so'
+adding 'envpool/procgen/registration.py'
+adding 'envpool/procgen/assets/misc_assets/ball_soccer1.png'
+adding 'envpool/procgen/assets/misc_assets/ball_soccer2.png'
+adding 'envpool/procgen/assets/misc_assets/ball_tennis1.png'
+adding 'envpool/procgen/assets/misc_assets/ball_volley2.png'
+adding 'envpool/procgen/assets/misc_assets/blockGreen.png'
+adding 'envpool/procgen/assets/misc_assets/blockRed.png'
+adding 'envpool/procgen/assets/misc_assets/bomb.png'
+adding 'envpool/procgen/assets/misc_assets/bunny2_jump.png'
+adding 'envpool/procgen/assets/misc_assets/bunny2_ready.png'
+adding 'envpool/procgen/assets/misc_assets/bunny2_stand.png'
+adding 'envpool/procgen/assets/misc_assets/bunny2_walk1.png'
+adding 'envpool/procgen/assets/misc_assets/bunny2_walk2.png'
+adding 'envpool/procgen/assets/misc_assets/cannonBall.png'
+adding 'envpool/procgen/assets/misc_assets/car_black_1.png'
+adding 'envpool/procgen/assets/misc_assets/car_black_2.png'
+adding 'envpool/procgen/assets/misc_assets/car_black_3.png'
+adding 'envpool/procgen/assets/misc_assets/car_black_4.png'
+adding 'envpool/procgen/assets/misc_assets/car_black_5.png'
+adding 'envpool/procgen/assets/misc_assets/car_blue_1.png'
+adding 'envpool/procgen/assets/misc_assets/car_blue_2.png'
+adding 'envpool/procgen/assets/misc_assets/car_blue_3.png'
+adding 'envpool/procgen/assets/misc_assets/car_blue_4.png'
+adding 'envpool/procgen/assets/misc_assets/car_blue_5.png'
+adding 'envpool/procgen/assets/misc_assets/car_green_1.png'
+adding 'envpool/procgen/assets/misc_assets/car_green_2.png'
+adding 'envpool/procgen/assets/misc_assets/car_green_3.png'
+adding 'envpool/procgen/assets/misc_assets/car_green_4.png'
+adding 'envpool/procgen/assets/misc_assets/car_green_5.png'
+adding 'envpool/procgen/assets/misc_assets/car_red_1.png'
+adding 'envpool/procgen/assets/misc_assets/car_red_2.png'
+adding 'envpool/procgen/assets/misc_assets/car_red_3.png'
+adding 'envpool/procgen/assets/misc_assets/car_red_4.png'
+adding 'envpool/procgen/assets/misc_assets/car_red_5.png'
+adding 'envpool/procgen/assets/misc_assets/car_yellow_1.png'
+adding 'envpool/procgen/assets/misc_assets/car_yellow_2.png'
+adding 'envpool/procgen/assets/misc_assets/car_yellow_3.png'
+adding 'envpool/procgen/assets/misc_assets/car_yellow_4.png'
+adding 'envpool/procgen/assets/misc_assets/car_yellow_5.png'
+adding 'envpool/procgen/assets/misc_assets/carrot.png'
+adding 'envpool/procgen/assets/misc_assets/character1.png'
+adding 'envpool/procgen/assets/misc_assets/character10.png'
+adding 'envpool/procgen/assets/misc_assets/character11.png'
+adding 'envpool/procgen/assets/misc_assets/character12.png'
+adding 'envpool/procgen/assets/misc_assets/character13.png'
+adding 'envpool/procgen/assets/misc_assets/character2.png'
+adding 'envpool/procgen/assets/misc_assets/character3.png'
+adding 'envpool/procgen/assets/misc_assets/character4.png'
+adding 'envpool/procgen/assets/misc_assets/character5.png'
+adding 'envpool/procgen/assets/misc_assets/character6.png'
+adding 'envpool/procgen/assets/misc_assets/character7.png'
+adding 'envpool/procgen/assets/misc_assets/character8.png'
+adding 'envpool/procgen/assets/misc_assets/character9.png'
+adding 'envpool/procgen/assets/misc_assets/cheese.png'
+adding 'envpool/procgen/assets/misc_assets/dirt.png'
+adding 'envpool/procgen/assets/misc_assets/dirt_2.png'
+adding 'envpool/procgen/assets/misc_assets/doorOpen_mid.png'
+adding 'envpool/procgen/assets/misc_assets/doorOpen_top.png'
+adding 'envpool/procgen/assets/misc_assets/elementStone007.png'
+adding 'envpool/procgen/assets/misc_assets/elementWood044.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFloating_1.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFloating_1b.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFloating_2.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFloating_3.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFloating_4.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFlying_1.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFlying_2.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFlying_3.png'
+adding 'envpool/procgen/assets/misc_assets/enemyFlying_4.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlack1.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlack2.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlack3.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlack4.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlack5.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlue1.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlue2.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlue3.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlue4.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipBlue5.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipGreen1.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipGreen2.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipGreen3.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipGreen4.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipGreen5.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipRed1.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipRed2.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipRed3.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipRed4.png'
+adding 'envpool/procgen/assets/misc_assets/enemyShipRed5.png'
+adding 'envpool/procgen/assets/misc_assets/enemySpikey_1.png'
+adding 'envpool/procgen/assets/misc_assets/enemySpikey_1b.png'
+adding 'envpool/procgen/assets/misc_assets/enemySpikey_2.png'
+adding 'envpool/procgen/assets/misc_assets/enemySpikey_3.png'
+adding 'envpool/procgen/assets/misc_assets/enemySpikey_4.png'
+adding 'envpool/procgen/assets/misc_assets/enemyWalking_1.png'
+adding 'envpool/procgen/assets/misc_assets/enemyWalking_1b.png'
+adding 'envpool/procgen/assets/misc_assets/enemyWalking_2.png'
+adding 'envpool/procgen/assets/misc_assets/enemyWalking_3.png'
+adding 'envpool/procgen/assets/misc_assets/enemyWalking_4.png'
+adding 'envpool/procgen/assets/misc_assets/explosion1.png'
+adding 'envpool/procgen/assets/misc_assets/explosion2.png'
+adding 'envpool/procgen/assets/misc_assets/explosion3.png'
+adding 'envpool/procgen/assets/misc_assets/explosion4.png'
+adding 'envpool/procgen/assets/misc_assets/explosion5.png'
+adding 'envpool/procgen/assets/misc_assets/fenceYellow.png'
+adding 'envpool/procgen/assets/misc_assets/fence_single.png'
+adding 'envpool/procgen/assets/misc_assets/finish.png'
+adding 'envpool/procgen/assets/misc_assets/finish2.png'
+adding 'envpool/procgen/assets/misc_assets/fire1.png'
+adding 'envpool/procgen/assets/misc_assets/fire_1.png'
+adding 'envpool/procgen/assets/misc_assets/fire_2.png'
+adding 'envpool/procgen/assets/misc_assets/fire_3.png'
+adding 'envpool/procgen/assets/misc_assets/fire_4.png'
+adding 'envpool/procgen/assets/misc_assets/fire_5.png'
+adding 'envpool/procgen/assets/misc_assets/fire_6.png'
+adding 'envpool/procgen/assets/misc_assets/fireball.png'
+adding 'envpool/procgen/assets/misc_assets/fishTile_072.png'
+adding 'envpool/procgen/assets/misc_assets/fishTile_074.png'
+adding 'envpool/procgen/assets/misc_assets/fishTile_076.png'
+adding 'envpool/procgen/assets/misc_assets/fishTile_078.png'
+adding 'envpool/procgen/assets/misc_assets/fishTile_080.png'
+adding 'envpool/procgen/assets/misc_assets/food1.png'
+adding 'envpool/procgen/assets/misc_assets/food2.png'
+adding 'envpool/procgen/assets/misc_assets/food3.png'
+adding 'envpool/procgen/assets/misc_assets/food4.png'
+adding 'envpool/procgen/assets/misc_assets/food5.png'
+adding 'envpool/procgen/assets/misc_assets/food6.png'
+adding 'envpool/procgen/assets/misc_assets/frog1.png'
+adding 'envpool/procgen/assets/misc_assets/frog2.png'
+adding 'envpool/procgen/assets/misc_assets/frog3.png'
+adding 'envpool/procgen/assets/misc_assets/frog4.png'
+adding 'envpool/procgen/assets/misc_assets/frog5.png'
+adding 'envpool/procgen/assets/misc_assets/frog6.png'
+adding 'envpool/procgen/assets/misc_assets/frog7.png'
+adding 'envpool/procgen/assets/misc_assets/fruit1.png'
+adding 'envpool/procgen/assets/misc_assets/fruit2.png'
+adding 'envpool/procgen/assets/misc_assets/fruit3.png'
+adding 'envpool/procgen/assets/misc_assets/fruit4.png'
+adding 'envpool/procgen/assets/misc_assets/fruit5.png'
+adding 'envpool/procgen/assets/misc_assets/fruit6.png'
+adding 'envpool/procgen/assets/misc_assets/gemBlue.png'
+adding 'envpool/procgen/assets/misc_assets/gemYellow.png'
+adding 'envpool/procgen/assets/misc_assets/genericItem_color_001.png'
+adding 'envpool/procgen/assets/misc_assets/genericItem_color_002.png'
+adding 'envpool/procgen/assets/misc_assets/genericItem_color_003.png'
+adding 'envpool/procgen/assets/misc_assets/genericItem_color_004.png'
+adding 'envpool/procgen/assets/misc_assets/genericItem_color_005.png'
+adding 'envpool/procgen/assets/misc_assets/genericItem_color_006.png'
+adding 'envpool/procgen/assets/misc_assets/groundA.png'
+adding 'envpool/procgen/assets/misc_assets/groundB.png'
+adding 'envpool/procgen/assets/misc_assets/groundC.png'
+adding 'envpool/procgen/assets/misc_assets/iconCircle_white.png'
+adding 'envpool/procgen/assets/misc_assets/keyBlue.png'
+adding 'envpool/procgen/assets/misc_assets/keyGreen.png'
+adding 'envpool/procgen/assets/misc_assets/keyRed.png'
+adding 'envpool/procgen/assets/misc_assets/keyRed2.png'
+adding 'envpool/procgen/assets/misc_assets/ladder_small.png'
+adding 'envpool/procgen/assets/misc_assets/laserBlue02.png'
+adding 'envpool/procgen/assets/misc_assets/laserBlue09.png'
+adding 'envpool/procgen/assets/misc_assets/laserGreen14.png'
+adding 'envpool/procgen/assets/misc_assets/laserRed11.png'
+adding 'envpool/procgen/assets/misc_assets/lockRed2.png'
+adding 'envpool/procgen/assets/misc_assets/lock_blue.png'
+adding 'envpool/procgen/assets/misc_assets/lock_green.png'
+adding 'envpool/procgen/assets/misc_assets/lock_red.png'
+adding 'envpool/procgen/assets/misc_assets/manBlue_silencer.png'
+adding 'envpool/procgen/assets/misc_assets/meteorBrown_big1.png'
+adding 'envpool/procgen/assets/misc_assets/meteorBrown_big2.png'
+adding 'envpool/procgen/assets/misc_assets/meteorBrown_big3.png'
+adding 'envpool/procgen/assets/misc_assets/meteorBrown_big4.png'
+adding 'envpool/procgen/assets/misc_assets/meteorGrey_big1.png'
+adding 'envpool/procgen/assets/misc_assets/meteorGrey_big2.png'
+adding 'envpool/procgen/assets/misc_assets/meteorGrey_big3.png'
+adding 'envpool/procgen/assets/misc_assets/meteorGrey_big4.png'
+adding 'envpool/procgen/assets/misc_assets/panel_wood.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip1_blue.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip1_green.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip1_orange.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip1_red.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip2_blue.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip2_green.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip2_orange.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip2_red.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip3_blue.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip3_green.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip3_orange.png'
+adding 'envpool/procgen/assets/misc_assets/playerShip3_red.png'
+adding 'envpool/procgen/assets/misc_assets/powerupRed_star.png'
+adding 'envpool/procgen/assets/misc_assets/present1.png'
+adding 'envpool/procgen/assets/misc_assets/present2.png'
+adding 'envpool/procgen/assets/misc_assets/present3.png'
+adding 'envpool/procgen/assets/misc_assets/roadTile6.png'
+adding 'envpool/procgen/assets/misc_assets/roadTile6b.png'
+adding 'envpool/procgen/assets/misc_assets/robot_3Dblue.png'
+adding 'envpool/procgen/assets/misc_assets/robot_greenDrive1.png'
+adding 'envpool/procgen/assets/misc_assets/saw.png'
+adding 'envpool/procgen/assets/misc_assets/shield2.png'
+adding 'envpool/procgen/assets/misc_assets/ship_1.png'
+adding 'envpool/procgen/assets/misc_assets/ship_2.png'
+adding 'envpool/procgen/assets/misc_assets/ship_3.png'
+adding 'envpool/procgen/assets/misc_assets/ship_4.png'
+adding 'envpool/procgen/assets/misc_assets/ship_5.png'
+adding 'envpool/procgen/assets/misc_assets/ship_6.png'
+adding 'envpool/procgen/assets/misc_assets/spaceAstronauts_008.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect1.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect2.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect3.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect4.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect5.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect6.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect7.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect8.png'
+adding 'envpool/procgen/assets/misc_assets/spaceEffect9.png'
+adding 'envpool/procgen/assets/misc_assets/spaceMeteors_001.png'
+adding 'envpool/procgen/assets/misc_assets/spaceMeteors_002.png'
+adding 'envpool/procgen/assets/misc_assets/spaceMeteors_003.png'
+adding 'envpool/procgen/assets/misc_assets/spaceMeteors_004.png'
+adding 'envpool/procgen/assets/misc_assets/spaceRockets_001.png'
+adding 'envpool/procgen/assets/misc_assets/spaceRockets_002.png'
+adding 'envpool/procgen/assets/misc_assets/spaceRockets_003.png'
+adding 'envpool/procgen/assets/misc_assets/spaceRockets_004.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_001.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_002.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_003.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_004.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_005.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_006.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_007.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_008.png'
+adding 'envpool/procgen/assets/misc_assets/spaceShips_009.png'
+adding 'envpool/procgen/assets/misc_assets/spaceStation_018.png'
+adding 'envpool/procgen/assets/misc_assets/spaceStation_019.png'
+adding 'envpool/procgen/assets/misc_assets/spikeMan_stand.png'
+adding 'envpool/procgen/assets/misc_assets/tank_bigRed.png'
+adding 'envpool/procgen/assets/misc_assets/tank_blue.png'
+adding 'envpool/procgen/assets/misc_assets/tank_dark.png'
+adding 'envpool/procgen/assets/misc_assets/tank_darkLarge.png'
+adding 'envpool/procgen/assets/misc_assets/tank_green.png'
+adding 'envpool/procgen/assets/misc_assets/tank_huge.png'
+adding 'envpool/procgen/assets/misc_assets/tank_red.png'
+adding 'envpool/procgen/assets/misc_assets/tank_sand.png'
+adding 'envpool/procgen/assets/misc_assets/target_red2.png'
+adding 'envpool/procgen/assets/misc_assets/terrainTile6.png'
+adding 'envpool/procgen/assets/misc_assets/tileStone_slope.png'
+adding 'envpool/procgen/assets/misc_assets/tileStone_slope2.png'
+adding 'envpool/procgen/assets/misc_assets/tile_316.png'
+adding 'envpool/procgen/assets/misc_assets/tile_318.png'
+adding 'envpool/procgen/assets/misc_assets/tile_bricksGrey.png'
+adding 'envpool/procgen/assets/misc_assets/tile_bricksGrown.png'
+adding 'envpool/procgen/assets/misc_assets/tile_bricksRed.png'
+adding 'envpool/procgen/assets/misc_assets/towerDefense_tile203.png'
+adding 'envpool/procgen/assets/misc_assets/towerDefense_tile270.png'
+adding 'envpool/procgen/assets/misc_assets/towerDefense_tile295.png'
+adding 'envpool/procgen/assets/misc_assets/towerDefense_tile296.png'
+adding 'envpool/procgen/assets/misc_assets/towerDefense_tile297.png'
+adding 'envpool/procgen/assets/misc_assets/towerDefense_tile298.png'
+adding 'envpool/procgen/assets/misc_assets/ufoGreen.png'
+adding 'envpool/procgen/assets/misc_assets/ufoGreen2.png'
+adding 'envpool/procgen/assets/misc_assets/ufoRed.png'
+adding 'envpool/procgen/assets/misc_assets/ufoRed2.png'
+adding 'envpool/procgen/assets/misc_assets/window.png'
+adding 'envpool/procgen/assets/misc_assets/yellowCrystal.png'
+adding 'envpool/procgen/assets/misc_assets/zombie2_silencer.png'
+adding 'envpool/procgen/assets/platform_backgrounds/airadventurelevel1.png'
+adding 'envpool/procgen/assets/platform_backgrounds/airadventurelevel2.png'
+adding 'envpool/procgen/assets/platform_backgrounds/airadventurelevel3.png'
+adding 'envpool/procgen/assets/platform_backgrounds/airadventurelevel4.png'
+adding 'envpool/procgen/assets/platform_backgrounds/alien_bg.png'
+adding 'envpool/procgen/assets/platform_backgrounds/another_world_bg.png'
+adding 'envpool/procgen/assets/platform_backgrounds/back_cave.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback1.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback10.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback2.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback3.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback4.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback5.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback6.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback7.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback8.png'
+adding 'envpool/procgen/assets/platform_backgrounds/battleback9.png'
+adding 'envpool/procgen/assets/platform_backgrounds/blue_desert.png'
+adding 'envpool/procgen/assets/platform_backgrounds/blue_grass.png'
+adding 'envpool/procgen/assets/platform_backgrounds/blue_land.png'
+adding 'envpool/procgen/assets/platform_backgrounds/blue_shroom.png'
+adding 'envpool/procgen/assets/platform_backgrounds/cave_background.png'
+adding 'envpool/procgen/assets/platform_backgrounds/caverns.png'
+adding 'envpool/procgen/assets/platform_backgrounds/colored_desert.png'
+adding 'envpool/procgen/assets/platform_backgrounds/colored_grass.png'
+adding 'envpool/procgen/assets/platform_backgrounds/colored_land.png'
+adding 'envpool/procgen/assets/platform_backgrounds/colored_shroom.png'
+adding 'envpool/procgen/assets/platform_backgrounds/cyberpunk_bg.png'
+adding 'envpool/procgen/assets/platform_backgrounds/landscape1.png'
+adding 'envpool/procgen/assets/platform_backgrounds/landscape2.png'
+adding 'envpool/procgen/assets/platform_backgrounds/landscape3.png'
+adding 'envpool/procgen/assets/platform_backgrounds/landscape4.png'
+adding 'envpool/procgen/assets/platform_backgrounds/living_tissue_bg.png'
+adding 'envpool/procgen/assets/platform_backgrounds/parallax_forest.png'
+adding 'envpool/procgen/assets/platform_backgrounds/scifi2_bg.png'
+adding 'envpool/procgen/assets/platform_backgrounds/scifi_bg.png'
+adding 'envpool/procgen/assets/platform_backgrounds/sunrise.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/beach1.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/beach2.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/beach3.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/beach4.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/candy1.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/candy2.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/candy3.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/candy4.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/fantasy1.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/fantasy2.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/fantasy3.png'
+adding 'envpool/procgen/assets/platform_backgrounds_2/fantasy4.png'
+adding 'envpool/procgen/assets/platformer/blueCrystal.png'
+adding 'envpool/procgen/assets/platformer/enemySwimming_1.png'
+adding 'envpool/procgen/assets/platformer/enemySwimming_2.png'
+adding 'envpool/procgen/assets/platformer/enemySwimming_3.png'
+adding 'envpool/procgen/assets/platformer/enemySwimming_4.png'
+adding 'envpool/procgen/assets/platformer/fireball.png'
+adding 'envpool/procgen/assets/platformer/greenCrystal.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_dead.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_duck.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_fall.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_hit.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_roll.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_stand.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_swim1.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_swim2.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_switch1.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_switch2.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_up1.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_up2.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_up3.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_walk1.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_walk2.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_walk3.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_walk4.png'
+adding 'envpool/procgen/assets/platformer/playerBlue_walk5.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_dead.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_duck.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_fall.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_hit.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_roll.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_stand.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_swim1.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_swim2.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_switch1.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_switch2.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_up1.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_up2.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_up3.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_walk1.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_walk2.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_walk3.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_walk4.png'
+adding 'envpool/procgen/assets/platformer/playerGreen_walk5.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_dead.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_duck.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_fall.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_hit.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_roll.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_stand.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_swim1.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_swim2.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_switch1.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_switch2.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_up1.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_up2.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_up3.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_walk1.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_walk2.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_walk3.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_walk4.png'
+adding 'envpool/procgen/assets/platformer/playerGrey_walk5.png'
+adding 'envpool/procgen/assets/platformer/playerRed_dead.png'
+adding 'envpool/procgen/assets/platformer/playerRed_duck.png'
+adding 'envpool/procgen/assets/platformer/playerRed_fall.png'
+adding 'envpool/procgen/assets/platformer/playerRed_hit.png'
+adding 'envpool/procgen/assets/platformer/playerRed_roll.png'
+adding 'envpool/procgen/assets/platformer/playerRed_stand.png'
+adding 'envpool/procgen/assets/platformer/playerRed_swim1.png'
+adding 'envpool/procgen/assets/platformer/playerRed_swim2.png'
+adding 'envpool/procgen/assets/platformer/playerRed_switch1.png'
+adding 'envpool/procgen/assets/platformer/playerRed_switch2.png'
+adding 'envpool/procgen/assets/platformer/playerRed_up1.png'
+adding 'envpool/procgen/assets/platformer/playerRed_up2.png'
+adding 'envpool/procgen/assets/platformer/playerRed_up3.png'
+adding 'envpool/procgen/assets/platformer/playerRed_walk1.png'
+adding 'envpool/procgen/assets/platformer/playerRed_walk2.png'
+adding 'envpool/procgen/assets/platformer/playerRed_walk3.png'
+adding 'envpool/procgen/assets/platformer/playerRed_walk4.png'
+adding 'envpool/procgen/assets/platformer/playerRed_walk5.png'
+adding 'envpool/procgen/assets/platformer/redCrystal.png'
+adding 'envpool/procgen/assets/platformer/shroom1.png'
+adding 'envpool/procgen/assets/platformer/shroom2.png'
+adding 'envpool/procgen/assets/platformer/shroom3.png'
+adding 'envpool/procgen/assets/platformer/shroom4.png'
+adding 'envpool/procgen/assets/platformer/shroom5.png'
+adding 'envpool/procgen/assets/platformer/shroom6.png'
+adding 'envpool/procgen/assets/platformer/tileBlue_05.png'
+adding 'envpool/procgen/assets/platformer/tileBlue_08.png'
+adding 'envpool/procgen/assets/platformer/tileBrown_06.png'
+adding 'envpool/procgen/assets/platformer/tileBrown_09.png'
+adding 'envpool/procgen/assets/platformer/tileGreen_05.png'
+adding 'envpool/procgen/assets/platformer/tileGreen_08.png'
+adding 'envpool/procgen/assets/platformer/tileYellow_06.png'
+adding 'envpool/procgen/assets/platformer/tileYellow_09.png'
+adding 'envpool/procgen/assets/platformer/yellowCrystal.png'
+adding 'envpool/procgen/assets/platformer/zombie_idle.png'
+adding 'envpool/procgen/assets/platformer/zombie_jump.png'
+adding 'envpool/procgen/assets/platformer/zombie_walk1.png'
+adding 'envpool/procgen/assets/platformer/zombie_walk2.png'
+adding 'envpool/procgen/assets/space_backgrounds/Background-1.png'
+adding 'envpool/procgen/assets/space_backgrounds/Background-2.png'
+adding 'envpool/procgen/assets/space_backgrounds/Background-3.png'
+adding 'envpool/procgen/assets/space_backgrounds/Background-4.png'
+adding 'envpool/procgen/assets/space_backgrounds/deep_sky_01.png'
+adding 'envpool/procgen/assets/space_backgrounds/deep_space_01.png'
+adding 'envpool/procgen/assets/space_backgrounds/eye_nebula_01.png'
+adding 'envpool/procgen/assets/space_backgrounds/ez_space_lite_01.png'
+adding 'envpool/procgen/assets/space_backgrounds/meyespace_v1_01.png'
+adding 'envpool/procgen/assets/space_backgrounds/milky_way_01.png'
+adding 'envpool/procgen/assets/space_backgrounds/parallax-space-backgound.png'
+adding 'envpool/procgen/assets/space_backgrounds/space_nebula_01.png'
+adding 'envpool/procgen/assets/space_backgrounds/spacegen_01.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed1.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed2.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed3.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed4.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed5.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed6.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed7.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/backgrounddetailed8.png'
+adding 'envpool/procgen/assets/topdown_backgrounds/floortiles.png'
+adding 'envpool/procgen/assets/water_backgrounds/underwater1.png'
+adding 'envpool/procgen/assets/water_backgrounds/underwater2.png'
+adding 'envpool/procgen/assets/water_backgrounds/underwater3.png'
+adding 'envpool/procgen/assets/water_backgrounds/water1.png'
+adding 'envpool/procgen/assets/water_backgrounds/water2.png'
+adding 'envpool/procgen/assets/water_backgrounds/water3.png'
+adding 'envpool/procgen/assets/water_backgrounds/water4.png'
+adding 'envpool/python/__init__.py'
+adding 'envpool/python/api.py'
+adding 'envpool/python/data.py'
+adding 'envpool/python/dm_envpool.py'
+adding 'envpool/python/env_spec.py'
+adding 'envpool/python/envpool.py'
+adding 'envpool/python/gym_envpool.py'
+adding 'envpool/python/gymnasium_envpool.py'
+adding 'envpool/python/lax.py'
+adding 'envpool/python/protocol.py'
+adding 'envpool/python/utils.py'
+adding 'envpool/python/xla_template.py'
+adding 'envpool/toy_text/__init__.py'
+adding 'envpool/toy_text/registration.py'
+adding 'envpool/toy_text/toy_text_envpool.so'
+adding 'envpool-0.8.4.dist-info/METADATA'
+adding 'envpool-0.8.4.dist-info/WHEEL'
+adding 'envpool-0.8.4.dist-info/top_level.txt'
+adding 'envpool-0.8.4.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
