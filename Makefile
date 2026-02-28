@@ -16,6 +16,7 @@ WORKSPACE      ?= $(shell pwd)
 NOTEBOOK_PORT  ?= 8888
 CONTAINER_NOTEBOOK_PORT ?= 8888
 EXTRA_DOCKER_RUN_ARGS ?=
+DOCKER_GPU_FLAGS ?= --gpus all -e NVIDIA_VISIBLE_DEVICES=all -e NVIDIA_DRIVER_CAPABILITIES=all
 RUN_FLAGS      = --name $(CONTAINER_NAME) -v $(WORKSPACE):/workspace $(EXTRA_DOCKER_RUN_ARGS)
 RUN_FLAGS_CLEAN = $(RUN_FLAGS) --rm -it
 RUN_FLAGS_DETACHED = $(RUN_FLAGS) -d
@@ -199,6 +200,7 @@ docker-run:
 			-v $(HOME)/.cache:/root/.cache \
 			-v /:/host \
 			--shm-size=4gb -it --rm \
+			$(DOCKER_GPU_FLAGS) \
 			--name $(CONTAINER_NAME) \
 			-e DISPLAY=$(DISPLAY) \
 			-e QT_X11_NO_MITSHM=1 \

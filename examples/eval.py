@@ -44,7 +44,7 @@ def parse_args():
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
     parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
     parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel evaluation environments")
-    parser.add_argument("--n-eval-episodes", type=int, default=1, help="Number of episodes for evaluation")
+    parser.add_argument("--n-eval-episodes", type=int, default=5, help="Number of episodes for evaluation")
     parser.add_argument("--seed", type=int, default=0, help="Random seed for evaluation")
     parser.add_argument("--render", action="store_true", help="Render the environment during evaluation")
     parser.add_argument(
