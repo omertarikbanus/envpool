@@ -5,6 +5,26 @@
 
 - Clean up codes.
 - remove unused log files.
+- `eval_rl.py` prepends `/app/envpool` to `sys.path` so `import envpool` resolves
+  to the source tree (`envpool/envpool/...`) instead of the pip-installed
+  package in site-packages (workaround for the top-level `__init__.py`
+  shadowing issue). This means `make run` (which builds+installs the wheel
+  into site-packages) does NOT update what `eval_rl.py` actually imports —
+  the source-tree `.so` files must also be rebuilt/copied separately, or the
+  two can silently drift out of sync. Worth deciding: keep both paths in
+  sync deliberately, or drop the sys.path shadowing and rely on `make run`'s
+  pip install as the single source of truth.
+- Enable windowed visualization (GLFW) from inside the `envpool-dev` Docker
+  container for one-off evaluation runs, instead of always running headless.
+  Confirmed feasible: host has a real Xorg session on `:0`
+  (`/run/user/1000/gdm/Xauthority`), GLFW windowed mode already works in
+  `MdlSimDriver.cc` (no code changes needed) — just needs the container
+  recreated with `-e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix:rw` plus
+  `xhost +si:localuser:root` on the host once. Expect software (llvmpipe)
+  rendering unless `/dev/dri` is also passed through. `envpool.toml` is
+  currently set to `headless = true` as the default (needed for the
+  container/sweep pipeline); a visual eval run would need a separate
+  headless=false config or a second container.
 
 
 ## Development Notes
