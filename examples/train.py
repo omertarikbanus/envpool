@@ -12,9 +12,10 @@ import numpy as np
 from datetime import datetime
 
 import torch as th
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList
 from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.evaluation import evaluate_policy
+from stable_baselines3.common.utils import get_schedule_fn
 
 # Import refactored common modules
 from common import (
@@ -62,6 +63,31 @@ class EpisodeInfoLoggingCallback(BaseCallback):
         self._values = {key: [] for key in self.info_keys}
 
 
+class PeriodicCheckpointCallback(BaseCallback):
+    """Save model + VecNormalize every `save_freq` timesteps.
+
+    Training otherwise only writes on a clean exit or KeyboardInterrupt, so an
+    OOM kill (SIGKILL) loses the whole run. Checkpoints go to a sibling
+    `<path>_ckpt` and are overwritten in place, which keeps disk use flat and
+    never touches the final artefact.
+    """
+
+    def __init__(self, save_freq, model_save_path):
+        super().__init__()
+        self.save_freq = int(save_freq)
+        self.ckpt_path = f"{model_save_path}_ckpt"
+        self._next_save = self.save_freq
+
+    def _on_step(self) -> bool:
+        if self.save_freq <= 0 or self.num_timesteps < self._next_save:
+            return True
+        self._next_save = self.num_timesteps + self.save_freq
+        save_model_and_stats(
+            self.model, self.ckpt_path,
+            find_vecnormalize_wrapper(self.model.get_env()),
+        )
+        logging.info("Checkpoint written at %d timesteps", self.num_timesteps)
+        return True
 
 
 
@@ -79,6 +105,9 @@ def parse_args():
     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
     parser.add_argument("--use-vecnormalize", dest="use_vecnormalize", action="store_true", help="Enable VecNormalize wrapper (normalize observations and rewards)")
     parser.add_argument("--no-vecnormalize", dest="use_vecnormalize", action="store_false", help="Disable VecNormalize wrapper")
+    parser.add_argument("--checkpoint-freq", type=int, default=0, help="Save a resumable checkpoint every N timesteps (0 disables)")
+    parser.add_argument("--learning-rate", type=float, default=None, help="Override common.utils.FIXED_LEARNING_RATE for this run")
+    parser.add_argument("--ent-coef", type=float, default=None, help="Override PPO entropy coefficient for this run")
     parser.set_defaults(use_vecnormalize=True)
     return parser.parse_args()
 
@@ -131,6 +160,26 @@ def main():
             continue_training=args.continue_training
         )
 
+        # Applied after create_or_load_model, which pins the rate to
+        # FIXED_LEARNING_RATE (1e-5) on both fresh and resumed models. At that
+        # rate approx_kl settles near 0.003 against target_kl 0.01, so PPO's own
+        # guard never binds and the policy barely leaves its initialisation.
+        # target_kl remains the brake when this is raised.
+        if args.learning_rate is not None:
+            logging.info("Overriding learning rate: %g", args.learning_rate)
+            model.learning_rate = args.learning_rate
+            model.lr_schedule = get_schedule_fn(args.learning_rate)
+            for param_group in model.policy.optimizer.param_groups:
+                param_group["lr"] = args.learning_rate
+
+        # At the default 0.05 the entropy bonus outran the policy loss: the
+        # action std climbed 0.050 -> 0.275 against the log_std ceiling of 0.30
+        # over one 17 M-step run while reward fell, which is divergence rather
+        # than exploration.
+        if args.ent_coef is not None:
+            logging.info("Overriding ent_coef: %g", args.ent_coef)
+            model.ent_coef = args.ent_coef
+
         if args.use_vecnormalize:
             vecnormalize_wrapper = find_vecnormalize_wrapper(env)
         else:
@@ -145,7 +194,11 @@ def main():
 
         logging.info("Starting training...")
         interrupted = False
-        episode_info_callback = EpisodeInfoLoggingCallback(MONITOR_INFO_KEYWORDS)
+        callbacks = [EpisodeInfoLoggingCallback(MONITOR_INFO_KEYWORDS)]
+        if args.checkpoint_freq > 0:
+            callbacks.append(
+                PeriodicCheckpointCallback(args.checkpoint_freq, args.model_save_path))
+        episode_info_callback = CallbackList(callbacks)
         try:
             model.learn(total_timesteps=args.total_timesteps, callback=episode_info_callback)
         except KeyboardInterrupt:
