@@ -121,7 +121,7 @@ def main():
     env = None
 
     # Setup logging
-    logger = setup_logging()
+    logger = setup_logging(args.tb_log_dir)
     
     logging.basicConfig(level=logging.INFO)
     logging.info("Experiment: quadruped_ppo_experiment")

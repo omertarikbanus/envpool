@@ -163,4 +163,5 @@ data/wbc_stand/20251019_072732/0_log.csv
 data/wbc_stand/20251019_072732/0_wbc.csv
 data/wbc_stand/20251019_100311/0_log.csv
 data/wbc_stand/20251019_100311/0_wbc.csv
+data/alpha/backups/
 *.lock

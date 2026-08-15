@@ -31,10 +31,7 @@ struct RLConstants {
   static constexpr int kNumLegs = 4;
   static constexpr int kActionDim = 24;
   static constexpr int kPhaseDeltaIdx = kActionDim - 1;
-  // cmd_vx 1 | z 1 | aBody 3 | vBody 3 | omegaBody 3 | rpy 3 | q 12 | qd 12
-  // | contact 4 | foot_pos 4x3 | sin/cos phase 2
-  // Was 46: no body height, no acceleration, and only two feet.
-  static constexpr int kObservationDim = 56;
+  static constexpr int kObservationDim = 46;
 };
 
 struct RewardWeights {
@@ -545,19 +542,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
                               : static_cast<mjtNum>(0.0);
     write_value(cmd_vx);
 
-    // Body height. The MPC uses it; the policy could not see it at all, yet the
-    // reward penalises |z - z_ref| and the survival criterion is a band on z.
-    write_value(static_cast<mjtNum>(last_state_est_.position[2]));
-
-    // Body linear acceleration -- an IMU signal, so this is available on real
-    // hardware, unlike the applied external force. It is the only channel that
-    // shows a push immediately: vBody below is its integral, and by the time
-    // the velocity has moved measurably 50-100 ms have passed, which is the
-    // same order as the vertical response latency this is meant to close.
-    for (int i = 0; i < 3; ++i) {
-      write_value(static_cast<mjtNum>(last_state_est_.aBody[i]));
-    }
-
     for (int i = 0; i < 3; ++i) {
       write_value(static_cast<mjtNum>(last_state_est_.vBody[i]));
     }
@@ -616,12 +600,11 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         foot_pos_body[leg].fill(static_cast<mjtNum>(0.0));
       }
     }
-    // All four feet. Legs 2 and 3 were computed but never written, so the
-    // policy saw half the stance geometry.
-    for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
-      for (int axis = 0; axis < 3; ++axis) {
-        write_value(foot_pos_body[leg][axis]);
-      }
+    for (int axis = 0; axis < 3; ++axis) {
+      write_value(foot_pos_body[0][axis]);
+    }
+    for (int axis = 0; axis < 3; ++axis) {
+      write_value(foot_pos_body[1][axis]);
     }
 
     mjtNum phi = static_cast<mjtNum>(0.0);
