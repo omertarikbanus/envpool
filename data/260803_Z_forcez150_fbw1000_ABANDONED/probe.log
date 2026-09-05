@@ -1,0 +1,7 @@
+[probe] steps=   655360 Fz_des mean=  249.5 sd=  8.35 corr=+0.178 gain=+0.020
+[probe] steps=  1572864 Fz_des mean=  251.4 sd=  9.57 corr=+0.122 gain=+0.018
+[probe] steps=  2359296 Fz_des mean=  249.2 sd=  9.97 corr=-0.102 gain=-0.021
+[probe] steps=  3276800 Fz_des mean=  248.5 sd= 15.49 corr=+0.041 gain=+0.009
+[probe] steps=  4063232 Fz_des mean=  251.6 sd= 11.71 corr=-0.153 gain=-0.022
+[probe] steps=  4849664 Fz_des mean=  250.9 sd= 12.57 corr=-0.076 gain=-0.011
+[probe] steps=  5111808 Fz_des mean=  250.8 sd= 12.82 corr=-0.025 gain=-0.004

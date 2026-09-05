@@ -1,0 +1,1766 @@
+Logging to data/tb_logs/20260803_185117
+INFO:root:Experiment: quadruped_ppo_experiment
+INFO:root:Using EnvPool for environment Humanoid-v4 with 256 envs. Seed: 0
+Using GPU: False
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+/usr/local/lib/python3.10/dist-packages/stable_baselines3/common/vec_env/base_vec_env.py:78: UserWarning: The `render_mode` attribute is not defined in your environment. It will be set to None.
+  warnings.warn("The `render_mode` attribute is not defined in your environment. It will be set to None.")
+Using VecNormalize wrapper...
+Creating new model...
+Using cpu device
+/usr/local/lib/python3.10/dist-packages/stable_baselines3/common/policies.py:486: UserWarning: As shared layers in the mlp_extractor are removed since SB3 v1.8.0, you should now pass directly a dictionary and not a list (net_arch=dict(pi=..., vf=...) instead of net_arch=[dict(pi=..., vf=...)])
+  warnings.warn(
+New model created.
+INFO:root:Overriding learning rate: 1e-05
+INFO:root:Overriding ent_coef: 0.05
+INFO:root:Starting training...
+[HumanoidEnv] Reset state env_id=0 z=0.298925 rpy=[0.000758349, -0.00157892, 0.000806413]
+[HumanoidEnv] unhealthy terminate at step=236 z=0.199649 rpy=[-0.504575, 0.408614, -1.60593] v_body=[-0.359575, -0.387685, -1.76644]
+[HumanoidEnv] Reset state env_id=0 z=0.298936 rpy=[0.00239635, -0.00150918, 0.000804634]
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 379      |
+|    ep_rew_mean     | 28.8     |
+| time/              |          |
+|    fps             | 3765     |
+|    iterations      | 1        |
+|    time_elapsed    | 34       |
+|    total_timesteps | 131072   |
+---------------------------------
+[HumanoidEnv] unhealthy terminate at step=539 z=0.190497 rpy=[-0.499429, 0.0490494, -0.783813] v_body=[-1.24766, 0.0684216, -1.56395]
+[HumanoidEnv] Reset state env_id=0 z=0.298938 rpy=[0.00205048, -0.0014519, 0.000799882]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 367          |
+|    ep_rew_mean          | 13.9         |
+| time/                   |              |
+|    fps                  | 2975         |
+|    iterations           | 2            |
+|    time_elapsed         | 88           |
+|    total_timesteps      | 262144       |
+| train/                  |              |
+|    approx_kl            | 0.0036744224 |
+|    clip_fraction        | 0.148        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 37.8         |
+|    explained_variance   | -0.0112      |
+|    learning_rate        | 1e-05        |
+|    loss                 | 4.89         |
+|    n_updates            | 10           |
+|    policy_gradient_loss | -0.00124     |
+|    std                  | 0.0502       |
+|    value_loss           | 2.67         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=293 z=0.199568 rpy=[-0.578394, 0.336337, -0.356967] v_body=[-0.404915, -0.0570015, -2.24801]
+[HumanoidEnv] Reset state env_id=0 z=0.298926 rpy=[5.11958e-05, -0.00155947, 0.000825653]
+[HumanoidEnv] unhealthy terminate at step=166 z=0.199579 rpy=[-0.481059, 0.266203, 0.329094] v_body=[0.450022, 0.809992, -0.868048]
+[HumanoidEnv] Reset state env_id=0 z=0.298924 rpy=[0.000403563, -0.00157025, 0.000797066]
+[HumanoidEnv] unhealthy terminate at step=262 z=0.195454 rpy=[2.31033, 0.0980118, 0.730759] v_body=[0.113865, 0.464403, 0.763341]
+[HumanoidEnv] Reset state env_id=0 z=0.29892 rpy=[-0.00117458, -0.00154441, 0.00072554]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 336          |
+|    ep_rew_mean          | 12.9         |
+| time/                   |              |
+|    fps                  | 2763         |
+|    iterations           | 3            |
+|    time_elapsed         | 142          |
+|    total_timesteps      | 393216       |
+| train/                  |              |
+|    approx_kl            | 0.0032362742 |
+|    clip_fraction        | 0.137        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 37.6         |
+|    explained_variance   | -0.0396      |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.65         |
+|    n_updates            | 20           |
+|    policy_gradient_loss | -0.0024      |
+|    std                  | 0.0506       |
+|    value_loss           | 0.817        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=229 z=0.198495 rpy=[-2.43369, -0.0531459, 0.584505] v_body=[0.642155, -0.640259, -0.509165]
+[HumanoidEnv] Reset state env_id=0 z=0.298924 rpy=[0.00282329, -0.00164354, 0.000731668]
+[HumanoidEnv] unhealthy terminate at step=258 z=0.197667 rpy=[3.0991, -0.0670715, 1.48417] v_body=[-0.145798, 0.93079, 0.48741]
+[HumanoidEnv] Reset state env_id=0 z=0.298932 rpy=[5.49561e-05, -0.00142017, 0.000763406]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 327          |
+|    ep_rew_mean          | 12.4         |
+| time/                   |              |
+|    fps                  | 2668         |
+|    iterations           | 4            |
+|    time_elapsed         | 196          |
+|    total_timesteps      | 524288       |
+| train/                  |              |
+|    approx_kl            | 0.0032727432 |
+|    clip_fraction        | 0.134        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 37.5         |
+|    explained_variance   | 0.158        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.57         |
+|    n_updates            | 30           |
+|    policy_gradient_loss | -0.0022      |
+|    std                  | 0.051        |
+|    value_loss           | 0.768        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=461 z=0.197309 rpy=[0.276969, 0.240935, -0.873138] v_body=[0.167608, 0.53078, -0.429876]
+[HumanoidEnv] Reset state env_id=0 z=0.298924 rpy=[0.000199983, -0.00156263, 0.000788827]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 316          |
+|    ep_rew_mean          | 12           |
+| time/                   |              |
+|    fps                  | 2611         |
+|    iterations           | 5            |
+|    time_elapsed         | 250          |
+|    total_timesteps      | 655360       |
+| train/                  |              |
+|    approx_kl            | 0.0032371206 |
+|    clip_fraction        | 0.132        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 37.3         |
+|    explained_variance   | 0.243        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.56         |
+|    n_updates            | 40           |
+|    policy_gradient_loss | -0.00226     |
+|    std                  | 0.0514       |
+|    value_loss           | 0.701        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=289 z=0.19977 rpy=[-0.873343, 0.113861, 0.425881] v_body=[1.04979, -1.03226, 0.565189]
+[HumanoidEnv] Reset state env_id=0 z=0.298925 rpy=[-0.000540123, -0.00152874, 0.000802089]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 365         |
+|    ep_rew_mean          | 13.8        |
+| time/                   |             |
+|    fps                  | 2569        |
+|    iterations           | 6           |
+|    time_elapsed         | 306         |
+|    total_timesteps      | 786432      |
+| train/                  |             |
+|    approx_kl            | 0.003332147 |
+|    clip_fraction        | 0.135       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 37.1        |
+|    explained_variance   | 0.357       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.47        |
+|    n_updates            | 50          |
+|    policy_gradient_loss | -0.00235    |
+|    std                  | 0.0518      |
+|    value_loss           | 0.631       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=369 z=0.198092 rpy=[1.53464, -0.27139, -1.82038] v_body=[0.470993, -1.42149, -1.45785]
+[HumanoidEnv] Reset state env_id=0 z=0.298922 rpy=[-0.00153469, -0.00153573, 0.000729059]
+[HumanoidEnv] unhealthy terminate at step=100 z=0.197199 rpy=[0.98811, 0.08081, 0.00112479] v_body=[0.72863, 0.12113, -1.36977]
+[HumanoidEnv] Reset state env_id=0 z=0.298922 rpy=[-0.000293404, -0.00155231, 0.000767607]
+[HumanoidEnv] unhealthy terminate at step=163 z=0.198034 rpy=[-0.683944, 0.176774, 0.178765] v_body=[0.72182, 0.195464, -0.907833]
+[HumanoidEnv] Reset state env_id=0 z=0.298942 rpy=[-0.00193573, -0.00134358, 0.00084453]
+[HumanoidEnv] unhealthy terminate at step=138 z=0.19663 rpy=[-2.58349, 0.332604, -0.885233] v_body=[0.536301, -0.119147, 1.56697]
+[HumanoidEnv] Reset state env_id=0 z=0.29892 rpy=[-0.000821183, -0.00154558, 0.000743191]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 302          |
+|    ep_rew_mean          | 11.3         |
+| time/                   |              |
+|    fps                  | 2543         |
+|    iterations           | 7            |
+|    time_elapsed         | 360          |
+|    total_timesteps      | 917504       |
+| train/                  |              |
+|    approx_kl            | 0.0031549814 |
+|    clip_fraction        | 0.131        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 36.9         |
+|    explained_variance   | 0.457        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.41         |
+|    n_updates            | 60           |
+|    policy_gradient_loss | -0.00233     |
+|    std                  | 0.0523       |
+|    value_loss           | 0.578        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=302 z=0.192882 rpy=[-2.97969, 0.177649, -1.2966] v_body=[0.0989896, -0.588242, 1.74579]
+[HumanoidEnv] Reset state env_id=0 z=0.29892 rpy=[0.000473774, -0.00157657, 0.000750051]
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt.zip
+INFO:root:Checkpoint written at 1000192 timesteps
+[HumanoidEnv] unhealthy terminate at step=156 z=0.193036 rpy=[-0.555279, 0.238293, 0.0566011] v_body=[0.715459, 0.0591578, -1.06379]
+[HumanoidEnv] Reset state env_id=0 z=0.298931 rpy=[0.000505017, -0.00149162, 0.000810832]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 331          |
+|    ep_rew_mean          | 12.6         |
+| time/                   |              |
+|    fps                  | 2514         |
+|    iterations           | 8            |
+|    time_elapsed         | 416          |
+|    total_timesteps      | 1048576      |
+| train/                  |              |
+|    approx_kl            | 0.0033046454 |
+|    clip_fraction        | 0.136        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 36.7         |
+|    explained_variance   | 0.558        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.33         |
+|    n_updates            | 70           |
+|    policy_gradient_loss | -0.00246     |
+|    std                  | 0.0527       |
+|    value_loss           | 0.514        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=397 z=0.195048 rpy=[-1.42919, 0.172826, -0.290866] v_body=[-0.730519, -0.749377, -0.689497]
+[HumanoidEnv] Reset state env_id=0 z=0.298924 rpy=[-0.00163081, -0.00152468, 0.000745477]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 321          |
+|    ep_rew_mean          | 12.2         |
+| time/                   |              |
+|    fps                  | 2495         |
+|    iterations           | 9            |
+|    time_elapsed         | 472          |
+|    total_timesteps      | 1179648      |
+| train/                  |              |
+|    approx_kl            | 0.0032472212 |
+|    clip_fraction        | 0.131        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 36.5         |
+|    explained_variance   | 0.592        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.3          |
+|    n_updates            | 80           |
+|    policy_gradient_loss | -0.00234     |
+|    std                  | 0.0531       |
+|    value_loss           | 0.488        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=458 z=0.199902 rpy=[-1.58257, -0.471656, -0.830858] v_body=[-0.115582, -0.964328, 0.762434]
+[HumanoidEnv] Reset state env_id=0 z=0.298926 rpy=[0.000268758, -0.00156417, 0.000827533]
+[HumanoidEnv] unhealthy terminate at step=159 z=0.196555 rpy=[-0.718871, 0.324554, 0.294369] v_body=[0.599318, 0.140598, -0.921648]
+[HumanoidEnv] Reset state env_id=0 z=0.298922 rpy=[0.00140602, -0.00158048, 0.000725057]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 320          |
+|    ep_rew_mean          | 12.2         |
+| time/                   |              |
+|    fps                  | 2486         |
+|    iterations           | 10           |
+|    time_elapsed         | 527          |
+|    total_timesteps      | 1310720      |
+| train/                  |              |
+|    approx_kl            | 0.0032074903 |
+|    clip_fraction        | 0.128        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 36.3         |
+|    explained_variance   | 0.634        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.26         |
+|    n_updates            | 90           |
+|    policy_gradient_loss | -0.00208     |
+|    std                  | 0.0535       |
+|    value_loss           | 0.466        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=194 z=0.195251 rpy=[2.10437, 0.0513638, -0.57801] v_body=[0.808872, -0.378069, 1.21499]
+[HumanoidEnv] Reset state env_id=0 z=0.298929 rpy=[0.00189403, -0.00155405, 0.000783382]
+[HumanoidEnv] unhealthy terminate at step=303 z=0.198121 rpy=[1.25213, -0.0607638, -0.272182] v_body=[0.401055, -0.0582368, -1.15875]
+[HumanoidEnv] Reset state env_id=0 z=0.298933 rpy=[-0.00182397, -0.0014424, 0.000810482]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 289          |
+|    ep_rew_mean          | 10.9         |
+| time/                   |              |
+|    fps                  | 2477         |
+|    iterations           | 11           |
+|    time_elapsed         | 581          |
+|    total_timesteps      | 1441792      |
+| train/                  |              |
+|    approx_kl            | 0.0032298178 |
+|    clip_fraction        | 0.129        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 36.1         |
+|    explained_variance   | 0.663        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.24         |
+|    n_updates            | 100          |
+|    policy_gradient_loss | -0.00222     |
+|    std                  | 0.054        |
+|    value_loss           | 0.455        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=171 z=0.189981 rpy=[1.19684, -0.0455461, -1.57147] v_body=[1.17375, 0.102064, -0.283643]
+[HumanoidEnv] Reset state env_id=0 z=0.298922 rpy=[0.000977178, -0.00157664, 0.000746825]
+[HumanoidEnv] unhealthy terminate at step=157 z=0.197076 rpy=[-0.924369, 0.290285, 0.209375] v_body=[0.498442, 0.158352, -0.805254]
+[HumanoidEnv] Reset state env_id=0 z=0.298923 rpy=[0.00248761, -0.00163283, 0.000735763]
+[HumanoidEnv] unhealthy terminate at step=230 z=0.19752 rpy=[1.17886, -0.261204, -1.73361] v_body=[0.244543, 0.259317, -0.0465134]
+[HumanoidEnv] Reset state env_id=0 z=0.298942 rpy=[-0.00205111, -0.00135689, 0.000849102]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 305          |
+|    ep_rew_mean          | 11.7         |
+| time/                   |              |
+|    fps                  | 2469         |
+|    iterations           | 12           |
+|    time_elapsed         | 636          |
+|    total_timesteps      | 1572864      |
+| train/                  |              |
+|    approx_kl            | 0.0032174329 |
+|    clip_fraction        | 0.13         |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.9         |
+|    explained_variance   | 0.73         |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.21         |
+|    n_updates            | 110          |
+|    policy_gradient_loss | -0.00216     |
+|    std                  | 0.0544       |
+|    value_loss           | 0.426        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=495 z=0.196759 rpy=[-3.04951, -0.0625775, -0.733991] v_body=[-0.918857, 0.678635, 0.358321]
+[HumanoidEnv] Reset state env_id=0 z=0.298942 rpy=[-0.00209009, -0.00137517, 0.000869347]
+[HumanoidEnv] unhealthy terminate at step=124 z=0.197198 rpy=[2.9491, -0.0516351, -0.0149493] v_body=[-0.0623228, 1.32093, 0.0854126]
+[HumanoidEnv] Reset state env_id=0 z=0.298928 rpy=[0.00109343, -0.00147915, 0.000737481]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 330          |
+|    ep_rew_mean          | 12.5         |
+| time/                   |              |
+|    fps                  | 2463         |
+|    iterations           | 13           |
+|    time_elapsed         | 691          |
+|    total_timesteps      | 1703936      |
+| train/                  |              |
+|    approx_kl            | 0.0031873856 |
+|    clip_fraction        | 0.128        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.7         |
+|    explained_variance   | 0.748        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.22         |
+|    n_updates            | 120          |
+|    policy_gradient_loss | -0.00212     |
+|    std                  | 0.0548       |
+|    value_loss           | 0.424        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=360 z=0.196763 rpy=[-2.26323, -0.0573369, -1.04513] v_body=[-0.485081, -0.694987, 0.739316]
+[HumanoidEnv] Reset state env_id=0 z=0.298941 rpy=[-0.00205266, -0.00137169, 0.000860536]
+[HumanoidEnv] unhealthy terminate at step=132 z=0.198051 rpy=[-0.941438, -0.165308, -0.573347] v_body=[-0.156662, -1.77719, -0.676252]
+[HumanoidEnv] Reset state env_id=0 z=0.298927 rpy=[-0.000283206, -0.0015295, 0.000823953]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 286         |
+|    ep_rew_mean          | 10.8        |
+| time/                   |             |
+|    fps                  | 2459        |
+|    iterations           | 14          |
+|    time_elapsed         | 746         |
+|    total_timesteps      | 1835008     |
+| train/                  |             |
+|    approx_kl            | 0.003194416 |
+|    clip_fraction        | 0.129       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 35.5        |
+|    explained_variance   | 0.778       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.18        |
+|    n_updates            | 130         |
+|    policy_gradient_loss | -0.0023     |
+|    std                  | 0.0553      |
+|    value_loss           | 0.397       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=330 z=0.193812 rpy=[-0.276296, 0.0436896, -0.398144] v_body=[-0.0742864, -0.381523, -1.51171]
+[HumanoidEnv] Reset state env_id=0 z=0.298921 rpy=[-0.000297122, -0.00155698, 0.000752202]
+[HumanoidEnv] unhealthy terminate at step=199 z=0.198401 rpy=[-1.99897, -0.0147877, -0.554821] v_body=[0.149664, -1.26866, -0.21287]
+[HumanoidEnv] Reset state env_id=0 z=0.298919 rpy=[-0.000268566, -0.00155864, 0.000723333]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 316          |
+|    ep_rew_mean          | 11.8         |
+| time/                   |              |
+|    fps                  | 2456         |
+|    iterations           | 15           |
+|    time_elapsed         | 800          |
+|    total_timesteps      | 1966080      |
+| train/                  |              |
+|    approx_kl            | 0.0031279104 |
+|    clip_fraction        | 0.129        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.3         |
+|    explained_variance   | 0.798        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.18         |
+|    n_updates            | 140          |
+|    policy_gradient_loss | -0.00199     |
+|    std                  | 0.0557       |
+|    value_loss           | 0.424        |
+------------------------------------------
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt.zip
+INFO:root:Checkpoint written at 2000384 timesteps
+[HumanoidEnv] unhealthy terminate at step=307 z=0.195184 rpy=[2.53948, -0.627155, -0.881051] v_body=[1.32096, 1.17958, -0.388215]
+[HumanoidEnv] Reset state env_id=0 z=0.298927 rpy=[0.00253086, -0.00162985, 0.000790903]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 342          |
+|    ep_rew_mean          | 12.6         |
+| time/                   |              |
+|    fps                  | 2453         |
+|    iterations           | 16           |
+|    time_elapsed         | 854          |
+|    total_timesteps      | 2097152      |
+| train/                  |              |
+|    approx_kl            | 0.0030456148 |
+|    clip_fraction        | 0.127        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.1         |
+|    explained_variance   | 0.816        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.19         |
+|    n_updates            | 150          |
+|    policy_gradient_loss | -0.00194     |
+|    std                  | 0.0562       |
+|    value_loss           | 0.429        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=413 z=0.199739 rpy=[-1.38752, -0.296027, -0.480313] v_body=[0.533822, -0.823046, 0.0523906]
+[HumanoidEnv] Reset state env_id=0 z=0.298917 rpy=[0.000601843, -0.00157699, 0.000695968]
+[HumanoidEnv] unhealthy terminate at step=144 z=0.197022 rpy=[0.324473, 0.155421, 0.0765104] v_body=[1.05682, 0.0162858, -1.06615]
+[HumanoidEnv] Reset state env_id=0 z=0.298928 rpy=[0.00125234, -0.00155535, 0.000811742]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 345          |
+|    ep_rew_mean          | 12.9         |
+| time/                   |              |
+|    fps                  | 2450         |
+|    iterations           | 17           |
+|    time_elapsed         | 909          |
+|    total_timesteps      | 2228224      |
+| train/                  |              |
+|    approx_kl            | 0.0031560473 |
+|    clip_fraction        | 0.128        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.9         |
+|    explained_variance   | 0.83         |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.16         |
+|    n_updates            | 160          |
+|    policy_gradient_loss | -0.00202     |
+|    std                  | 0.0566       |
+|    value_loss           | 0.437        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=490 z=0.196151 rpy=[-0.0754397, 0.122306, 0.984263] v_body=[0.0530182, -0.456444, -0.314846]
+[HumanoidEnv] Reset state env_id=0 z=0.298934 rpy=[0.00137979, -0.00148344, 0.000805187]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 345          |
+|    ep_rew_mean          | 12.9         |
+| time/                   |              |
+|    fps                  | 2448         |
+|    iterations           | 18           |
+|    time_elapsed         | 963          |
+|    total_timesteps      | 2359296      |
+| train/                  |              |
+|    approx_kl            | 0.0031262736 |
+|    clip_fraction        | 0.126        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.8         |
+|    explained_variance   | 0.841        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.18         |
+|    n_updates            | 170          |
+|    policy_gradient_loss | -0.00213     |
+|    std                  | 0.0571       |
+|    value_loss           | 0.41         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=391 z=0.189039 rpy=[1.0252, -0.0925158, 1.12499] v_body=[-1.02177, 1.62698, 0.499187]
+[HumanoidEnv] Reset state env_id=0 z=0.298918 rpy=[0.00180733, -0.00161728, 0.0006934]
+[HumanoidEnv] unhealthy terminate at step=245 z=0.199249 rpy=[1.98655, 0.26687, -1.80248] v_body=[0.571803, -1.19402, 0.242116]
+[HumanoidEnv] Reset state env_id=0 z=0.298928 rpy=[0.0011427, -0.00156192, 0.000828048]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 336          |
+|    ep_rew_mean          | 12.6         |
+| time/                   |              |
+|    fps                  | 2446         |
+|    iterations           | 19           |
+|    time_elapsed         | 1017         |
+|    total_timesteps      | 2490368      |
+| train/                  |              |
+|    approx_kl            | 0.0031266105 |
+|    clip_fraction        | 0.127        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.6         |
+|    explained_variance   | 0.845        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.16         |
+|    n_updates            | 180          |
+|    policy_gradient_loss | -0.00197     |
+|    std                  | 0.0575       |
+|    value_loss           | 0.45         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=467 z=0.197702 rpy=[-0.645002, -0.31285, -0.648644] v_body=[0.808313, -0.561171, -0.924921]
+[HumanoidEnv] Reset state env_id=0 z=0.298923 rpy=[-8.06574e-05, -0.0015593, 0.000790517]
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 355        |
+|    ep_rew_mean          | 13.3       |
+| time/                   |            |
+|    fps                  | 2444       |
+|    iterations           | 20         |
+|    time_elapsed         | 1072       |
+|    total_timesteps      | 2621440    |
+| train/                  |            |
+|    approx_kl            | 0.00316968 |
+|    clip_fraction        | 0.127      |
+|    clip_range           | 0.1        |
+|    clip_range_vf        | 0.2        |
+|    entropy_loss         | 34.4       |
+|    explained_variance   | 0.849      |
+|    learning_rate        | 1e-05      |
+|    loss                 | 2.14       |
+|    n_updates            | 190        |
+|    policy_gradient_loss | -0.00221   |
+|    std                  | 0.058      |
+|    value_loss           | 0.438      |
+----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=276 z=0.19809 rpy=[0.329713, 0.288656, 0.447344] v_body=[-0.030098, 0.464428, -2.00954]
+[HumanoidEnv] Reset state env_id=0 z=0.298921 rpy=[0.00133461, -0.00159704, 0.000748869]
+[HumanoidEnv] unhealthy terminate at step=223 z=0.195995 rpy=[0.522448, 0.116551, -0.233354] v_body=[0.15122, 0.37456, -0.764378]
+[HumanoidEnv] Reset state env_id=0 z=0.298932 rpy=[-0.000608718, -0.00139578, 0.000736484]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 380          |
+|    ep_rew_mean          | 14.2         |
+| time/                   |              |
+|    fps                  | 2442         |
+|    iterations           | 21           |
+|    time_elapsed         | 1126         |
+|    total_timesteps      | 2752512      |
+| train/                  |              |
+|    approx_kl            | 0.0031225467 |
+|    clip_fraction        | 0.127        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.2         |
+|    explained_variance   | 0.868        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.15         |
+|    n_updates            | 200          |
+|    policy_gradient_loss | -0.00201     |
+|    std                  | 0.0585       |
+|    value_loss           | 0.45         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=433 z=0.183854 rpy=[-0.503375, -0.656948, 1.07519] v_body=[1.11731, 2.0152, -2.70066]
+[HumanoidEnv] Reset state env_id=0 z=0.298933 rpy=[0.00167365, -0.00150673, 0.00080455]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 355          |
+|    ep_rew_mean          | 13.3         |
+| time/                   |              |
+|    fps                  | 2441         |
+|    iterations           | 22           |
+|    time_elapsed         | 1181         |
+|    total_timesteps      | 2883584      |
+| train/                  |              |
+|    approx_kl            | 0.0030960646 |
+|    clip_fraction        | 0.126        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34           |
+|    explained_variance   | 0.877        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.12         |
+|    n_updates            | 210          |
+|    policy_gradient_loss | -0.00211     |
+|    std                  | 0.0589       |
+|    value_loss           | 0.453        |
+------------------------------------------
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt.zip
+INFO:root:Checkpoint written at 3000576 timesteps
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 373          |
+|    ep_rew_mean          | 14           |
+| time/                   |              |
+|    fps                  | 2438         |
+|    iterations           | 23           |
+|    time_elapsed         | 1236         |
+|    total_timesteps      | 3014656      |
+| train/                  |              |
+|    approx_kl            | 0.0030446337 |
+|    clip_fraction        | 0.122        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.8         |
+|    explained_variance   | 0.885        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.16         |
+|    n_updates            | 220          |
+|    policy_gradient_loss | -0.00185     |
+|    std                  | 0.0594       |
+|    value_loss           | 0.462        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=726 z=0.185462 rpy=[1.2591, 0.145694, 2.77922] v_body=[-0.97467, -1.72656, 0.919785]
+[HumanoidEnv] Reset state env_id=0 z=0.298934 rpy=[-0.00015527, -0.0014176, 0.000786186]
+[HumanoidEnv] unhealthy terminate at step=431 z=0.185637 rpy=[0.378061, 0.223839, 0.338498] v_body=[-0.268197, 0.236168, -1.78935]
+[HumanoidEnv] Reset state env_id=0 z=0.298934 rpy=[-0.000398135, -0.00142288, 0.000809516]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 358          |
+|    ep_rew_mean          | 13.6         |
+| time/                   |              |
+|    fps                  | 2433         |
+|    iterations           | 24           |
+|    time_elapsed         | 1292         |
+|    total_timesteps      | 3145728      |
+| train/                  |              |
+|    approx_kl            | 0.0030670012 |
+|    clip_fraction        | 0.124        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.6         |
+|    explained_variance   | 0.886        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.18         |
+|    n_updates            | 230          |
+|    policy_gradient_loss | -0.00219     |
+|    std                  | 0.0599       |
+|    value_loss           | 0.453        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=402 z=0.199942 rpy=[-0.98897, 0.30614, 0.216075] v_body=[-0.169229, 0.3143, -0.932971]
+[HumanoidEnv] Reset state env_id=0 z=0.298923 rpy=[0.0022719, -0.0015624, 0.000690461]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 346          |
+|    ep_rew_mean          | 13.2         |
+| time/                   |              |
+|    fps                  | 2429         |
+|    iterations           | 25           |
+|    time_elapsed         | 1348         |
+|    total_timesteps      | 3276800      |
+| train/                  |              |
+|    approx_kl            | 0.0030880473 |
+|    clip_fraction        | 0.124        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.4         |
+|    explained_variance   | 0.885        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.09         |
+|    n_updates            | 240          |
+|    policy_gradient_loss | -0.002       |
+|    std                  | 0.0604       |
+|    value_loss           | 0.478        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=316 z=0.193988 rpy=[0.791637, -0.204714, 1.21298] v_body=[-0.690108, 1.03694, -1.52964]
+[HumanoidEnv] Reset state env_id=0 z=0.29894 rpy=[-0.000715351, -0.00137338, 0.000830628]
+[HumanoidEnv] unhealthy terminate at step=301 z=0.197632 rpy=[1.26594, 0.28787, 1.08562] v_body=[0.284076, 0.349508, -1.71537]
+[HumanoidEnv] Reset state env_id=0 z=0.298921 rpy=[0.000834288, -0.00158832, 0.000752903]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 333          |
+|    ep_rew_mean          | 12.7         |
+| time/                   |              |
+|    fps                  | 2423         |
+|    iterations           | 26           |
+|    time_elapsed         | 1406         |
+|    total_timesteps      | 3407872      |
+| train/                  |              |
+|    approx_kl            | 0.0029863156 |
+|    clip_fraction        | 0.123        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.2         |
+|    explained_variance   | 0.883        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.15         |
+|    n_updates            | 250          |
+|    policy_gradient_loss | -0.0019      |
+|    std                  | 0.0608       |
+|    value_loss           | 0.499        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=155 z=0.198948 rpy=[-0.708586, 0.368642, 0.0747237] v_body=[-0.244056, 0.184056, -0.209635]
+[HumanoidEnv] Reset state env_id=0 z=0.298923 rpy=[-0.000207531, -0.00155693, 0.000782134]
+[HumanoidEnv] unhealthy terminate at step=162 z=0.198557 rpy=[-0.646344, 0.143162, 0.166898] v_body=[0.677089, 0.36342, -0.737784]
+[HumanoidEnv] Reset state env_id=0 z=0.298927 rpy=[0.000784793, -0.00156298, 0.000829527]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 384         |
+|    ep_rew_mean          | 14.5        |
+| time/                   |             |
+|    fps                  | 2421        |
+|    iterations           | 27          |
+|    time_elapsed         | 1461        |
+|    total_timesteps      | 3538944     |
+| train/                  |             |
+|    approx_kl            | 0.003080123 |
+|    clip_fraction        | 0.124       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 33          |
+|    explained_variance   | 0.89        |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.14        |
+|    n_updates            | 260         |
+|    policy_gradient_loss | -0.00201    |
+|    std                  | 0.0613      |
+|    value_loss           | 0.481       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=290 z=0.19266 rpy=[-0.818116, -0.093742, -0.191452] v_body=[1.87165, -1.47247, -1.55528]
+[HumanoidEnv] Reset state env_id=0 z=0.298934 rpy=[-0.00173259, -0.00148578, 0.000863676]
+[HumanoidEnv] unhealthy terminate at step=159 z=0.19068 rpy=[-2.89292, -0.161583, -0.520665] v_body=[0.791785, -0.411736, 1.68645]
+[HumanoidEnv] Reset state env_id=0 z=0.298925 rpy=[0.000325351, -0.0015573, 0.000802589]
+[HumanoidEnv] unhealthy terminate at step=154 z=0.195941 rpy=[-0.704844, 0.315108, 0.198312] v_body=[0.810127, 0.0305532, -0.792859]
+[HumanoidEnv] Reset state env_id=0 z=0.298937 rpy=[0.00183527, -0.00145564, 0.000791938]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 377         |
+|    ep_rew_mean          | 14.5        |
+| time/                   |             |
+|    fps                  | 2421        |
+|    iterations           | 28          |
+|    time_elapsed         | 1515        |
+|    total_timesteps      | 3670016     |
+| train/                  |             |
+|    approx_kl            | 0.003034789 |
+|    clip_fraction        | 0.123       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 32.8        |
+|    explained_variance   | 0.89        |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.09        |
+|    n_updates            | 270         |
+|    policy_gradient_loss | -0.00184    |
+|    std                  | 0.0618      |
+|    value_loss           | 0.482       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=418 z=0.195591 rpy=[-0.672587, 0.247361, -0.0461982] v_body=[-0.0926004, -0.297296, -1.24723]
+[HumanoidEnv] Reset state env_id=0 z=0.298929 rpy=[0.00153237, -0.00147547, 0.000713634]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 365          |
+|    ep_rew_mean          | 13.9         |
+| time/                   |              |
+|    fps                  | 2421         |
+|    iterations           | 29           |
+|    time_elapsed         | 1570         |
+|    total_timesteps      | 3801088      |
+| train/                  |              |
+|    approx_kl            | 0.0030069426 |
+|    clip_fraction        | 0.12         |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 32.6         |
+|    explained_variance   | 0.893        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.08         |
+|    n_updates            | 280          |
+|    policy_gradient_loss | -0.00179     |
+|    std                  | 0.0623       |
+|    value_loss           | 0.469        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=330 z=0.197351 rpy=[-0.660616, -0.0843861, -0.248966] v_body=[0.954686, 0.111317, -1.36683]
+[HumanoidEnv] Reset state env_id=0 z=0.298918 rpy=[0.00233923, -0.00163745, 0.0006852]
+[HumanoidEnv] unhealthy terminate at step=147 z=0.193978 rpy=[-0.698807, 0.327438, 0.212254] v_body=[0.0993759, -0.44026, -1.12956]
+[HumanoidEnv] Reset state env_id=0 z=0.298921 rpy=[8.34317e-07, -0.00154355, 0.000729732]
+[HumanoidEnv] unhealthy terminate at step=154 z=0.189859 rpy=[-0.550889, 0.307698, 0.247831] v_body=[0.665552, -0.118506, -1.08779]
+[HumanoidEnv] Reset state env_id=0 z=0.298917 rpy=[0.00255904, -0.00163812, 0.000649119]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 354         |
+|    ep_rew_mean          | 13.3        |
+| time/                   |             |
+|    fps                  | 2421        |
+|    iterations           | 30          |
+|    time_elapsed         | 1624        |
+|    total_timesteps      | 3932160     |
+| train/                  |             |
+|    approx_kl            | 0.003071927 |
+|    clip_fraction        | 0.123       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 32.4        |
+|    explained_variance   | 0.898       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.15        |
+|    n_updates            | 290         |
+|    policy_gradient_loss | -0.00198    |
+|    std                  | 0.0628      |
+|    value_loss           | 0.479       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=203 z=0.196839 rpy=[3.12639, 0.433329, -0.407079] v_body=[0.321548, 0.0955524, 0.479472]
+[HumanoidEnv] Reset state env_id=0 z=0.298921 rpy=[0.00133325, -0.00160003, 0.000753534]
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt.zip
+INFO:root:Checkpoint written at 4000768 timesteps
+[HumanoidEnv] unhealthy terminate at step=340 z=0.764969 rpy=[0.341438, -0.0313698, -1.27373] v_body=[0.0502513, -1.16268, 1.77495]
+[HumanoidEnv] Reset state env_id=0 z=0.298927 rpy=[-0.000735031, -0.00147157, 0.000764801]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 371         |
+|    ep_rew_mean          | 14.1        |
+| time/                   |             |
+|    fps                  | 2420        |
+|    iterations           | 31          |
+|    time_elapsed         | 1678        |
+|    total_timesteps      | 4063232     |
+| train/                  |             |
+|    approx_kl            | 0.003117489 |
+|    clip_fraction        | 0.125       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 32.2        |
+|    explained_variance   | 0.893       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.1         |
+|    n_updates            | 300         |
+|    policy_gradient_loss | -0.00208    |
+|    std                  | 0.0634      |
+|    value_loss           | 0.486       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=269 z=0.190701 rpy=[0.513228, 0.0806236, 0.113026] v_body=[0.427883, -0.267228, -1.51729]
+[HumanoidEnv] Reset state env_id=0 z=0.298919 rpy=[0.000175039, -0.00157188, 0.000728919]
+[HumanoidEnv] unhealthy terminate at step=235 z=0.198894 rpy=[-1.64971, -0.142324, 3.12404] v_body=[-0.730654, 0.950079, 1.2294]
+[HumanoidEnv] Reset state env_id=0 z=0.298916 rpy=[0.00258312, -0.00164565, 0.000648839]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 341          |
+|    ep_rew_mean          | 13           |
+| time/                   |              |
+|    fps                  | 2420         |
+|    iterations           | 32           |
+|    time_elapsed         | 1732         |
+|    total_timesteps      | 4194304      |
+| train/                  |              |
+|    approx_kl            | 0.0031410758 |
+|    clip_fraction        | 0.125        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 32.1         |
+|    explained_variance   | 0.896        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.06         |
+|    n_updates            | 310          |
+|    policy_gradient_loss | -0.00217     |
+|    std                  | 0.0639       |
+|    value_loss           | 0.47         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=250 z=0.197346 rpy=[1.67311, 0.234067, 2.55682] v_body=[-0.763973, -1.31358, 1.32241]
+[HumanoidEnv] Reset state env_id=0 z=0.298932 rpy=[0.00158044, -0.00150134, 0.00078838]
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 331        |
+|    ep_rew_mean          | 12.6       |
+| time/                   |            |
+|    fps                  | 2420       |
+|    iterations           | 33         |
+|    time_elapsed         | 1786       |
+|    total_timesteps      | 4325376    |
+| train/                  |            |
+|    approx_kl            | 0.00307342 |
+|    clip_fraction        | 0.122      |
+|    clip_range           | 0.1        |
+|    clip_range_vf        | 0.2        |
+|    entropy_loss         | 31.9       |
+|    explained_variance   | 0.898      |
+|    learning_rate        | 1e-05      |
+|    loss                 | 2.01       |
+|    n_updates            | 320        |
+|    policy_gradient_loss | -0.00205   |
+|    std                  | 0.0644     |
+|    value_loss           | 0.464      |
+----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=650 z=0.196157 rpy=[-0.804818, 0.00521328, -0.426791] v_body=[-0.392067, -0.722311, -0.138632]
+[HumanoidEnv] Reset state env_id=0 z=0.298928 rpy=[0.00260387, -0.00161572, 0.000772201]
+[HumanoidEnv] unhealthy terminate at step=223 z=0.198653 rpy=[1.45256, 0.39281, 0.539442] v_body=[0.158576, 0.161935, -0.390201]
+[HumanoidEnv] Reset state env_id=0 z=0.298923 rpy=[-0.000195666, -0.00155715, 0.000788778]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 324          |
+|    ep_rew_mean          | 12.3         |
+| time/                   |              |
+|    fps                  | 2420         |
+|    iterations           | 34           |
+|    time_elapsed         | 1840         |
+|    total_timesteps      | 4456448      |
+| train/                  |              |
+|    approx_kl            | 0.0031074912 |
+|    clip_fraction        | 0.126        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 31.7         |
+|    explained_variance   | 0.901        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.01         |
+|    n_updates            | 330          |
+|    policy_gradient_loss | -0.00214     |
+|    std                  | 0.0649       |
+|    value_loss           | 0.46         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=381 z=0.1967 rpy=[2.4202, -0.177311, 1.83842] v_body=[0.852814, 0.16645, 1.71604]
+[HumanoidEnv] Reset state env_id=0 z=0.298939 rpy=[-0.00149538, -0.00137225, 0.000832994]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 353          |
+|    ep_rew_mean          | 13.6         |
+| time/                   |              |
+|    fps                  | 2420         |
+|    iterations           | 35           |
+|    time_elapsed         | 1895         |
+|    total_timesteps      | 4587520      |
+| train/                  |              |
+|    approx_kl            | 0.0029932284 |
+|    clip_fraction        | 0.122        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 31.5         |
+|    explained_variance   | 0.899        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.06         |
+|    n_updates            | 340          |
+|    policy_gradient_loss | -0.00199     |
+|    std                  | 0.0654       |
+|    value_loss           | 0.48         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=473 z=0.199201 rpy=[-1.76361, 0.0626797, -0.186345] v_body=[-0.433237, -0.498463, -0.726459]
+[HumanoidEnv] Reset state env_id=0 z=0.298923 rpy=[0.0003466, -0.00156911, 0.000775571]
+[HumanoidEnv] unhealthy terminate at step=161 z=0.198041 rpy=[-0.572934, 0.218551, 0.223368] v_body=[0.63945, 0.172805, -0.946665]
+[HumanoidEnv] Reset state env_id=0 z=0.298933 rpy=[0.001537, -0.00148844, 0.000793222]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 346          |
+|    ep_rew_mean          | 13.2         |
+| time/                   |              |
+|    fps                  | 2420         |
+|    iterations           | 36           |
+|    time_elapsed         | 1949         |
+|    total_timesteps      | 4718592      |
+| train/                  |              |
+|    approx_kl            | 0.0029877974 |
+|    clip_fraction        | 0.122        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 31.3         |
+|    explained_variance   | 0.897        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.97         |
+|    n_updates            | 350          |
+|    policy_gradient_loss | -0.00191     |
+|    std                  | 0.066        |
+|    value_loss           | 0.463        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=412 z=0.195504 rpy=[-0.344904, -0.00692039, -0.550847] v_body=[0.759356, -0.144109, -0.78011]
+[HumanoidEnv] Reset state env_id=0 z=0.298936 rpy=[-0.000739742, -0.00138489, 0.000793893]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 369          |
+|    ep_rew_mean          | 14.3         |
+| time/                   |              |
+|    fps                  | 2421         |
+|    iterations           | 37           |
+|    time_elapsed         | 2003         |
+|    total_timesteps      | 4849664      |
+| train/                  |              |
+|    approx_kl            | 0.0029874207 |
+|    clip_fraction        | 0.121        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 31.1         |
+|    explained_variance   | 0.898        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.07         |
+|    n_updates            | 360          |
+|    policy_gradient_loss | -0.00182     |
+|    std                  | 0.0665       |
+|    value_loss           | 0.48         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=309 z=0.182471 rpy=[0.441724, -0.0793945, -0.63151] v_body=[0.144299, 0.715239, -2.93257]
+[HumanoidEnv] Reset state env_id=0 z=0.298941 rpy=[-1.69975e-06, -0.00138143, 0.000851584]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 373          |
+|    ep_rew_mean          | 14.5         |
+| time/                   |              |
+|    fps                  | 2420         |
+|    iterations           | 38           |
+|    time_elapsed         | 2057         |
+|    total_timesteps      | 4980736      |
+| train/                  |              |
+|    approx_kl            | 0.0029729735 |
+|    clip_fraction        | 0.12         |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 30.9         |
+|    explained_variance   | 0.899        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.02         |
+|    n_updates            | 370          |
+|    policy_gradient_loss | -0.00177     |
+|    std                  | 0.067        |
+|    value_loss           | 0.468        |
+------------------------------------------
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt.zip
+INFO:root:Checkpoint written at 5000960 timesteps
+[HumanoidEnv] unhealthy terminate at step=433 z=0.198761 rpy=[-1.18138, -0.220028, -0.327196] v_body=[0.903726, -0.549422, -0.0916029]
+[HumanoidEnv] Reset state env_id=0 z=0.29892 rpy=[0.000973991, -0.00155188, 0.000709605]
+[HumanoidEnv] unhealthy terminate at step=302 z=0.189902 rpy=[-0.478311, 0.0734802, -0.274782] v_body=[0.918472, -0.817933, -1.87621]
+[HumanoidEnv] Reset state env_id=0 z=0.29893 rpy=[-0.00201021, -0.00149982, 0.000804838]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 351         |
+|    ep_rew_mean          | 13.5        |
+| time/                   |             |
+|    fps                  | 2419        |
+|    iterations           | 39          |
+|    time_elapsed         | 2112        |
+|    total_timesteps      | 5111808     |
+| train/                  |             |
+|    approx_kl            | 0.002991435 |
+|    clip_fraction        | 0.118       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 30.7        |
+|    explained_variance   | 0.897       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 1.96        |
+|    n_updates            | 380         |
+|    policy_gradient_loss | -0.00195    |
+|    std                  | 0.0676      |
+|    value_loss           | 0.461       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=175 z=0.199969 rpy=[0.254794, -0.412536, 1.57075] v_body=[0.228235, -0.185004, -0.177812]
+[HumanoidEnv] Reset state env_id=0 z=0.298939 rpy=[0.000623493, -0.00139997, 0.000819893]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 369          |
+|    ep_rew_mean          | 14.1         |
+| time/                   |              |
+|    fps                  | 2419         |
+|    iterations           | 40           |
+|    time_elapsed         | 2166         |
+|    total_timesteps      | 5242880      |
+| train/                  |              |
+|    approx_kl            | 0.0031283381 |
+|    clip_fraction        | 0.127        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 30.5         |
+|    explained_variance   | 0.899        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.97         |
+|    n_updates            | 390          |
+|    policy_gradient_loss | -0.0022      |
+|    std                  | 0.0681       |
+|    value_loss           | 0.472        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=586 z=0.199946 rpy=[1.18672, 0.440183, 1.45354] v_body=[-0.237892, -0.13969, -0.83542]
+[HumanoidEnv] Reset state env_id=0 z=0.298924 rpy=[0.00226618, -0.00162786, 0.000764163]
+[HumanoidEnv] unhealthy terminate at step=376 z=0.198335 rpy=[1.19702, 0.175986, 0.277039] v_body=[-1.5181, 0.571393, -0.861255]
+[HumanoidEnv] Reset state env_id=0 z=0.298921 rpy=[0.00276559, -0.00164949, 0.000711819]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 372          |
+|    ep_rew_mean          | 14.3         |
+| time/                   |              |
+|    fps                  | 2418         |
+|    iterations           | 41           |
+|    time_elapsed         | 2222         |
+|    total_timesteps      | 5373952      |
+| train/                  |              |
+|    approx_kl            | 0.0029809107 |
+|    clip_fraction        | 0.119        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 30.3         |
+|    explained_variance   | 0.899        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.95         |
+|    n_updates            | 400          |
+|    policy_gradient_loss | -0.00183     |
+|    std                  | 0.0687       |
+|    value_loss           | 0.466        |
+------------------------------------------
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 379         |
+|    ep_rew_mean          | 14.6        |
+| time/                   |             |
+|    fps                  | 2417        |
+|    iterations           | 42          |
+|    time_elapsed         | 2277        |
+|    total_timesteps      | 5505024     |
+| train/                  |             |
+|    approx_kl            | 0.003042039 |
+|    clip_fraction        | 0.123       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 30.1        |
+|    explained_variance   | 0.902       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 1.96        |
+|    n_updates            | 410         |
+|    policy_gradient_loss | -0.00217    |
+|    std                  | 0.0692      |
+|    value_loss           | 0.464       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=615 z=0.197443 rpy=[2.25478, 0.169861, 2.30383] v_body=[-0.457099, -1.19777, 0.959693]
+[HumanoidEnv] Reset state env_id=0 z=0.298939 rpy=[-0.00206749, -0.00136322, 0.000817032]
+[HumanoidEnv] unhealthy terminate at step=301 z=0.197858 rpy=[0.798869, -0.119327, 2.49355] v_body=[-1.62047, -2.62107, -0.444912]
+[HumanoidEnv] Reset state env_id=0 z=0.29893 rpy=[0.000643915, -0.00143401, 0.000716287]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 382          |
+|    ep_rew_mean          | 14.6         |
+| time/                   |              |
+|    fps                  | 2417         |
+|    iterations           | 43           |
+|    time_elapsed         | 2331         |
+|    total_timesteps      | 5636096      |
+| train/                  |              |
+|    approx_kl            | 0.0030262875 |
+|    clip_fraction        | 0.12         |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 29.9         |
+|    explained_variance   | 0.9          |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.93         |
+|    n_updates            | 420          |
+|    policy_gradient_loss | -0.00219     |
+|    std                  | 0.0698       |
+|    value_loss           | 0.467        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=307 z=0.196905 rpy=[-0.408023, 0.369459, -0.273271] v_body=[0.0810431, 0.308285, -0.551336]
+[HumanoidEnv] Reset state env_id=0 z=0.298924 rpy=[0.00115621, -0.00157245, 0.000781864]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 378          |
+|    ep_rew_mean          | 14.6         |
+| time/                   |              |
+|    fps                  | 2417         |
+|    iterations           | 44           |
+|    time_elapsed         | 2385         |
+|    total_timesteps      | 5767168      |
+| train/                  |              |
+|    approx_kl            | 0.0030343186 |
+|    clip_fraction        | 0.123        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 29.7         |
+|    explained_variance   | 0.901        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.87         |
+|    n_updates            | 430          |
+|    policy_gradient_loss | -0.00215     |
+|    std                  | 0.0703       |
+|    value_loss           | 0.459        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=503 z=0.198287 rpy=[0.676612, 0.249755, -0.0378361] v_body=[0.666068, -0.087297, -0.176062]
+[HumanoidEnv] Reset state env_id=0 z=0.298927 rpy=[0.00123554, -0.00152384, 0.000760367]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 392         |
+|    ep_rew_mean          | 15          |
+| time/                   |             |
+|    fps                  | 2417        |
+|    iterations           | 45          |
+|    time_elapsed         | 2439        |
+|    total_timesteps      | 5898240     |
+| train/                  |             |
+|    approx_kl            | 0.003048801 |
+|    clip_fraction        | 0.119       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 29.5        |
+|    explained_variance   | 0.903       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 1.93        |
+|    n_updates            | 440         |
+|    policy_gradient_loss | -0.002      |
+|    std                  | 0.0709      |
+|    value_loss           | 0.446       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=612 z=0.188623 rpy=[-0.323412, -0.549687, 1.82808] v_body=[0.209384, 1.11689, -0.182237]
+[HumanoidEnv] Reset state env_id=0 z=0.298925 rpy=[-0.000561999, -0.00150405, 0.000779564]
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_Z_Xhparams_fbw1/model_ckpt.zip
+INFO:root:Checkpoint written at 6001152 timesteps
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 374          |
+|    ep_rew_mean          | 14.4         |
+| time/                   |              |
+|    fps                  | 2417         |
+|    iterations           | 46           |
+|    time_elapsed         | 2494         |
+|    total_timesteps      | 6029312      |
+| train/                  |              |
+|    approx_kl            | 0.0030097878 |
+|    clip_fraction        | 0.119        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 29.3         |
+|    explained_variance   | 0.903        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.9          |
+|    n_updates            | 450          |
+|    policy_gradient_loss | -0.00216     |
+|    std                  | 0.0715       |
+|    value_loss           | 0.444        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=414 z=0.197916 rpy=[-1.12921, -0.118773, -0.0393661] v_body=[1.00154, 0.0553784, -1.03646]
+[HumanoidEnv] Reset state env_id=0 z=0.298925 rpy=[-0.000941221, -0.00150018, 0.00077605]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 402          |
+|    ep_rew_mean          | 15.5         |
+| time/                   |              |
+|    fps                  | 2415         |
+|    iterations           | 47           |
+|    time_elapsed         | 2550         |
+|    total_timesteps      | 6160384      |
+| train/                  |              |
+|    approx_kl            | 0.0028772997 |
+|    clip_fraction        | 0.116        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 29.2         |
+|    explained_variance   | 0.907        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.87         |
+|    n_updates            | 460          |
+|    policy_gradient_loss | -0.00189     |
+|    std                  | 0.0721       |
+|    value_loss           | 0.436        |
+------------------------------------------

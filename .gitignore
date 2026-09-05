@@ -165,3 +165,8 @@ data/wbc_stand/20251019_100311/0_log.csv
 data/wbc_stand/20251019_100311/0_wbc.csv
 data/alpha/backups/
 *.lock
+
+# Training console logs live with the run they document; the *.log rule above
+# is for build and scratch output. data/current/ stays excluded as a whole, so
+# its rebuild logs are unaffected.
+!data/**/*.log

@@ -1,0 +1,1772 @@
+Logging to data/tb_logs/20260803_084850
+INFO:root:Experiment: quadruped_ppo_experiment
+INFO:root:Using EnvPool for environment Humanoid-v4 with 256 envs. Seed: 0
+Using GPU: False
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+LogServer: New client 127.0.0.1:56781.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+/usr/local/lib/python3.10/dist-packages/stable_baselines3/common/vec_env/base_vec_env.py:78: UserWarning: The `render_mode` attribute is not defined in your environment. It will be set to None.
+  warnings.warn("The `render_mode` attribute is not defined in your environment. It will be set to None.")
+Using VecNormalize wrapper...
+Creating new model...
+Using cpu device
+/usr/local/lib/python3.10/dist-packages/stable_baselines3/common/policies.py:486: UserWarning: As shared layers in the mlp_extractor are removed since SB3 v1.8.0, you should now pass directly a dictionary and not a list (net_arch=dict(pi=..., vf=...) instead of net_arch=[dict(pi=..., vf=...)])
+  warnings.warn(
+New model created.
+INFO:root:Starting training...
+LogServer: 127.0.0.1:56781 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:47482.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299832 rpy=[0.00119089, -0.000430032, 0.000613637]
+[HumanoidEnv] unhealthy terminate at step=474 z=0.197621 rpy=[-0.184065, 0.152481, 0.314417] v_body=[0.39798, 0.238716, -0.580608]
+LogServer: 127.0.0.1:47482 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:34063.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299855 rpy=[0.00188965, -0.000349316, 0.000615183]
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 434      |
+|    ep_rew_mean     | 35.3     |
+| time/              |          |
+|    fps             | 3729     |
+|    iterations      | 1        |
+|    time_elapsed    | 35       |
+|    total_timesteps | 131072   |
+---------------------------------
+[HumanoidEnv] unhealthy terminate at step=474 z=0.764385 rpy=[1.56227, 0.0341172, -1.5413] v_body=[-2.63793, -0.593569, -2.06438]
+LogServer: 127.0.0.1:34063 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:54701.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299873 rpy=[-0.000248013, -0.000172599, 0.000809428]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 415          |
+|    ep_rew_mean          | 14.6         |
+| time/                   |              |
+|    fps                  | 2889         |
+|    iterations           | 2            |
+|    time_elapsed         | 90           |
+|    total_timesteps      | 262144       |
+| train/                  |              |
+|    approx_kl            | 0.0034210302 |
+|    clip_fraction        | 0.145        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 37.8         |
+|    explained_variance   | -0.176       |
+|    learning_rate        | 1e-05        |
+|    loss                 | 5.35         |
+|    n_updates            | 10           |
+|    policy_gradient_loss | -0.0013      |
+|    std                  | 0.0502       |
+|    value_loss           | 3.01         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=320 z=0.199175 rpy=[-0.445036, 0.116186, 0.187224] v_body=[0.246231, 0.212192, -0.971401]
+LogServer: 127.0.0.1:54701 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:33379.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299914 rpy=[-0.000657005, -9.58558e-05, 0.000679218]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 371          |
+|    ep_rew_mean          | 13.2         |
+| time/                   |              |
+|    fps                  | 2670         |
+|    iterations           | 3            |
+|    time_elapsed         | 147          |
+|    total_timesteps      | 393216       |
+| train/                  |              |
+|    approx_kl            | 0.0030001486 |
+|    clip_fraction        | 0.12         |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 37.6         |
+|    explained_variance   | -0.439       |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.63         |
+|    n_updates            | 20           |
+|    policy_gradient_loss | -0.00191     |
+|    std                  | 0.0506       |
+|    value_loss           | 0.795        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=392 z=0.197108 rpy=[0.514131, 0.162249, -0.249341] v_body=[-0.673257, 1.86862, -1.92739]
+LogServer: 127.0.0.1:33379 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:48834.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299879 rpy=[-0.00101662, -0.000289675, 0.000578802]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 399          |
+|    ep_rew_mean          | 14           |
+| time/                   |              |
+|    fps                  | 2572         |
+|    iterations           | 4            |
+|    time_elapsed         | 203          |
+|    total_timesteps      | 524288       |
+| train/                  |              |
+|    approx_kl            | 0.0029474036 |
+|    clip_fraction        | 0.115        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 37.4         |
+|    explained_variance   | 0.0514       |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.51         |
+|    n_updates            | 30           |
+|    policy_gradient_loss | -0.00156     |
+|    std                  | 0.051        |
+|    value_loss           | 0.677        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=419 z=0.188732 rpy=[0.0262996, -0.171675, -0.101051] v_body=[0.471134, 0.393987, -3.52913]
+LogServer: 127.0.0.1:48834 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:43557.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299875 rpy=[0.00031671, -0.000230033, 0.000697489]
+[HumanoidEnv] unhealthy terminate at step=468 z=0.194878 rpy=[1.12018, 0.201626, -0.496111] v_body=[-0.490082, 0.912785, 0.0923677]
+LogServer: 127.0.0.1:43557 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:39567.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299844 rpy=[0.00229171, -0.000361289, 0.00065916]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 356         |
+|    ep_rew_mean          | 12.8        |
+| time/                   |             |
+|    fps                  | 2503        |
+|    iterations           | 5           |
+|    time_elapsed         | 261         |
+|    total_timesteps      | 655360      |
+| train/                  |             |
+|    approx_kl            | 0.003023123 |
+|    clip_fraction        | 0.116       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 37.2        |
+|    explained_variance   | 0.228       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.49        |
+|    n_updates            | 40          |
+|    policy_gradient_loss | -0.00174    |
+|    std                  | 0.0514      |
+|    value_loss           | 0.612       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=439 z=0.197273 rpy=[0.0349343, 0.10593, 0.391567] v_body=[0.20033, -0.373624, -0.35364]
+LogServer: 127.0.0.1:39567 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:48043.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.29988 rpy=[0.000800473, -0.000246169, 0.000638515]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 336         |
+|    ep_rew_mean          | 11.8        |
+| time/                   |             |
+|    fps                  | 2466        |
+|    iterations           | 6           |
+|    time_elapsed         | 318         |
+|    total_timesteps      | 786432      |
+| train/                  |             |
+|    approx_kl            | 0.002906424 |
+|    clip_fraction        | 0.114       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 37.1        |
+|    explained_variance   | 0.322       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.42        |
+|    n_updates            | 50          |
+|    policy_gradient_loss | -0.00117    |
+|    std                  | 0.0519      |
+|    value_loss           | 0.56        |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=503 z=0.188196 rpy=[-0.746058, 0.139795, -0.922552] v_body=[-1.43275, 0.290924, -1.66393]
+LogServer: 127.0.0.1:48043 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:34774.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299888 rpy=[-0.000221934, -0.000181743, 0.000703126]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 353          |
+|    ep_rew_mean          | 12.4         |
+| time/                   |              |
+|    fps                  | 2440         |
+|    iterations           | 7            |
+|    time_elapsed         | 375          |
+|    total_timesteps      | 917504       |
+| train/                  |              |
+|    approx_kl            | 0.0029980761 |
+|    clip_fraction        | 0.118        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 36.9         |
+|    explained_variance   | 0.44         |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.33         |
+|    n_updates            | 60           |
+|    policy_gradient_loss | -0.00142     |
+|    std                  | 0.0523       |
+|    value_loss           | 0.496        |
+------------------------------------------
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt.zip
+INFO:root:Checkpoint written at 1000192 timesteps
+[HumanoidEnv] unhealthy terminate at step=424 z=0.198733 rpy=[0.23342, 0.0113169, -0.0516178] v_body=[0.0813046, -0.534817, -0.775768]
+LogServer: 127.0.0.1:34774 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:58242.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299851 rpy=[-0.000215296, -0.000334531, 0.000657024]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 341         |
+|    ep_rew_mean          | 11.7        |
+| time/                   |             |
+|    fps                  | 2422        |
+|    iterations           | 8           |
+|    time_elapsed         | 432         |
+|    total_timesteps      | 1048576     |
+| train/                  |             |
+|    approx_kl            | 0.003017023 |
+|    clip_fraction        | 0.118       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 36.7        |
+|    explained_variance   | 0.514       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.27        |
+|    n_updates            | 70          |
+|    policy_gradient_loss | -0.00148    |
+|    std                  | 0.0527      |
+|    value_loss           | 0.452       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=435 z=0.197655 rpy=[-1.08652, 0.11554, 0.419208] v_body=[0.0421086, -0.491151, -0.229575]
+LogServer: 127.0.0.1:58242 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:38231.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.29984 rpy=[0.000702539, -0.000428014, 0.000556431]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 341          |
+|    ep_rew_mean          | 11.9         |
+| time/                   |              |
+|    fps                  | 2407         |
+|    iterations           | 9            |
+|    time_elapsed         | 490          |
+|    total_timesteps      | 1179648      |
+| train/                  |              |
+|    approx_kl            | 0.0029396554 |
+|    clip_fraction        | 0.117        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 36.5         |
+|    explained_variance   | 0.57         |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.25         |
+|    n_updates            | 80           |
+|    policy_gradient_loss | -0.00164     |
+|    std                  | 0.0531       |
+|    value_loss           | 0.426        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=349 z=0.197241 rpy=[0.280055, 0.102675, -0.0192848] v_body=[0.785538, -0.390971, -0.904427]
+LogServer: 127.0.0.1:38231 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:41932.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299828 rpy=[-7.74364e-05, -0.000383366, 0.00069354]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 340         |
+|    ep_rew_mean          | 11.8        |
+| time/                   |             |
+|    fps                  | 2396        |
+|    iterations           | 10          |
+|    time_elapsed         | 546         |
+|    total_timesteps      | 1310720     |
+| train/                  |             |
+|    approx_kl            | 0.003047045 |
+|    clip_fraction        | 0.119       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 36.3        |
+|    explained_variance   | 0.612       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.19        |
+|    n_updates            | 90          |
+|    policy_gradient_loss | -0.0017     |
+|    std                  | 0.0535      |
+|    value_loss           | 0.406       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=434 z=0.194155 rpy=[-0.440561, 0.0798154, 0.104256] v_body=[0.704331, 0.205369, -1.02216]
+LogServer: 127.0.0.1:41932 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:50597.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299795 rpy=[0.00213749, -0.000531969, 0.000627936]
+[HumanoidEnv] unhealthy terminate at step=415 z=0.196063 rpy=[-0.0999292, 0.0629174, 0.206707] v_body=[0.522281, 0.402113, -0.468904]
+LogServer: 127.0.0.1:50597 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:45003.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299844 rpy=[0.00016139, -0.000378032, 0.000611362]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 339         |
+|    ep_rew_mean          | 12          |
+| time/                   |             |
+|    fps                  | 2388        |
+|    iterations           | 11          |
+|    time_elapsed         | 603         |
+|    total_timesteps      | 1441792     |
+| train/                  |             |
+|    approx_kl            | 0.002904482 |
+|    clip_fraction        | 0.115       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 36.1        |
+|    explained_variance   | 0.634       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.22        |
+|    n_updates            | 100         |
+|    policy_gradient_loss | -0.00151    |
+|    std                  | 0.054       |
+|    value_loss           | 0.412       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=402 z=0.189615 rpy=[0.0895233, 0.138689, -0.307072] v_body=[1.04525, -0.624899, -1.47909]
+LogServer: 127.0.0.1:45003 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:38252.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299839 rpy=[0.00113789, -0.000482296, 0.0004668]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 365          |
+|    ep_rew_mean          | 13           |
+| time/                   |              |
+|    fps                  | 2383         |
+|    iterations           | 12           |
+|    time_elapsed         | 659          |
+|    total_timesteps      | 1572864      |
+| train/                  |              |
+|    approx_kl            | 0.0030074043 |
+|    clip_fraction        | 0.119        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.9         |
+|    explained_variance   | 0.635        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.16         |
+|    n_updates            | 110          |
+|    policy_gradient_loss | -0.00169     |
+|    std                  | 0.0544       |
+|    value_loss           | 0.402        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=204 z=0.192647 rpy=[-0.968117, -0.0125711, 2.31688] v_body=[0.408337, 0.401801, -0.981961]
+LogServer: 127.0.0.1:38252 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:58868.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299883 rpy=[0.000917913, -0.000252656, 0.000607041]
+[HumanoidEnv] unhealthy terminate at step=444 z=0.195841 rpy=[0.307724, 0.331997, -2.09641] v_body=[-0.253299, 0.175192, -0.701328]
+LogServer: 127.0.0.1:58868 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:44962.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299891 rpy=[-5.4018e-05, -0.00012733, 0.00076525]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 325          |
+|    ep_rew_mean          | 11.7         |
+| time/                   |              |
+|    fps                  | 2378         |
+|    iterations           | 13           |
+|    time_elapsed         | 716          |
+|    total_timesteps      | 1703936      |
+| train/                  |              |
+|    approx_kl            | 0.0029349746 |
+|    clip_fraction        | 0.116        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.7         |
+|    explained_variance   | 0.673        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.21         |
+|    n_updates            | 120          |
+|    policy_gradient_loss | -0.00141     |
+|    std                  | 0.0549       |
+|    value_loss           | 0.442        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=315 z=0.199548 rpy=[-0.0424687, 0.056442, 0.107464] v_body=[0.107, 0.0968221, -1.0365]
+LogServer: 127.0.0.1:44962 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:57053.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299861 rpy=[0.000287145, -0.000335243, 0.000620495]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 328          |
+|    ep_rew_mean          | 11.6         |
+| time/                   |              |
+|    fps                  | 2379         |
+|    iterations           | 14           |
+|    time_elapsed         | 771          |
+|    total_timesteps      | 1835008      |
+| train/                  |              |
+|    approx_kl            | 0.0031108076 |
+|    clip_fraction        | 0.121        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.5         |
+|    explained_variance   | 0.65         |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.22         |
+|    n_updates            | 130          |
+|    policy_gradient_loss | -0.00159     |
+|    std                  | 0.0553       |
+|    value_loss           | 0.427        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=344 z=0.197199 rpy=[0.272511, -0.028226, -0.0281194] v_body=[0.503059, -0.17609, -0.855677]
+LogServer: 127.0.0.1:57053 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:48532.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.29987 rpy=[0.000214411, -0.000221158, 0.000741808]
+[HumanoidEnv] unhealthy terminate at step=385 z=0.198113 rpy=[0.0597003, -0.00685574, 0.0147987] v_body=[0.534064, -0.0832644, -0.276168]
+LogServer: 127.0.0.1:48532 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:57749.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299849 rpy=[0.000266405, -0.000318186, 0.000721686]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 368          |
+|    ep_rew_mean          | 12.8         |
+| time/                   |              |
+|    fps                  | 2375         |
+|    iterations           | 15           |
+|    time_elapsed         | 827          |
+|    total_timesteps      | 1966080      |
+| train/                  |              |
+|    approx_kl            | 0.0029378808 |
+|    clip_fraction        | 0.115        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.3         |
+|    explained_variance   | 0.691        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.26         |
+|    n_updates            | 140          |
+|    policy_gradient_loss | -0.00147     |
+|    std                  | 0.0558       |
+|    value_loss           | 0.485        |
+------------------------------------------
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt.zip
+INFO:root:Checkpoint written at 2000384 timesteps
+[HumanoidEnv] unhealthy terminate at step=499 z=0.199444 rpy=[-0.0784567, 0.11923, -0.0874921] v_body=[0.418284, -0.0427175, -2.07081]
+LogServer: 127.0.0.1:57749 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:42511.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299845 rpy=[0.00179516, -0.000449047, 0.00051809]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 395          |
+|    ep_rew_mean          | 13.7         |
+| time/                   |              |
+|    fps                  | 2372         |
+|    iterations           | 16           |
+|    time_elapsed         | 884          |
+|    total_timesteps      | 2097152      |
+| train/                  |              |
+|    approx_kl            | 0.0030194302 |
+|    clip_fraction        | 0.119        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 35.1         |
+|    explained_variance   | 0.743        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.21         |
+|    n_updates            | 150          |
+|    policy_gradient_loss | -0.00169     |
+|    std                  | 0.0562       |
+|    value_loss           | 0.46         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=306 z=0.194485 rpy=[-0.204574, 0.147268, -0.0543026] v_body=[0.328683, 0.212779, -0.908698]
+LogServer: 127.0.0.1:42511 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:45417.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299804 rpy=[0.00164378, -0.000545038, 0.000485318]
+[HumanoidEnv] unhealthy terminate at step=209 z=0.196263 rpy=[0.290809, 0.0200712, 0.064649] v_body=[0.68382, -0.0549099, -0.578889]
+LogServer: 127.0.0.1:45417 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:32833.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299866 rpy=[-0.000669777, -0.000284718, 0.000669052]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 369          |
+|    ep_rew_mean          | 12.8         |
+| time/                   |              |
+|    fps                  | 2371         |
+|    iterations           | 17           |
+|    time_elapsed         | 939          |
+|    total_timesteps      | 2228224      |
+| train/                  |              |
+|    approx_kl            | 0.0029745642 |
+|    clip_fraction        | 0.115        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.9         |
+|    explained_variance   | 0.747        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.25         |
+|    n_updates            | 160          |
+|    policy_gradient_loss | -0.00167     |
+|    std                  | 0.0567       |
+|    value_loss           | 0.509        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=345 z=0.198135 rpy=[-0.683673, -0.0190244, -0.224577] v_body=[1.17576, -0.283972, -0.787256]
+LogServer: 127.0.0.1:32833 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:56113.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299887 rpy=[9.06928e-05, -0.000199265, 0.00067633]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 402          |
+|    ep_rew_mean          | 13.8         |
+| time/                   |              |
+|    fps                  | 2370         |
+|    iterations           | 18           |
+|    time_elapsed         | 995          |
+|    total_timesteps      | 2359296      |
+| train/                  |              |
+|    approx_kl            | 0.0031158426 |
+|    clip_fraction        | 0.122        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.7         |
+|    explained_variance   | 0.759        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.33         |
+|    n_updates            | 170          |
+|    policy_gradient_loss | -0.00183     |
+|    std                  | 0.0571       |
+|    value_loss           | 0.529        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=469 z=0.192834 rpy=[-0.0581208, 0.041164, 0.0480861] v_body=[-0.0360481, -0.157457, -1.46534]
+LogServer: 127.0.0.1:56113 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:36054.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299856 rpy=[0.00158692, -0.000323519, 0.000651433]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 424          |
+|    ep_rew_mean          | 14.7         |
+| time/                   |              |
+|    fps                  | 2370         |
+|    iterations           | 19           |
+|    time_elapsed         | 1050         |
+|    total_timesteps      | 2490368      |
+| train/                  |              |
+|    approx_kl            | 0.0029876535 |
+|    clip_fraction        | 0.117        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.5         |
+|    explained_variance   | 0.781        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.23         |
+|    n_updates            | 180          |
+|    policy_gradient_loss | -0.00175     |
+|    std                  | 0.0576       |
+|    value_loss           | 0.539        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=273 z=0.197339 rpy=[0.161207, 0.0533009, 0.128635] v_body=[-0.33285, 0.913836, -1.70519]
+LogServer: 127.0.0.1:36054 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:45836.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299895 rpy=[-0.00111945, -0.000190938, 0.00068008]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 407          |
+|    ep_rew_mean          | 14.1         |
+| time/                   |              |
+|    fps                  | 2369         |
+|    iterations           | 20           |
+|    time_elapsed         | 1106         |
+|    total_timesteps      | 2621440      |
+| train/                  |              |
+|    approx_kl            | 0.0030020522 |
+|    clip_fraction        | 0.117        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.3         |
+|    explained_variance   | 0.787        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.22         |
+|    n_updates            | 190          |
+|    policy_gradient_loss | -0.0017      |
+|    std                  | 0.0581       |
+|    value_loss           | 0.533        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=741 z=0.196352 rpy=[-1.05037, -0.319958, -2.31465] v_body=[-1.74145, 0.625618, 0.631314]
+LogServer: 127.0.0.1:45836 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:52751.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299878 rpy=[-0.000940624, -0.000243253, 0.000680354]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 422          |
+|    ep_rew_mean          | 14.7         |
+| time/                   |              |
+|    fps                  | 2369         |
+|    iterations           | 21           |
+|    time_elapsed         | 1161         |
+|    total_timesteps      | 2752512      |
+| train/                  |              |
+|    approx_kl            | 0.0029767817 |
+|    clip_fraction        | 0.118        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 34.1         |
+|    explained_variance   | 0.832        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.26         |
+|    n_updates            | 200          |
+|    policy_gradient_loss | -0.00181     |
+|    std                  | 0.0585       |
+|    value_loss           | 0.513        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=456 z=0.194929 rpy=[2.46846, -0.23977, 0.377737] v_body=[-0.789281, 1.6066, 1.74313]
+LogServer: 127.0.0.1:52751 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:37642.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299866 rpy=[-0.000400091, -0.000333131, 0.000582052]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 413          |
+|    ep_rew_mean          | 14.4         |
+| time/                   |              |
+|    fps                  | 2368         |
+|    iterations           | 22           |
+|    time_elapsed         | 1217         |
+|    total_timesteps      | 2883584      |
+| train/                  |              |
+|    approx_kl            | 0.0030722558 |
+|    clip_fraction        | 0.121        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.9         |
+|    explained_variance   | 0.844        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.18         |
+|    n_updates            | 210          |
+|    policy_gradient_loss | -0.00176     |
+|    std                  | 0.059        |
+|    value_loss           | 0.485        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=438 z=0.198495 rpy=[-0.837254, 0.172748, 0.266001] v_body=[-0.106225, -0.591894, 0.226363]
+LogServer: 127.0.0.1:37642 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:52548.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299904 rpy=[-0.00104265, -0.000181663, 0.000644679]
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt.zip
+INFO:root:Checkpoint written at 3000576 timesteps
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 394         |
+|    ep_rew_mean          | 13.9        |
+| time/                   |             |
+|    fps                  | 2367        |
+|    iterations           | 23          |
+|    time_elapsed         | 1273        |
+|    total_timesteps      | 3014656     |
+| train/                  |             |
+|    approx_kl            | 0.003000746 |
+|    clip_fraction        | 0.117       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 33.8        |
+|    explained_variance   | 0.85        |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.15        |
+|    n_updates            | 220         |
+|    policy_gradient_loss | -0.00179    |
+|    std                  | 0.0595      |
+|    value_loss           | 0.503       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=406 z=0.176578 rpy=[-0.000344099, 0.226512, -0.389729] v_body=[-0.424745, -0.0836995, -2.72114]
+LogServer: 127.0.0.1:52548 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:56584.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299864 rpy=[0.00047736, -0.000212933, 0.000786734]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 385          |
+|    ep_rew_mean          | 13.3         |
+| time/                   |              |
+|    fps                  | 2366         |
+|    iterations           | 24           |
+|    time_elapsed         | 1329         |
+|    total_timesteps      | 3145728      |
+| train/                  |              |
+|    approx_kl            | 0.0029024093 |
+|    clip_fraction        | 0.114        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.6         |
+|    explained_variance   | 0.849        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.27         |
+|    n_updates            | 230          |
+|    policy_gradient_loss | -0.00159     |
+|    std                  | 0.06         |
+|    value_loss           | 0.523        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=519 z=0.190963 rpy=[0.921325, -0.623691, -0.754308] v_body=[0.276807, 0.606038, -1.79927]
+LogServer: 127.0.0.1:56584 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:51643.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299812 rpy=[0.00214511, -0.000590271, 0.000413647]
+[HumanoidEnv] unhealthy terminate at step=89 z=0.193811 rpy=[-0.338948, -0.0961564, -0.38348] v_body=[1.07548, 0.12925, -0.953414]
+LogServer: 127.0.0.1:51643 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:52053.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299802 rpy=[0.00233356, -0.000526555, 0.000636336]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 392          |
+|    ep_rew_mean          | 13.6         |
+| time/                   |              |
+|    fps                  | 2365         |
+|    iterations           | 25           |
+|    time_elapsed         | 1385         |
+|    total_timesteps      | 3276800      |
+| train/                  |              |
+|    approx_kl            | 0.0029882176 |
+|    clip_fraction        | 0.118        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.4         |
+|    explained_variance   | 0.849        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.11         |
+|    n_updates            | 240          |
+|    policy_gradient_loss | -0.00155     |
+|    std                  | 0.0605       |
+|    value_loss           | 0.522        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=425 z=0.19549 rpy=[-0.21017, 0.140029, 0.155713] v_body=[0.62888, 0.322816, -0.783937]
+LogServer: 127.0.0.1:52053 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:41117.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299853 rpy=[-0.000155398, -0.000383338, 0.000525102]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 394          |
+|    ep_rew_mean          | 13.7         |
+| time/                   |              |
+|    fps                  | 2364         |
+|    iterations           | 26           |
+|    time_elapsed         | 1441         |
+|    total_timesteps      | 3407872      |
+| train/                  |              |
+|    approx_kl            | 0.0030122837 |
+|    clip_fraction        | 0.115        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33.2         |
+|    explained_variance   | 0.851        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.15         |
+|    n_updates            | 250          |
+|    policy_gradient_loss | -0.00149     |
+|    std                  | 0.061        |
+|    value_loss           | 0.538        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=536 z=0.194952 rpy=[-0.881, -0.456989, 2.74711] v_body=[1.23092, 0.991039, -0.724337]
+LogServer: 127.0.0.1:41117 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:44359.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299854 rpy=[-0.000309119, -0.000298941, 0.000723966]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 409          |
+|    ep_rew_mean          | 13.9         |
+| time/                   |              |
+|    fps                  | 2364         |
+|    iterations           | 27           |
+|    time_elapsed         | 1496         |
+|    total_timesteps      | 3538944      |
+| train/                  |              |
+|    approx_kl            | 0.0029757181 |
+|    clip_fraction        | 0.113        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 33           |
+|    explained_variance   | 0.859        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.16         |
+|    n_updates            | 260          |
+|    policy_gradient_loss | -0.00138     |
+|    std                  | 0.0615       |
+|    value_loss           | 0.517        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=548 z=0.181263 rpy=[0.185081, -0.557822, -2.84555] v_body=[-2.84155, -0.920784, -1.7154]
+LogServer: 127.0.0.1:44359 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:39427.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299887 rpy=[6.33108e-05, -0.000139247, 0.000767507]
+[HumanoidEnv] unhealthy terminate at step=407 z=0.196775 rpy=[-0.182322, 0.0468307, 0.222884] v_body=[-0.304411, -0.0541408, -1.48679]
+LogServer: 127.0.0.1:39427 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:52925.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299873 rpy=[0.00129486, -0.000361701, 0.000496452]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 406          |
+|    ep_rew_mean          | 14.2         |
+| time/                   |              |
+|    fps                  | 2364         |
+|    iterations           | 28           |
+|    time_elapsed         | 1552         |
+|    total_timesteps      | 3670016      |
+| train/                  |              |
+|    approx_kl            | 0.0029829408 |
+|    clip_fraction        | 0.118        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 32.8         |
+|    explained_variance   | 0.864        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.12         |
+|    n_updates            | 270          |
+|    policy_gradient_loss | -0.0017      |
+|    std                  | 0.062        |
+|    value_loss           | 0.528        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=427 z=0.194602 rpy=[0.0568246, 0.214472, 0.251384] v_body=[0.27094, 0.880616, -2.42783]
+LogServer: 127.0.0.1:52925 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:40826.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299871 rpy=[-0.000412437, -0.00025592, 0.000707801]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 386          |
+|    ep_rew_mean          | 13.3         |
+| time/                   |              |
+|    fps                  | 2364         |
+|    iterations           | 29           |
+|    time_elapsed         | 1607         |
+|    total_timesteps      | 3801088      |
+| train/                  |              |
+|    approx_kl            | 0.0029472024 |
+|    clip_fraction        | 0.118        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 32.6         |
+|    explained_variance   | 0.866        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.15         |
+|    n_updates            | 280          |
+|    policy_gradient_loss | -0.00153     |
+|    std                  | 0.0625       |
+|    value_loss           | 0.524        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=439 z=0.19892 rpy=[-2.07292, 0.259526, -0.285264] v_body=[-0.294837, 0.540486, 0.8959]
+LogServer: 127.0.0.1:40826 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:44158.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299854 rpy=[-0.0014592, -0.000262679, 0.00077978]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 391          |
+|    ep_rew_mean          | 13.5         |
+| time/                   |              |
+|    fps                  | 2364         |
+|    iterations           | 30           |
+|    time_elapsed         | 1663         |
+|    total_timesteps      | 3932160      |
+| train/                  |              |
+|    approx_kl            | 0.0030037628 |
+|    clip_fraction        | 0.115        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 32.4         |
+|    explained_variance   | 0.865        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.09         |
+|    n_updates            | 290          |
+|    policy_gradient_loss | -0.00137     |
+|    std                  | 0.063        |
+|    value_loss           | 0.53         |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=384 z=0.190285 rpy=[1.29468, 0.413999, 0.987104] v_body=[-2.38721, 0.496593, -0.266206]
+LogServer: 127.0.0.1:44158 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:60244.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299806 rpy=[0.00221497, -0.000594525, 0.000442138]
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt.zip
+INFO:root:Checkpoint written at 4000768 timesteps
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 372          |
+|    ep_rew_mean          | 13           |
+| time/                   |              |
+|    fps                  | 2363         |
+|    iterations           | 31           |
+|    time_elapsed         | 1719         |
+|    total_timesteps      | 4063232      |
+| train/                  |              |
+|    approx_kl            | 0.0030248747 |
+|    clip_fraction        | 0.118        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 32.2         |
+|    explained_variance   | 0.864        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.19         |
+|    n_updates            | 300          |
+|    policy_gradient_loss | -0.00151     |
+|    std                  | 0.0635       |
+|    value_loss           | 0.529        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=562 z=0.180116 rpy=[-0.0251397, 0.0827917, -1.92854] v_body=[-0.873774, 0.410628, -2.00728]
+LogServer: 127.0.0.1:60244 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:48514.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299894 rpy=[-7.71421e-05, -0.000164496, 0.000688654]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 411          |
+|    ep_rew_mean          | 14.1         |
+| time/                   |              |
+|    fps                  | 2363         |
+|    iterations           | 32           |
+|    time_elapsed         | 1774         |
+|    total_timesteps      | 4194304      |
+| train/                  |              |
+|    approx_kl            | 0.0029160448 |
+|    clip_fraction        | 0.116        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 32           |
+|    explained_variance   | 0.868        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.11         |
+|    n_updates            | 310          |
+|    policy_gradient_loss | -0.00136     |
+|    std                  | 0.064        |
+|    value_loss           | 0.508        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=418 z=0.191493 rpy=[-0.0706867, 0.179663, 0.0306223] v_body=[-0.128033, -0.0216769, -1.28297]
+LogServer: 127.0.0.1:48514 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:51435.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.29987 rpy=[-0.00149953, -0.000203796, 0.000811001]
+[HumanoidEnv] unhealthy terminate at step=327 z=0.195524 rpy=[0.705928, 0.00059424, 1.2521] v_body=[0.102044, -0.259483, -0.879706]
+LogServer: 127.0.0.1:51435 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:52397.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299823 rpy=[0.00210766, -0.000462409, 0.000628201]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 368         |
+|    ep_rew_mean          | 12.9        |
+| time/                   |             |
+|    fps                  | 2362        |
+|    iterations           | 33          |
+|    time_elapsed         | 1830        |
+|    total_timesteps      | 4325376     |
+| train/                  |             |
+|    approx_kl            | 0.002969837 |
+|    clip_fraction        | 0.118       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 31.8        |
+|    explained_variance   | 0.875       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.11        |
+|    n_updates            | 320         |
+|    policy_gradient_loss | -0.00155    |
+|    std                  | 0.0645      |
+|    value_loss           | 0.5         |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=266 z=0.199566 rpy=[-0.0302038, 0.166223, 0.10226] v_body=[0.555509, 0.269745, -0.488203]
+LogServer: 127.0.0.1:52397 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:57501.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299825 rpy=[0.00184887, -0.000511346, 0.000518402]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 379          |
+|    ep_rew_mean          | 13.3         |
+| time/                   |              |
+|    fps                  | 2362         |
+|    iterations           | 34           |
+|    time_elapsed         | 1886         |
+|    total_timesteps      | 4456448      |
+| train/                  |              |
+|    approx_kl            | 0.0029654645 |
+|    clip_fraction        | 0.116        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 31.6         |
+|    explained_variance   | 0.861        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.03         |
+|    n_updates            | 330          |
+|    policy_gradient_loss | -0.00132     |
+|    std                  | 0.0651       |
+|    value_loss           | 0.524        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=357 z=0.199316 rpy=[0.273279, 0.215787, -0.0759596] v_body=[0.644654, 0.040739, -0.760117]
+LogServer: 127.0.0.1:57501 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:54181.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.29985 rpy=[-0.00077918, -0.000319004, 0.000670928]
+[HumanoidEnv] unhealthy terminate at step=369 z=0.198069 rpy=[0.320901, 0.025484, -0.0372008] v_body=[0.755805, -0.526666, -1.10795]
+LogServer: 127.0.0.1:54181 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:56789.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299861 rpy=[-0.000282396, -0.000301536, 0.000682113]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 367         |
+|    ep_rew_mean          | 12.9        |
+| time/                   |             |
+|    fps                  | 2362        |
+|    iterations           | 35          |
+|    time_elapsed         | 1942        |
+|    total_timesteps      | 4587520     |
+| train/                  |             |
+|    approx_kl            | 0.002905938 |
+|    clip_fraction        | 0.114       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 31.4        |
+|    explained_variance   | 0.872       |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2.04        |
+|    n_updates            | 340         |
+|    policy_gradient_loss | -0.00135    |
+|    std                  | 0.0656      |
+|    value_loss           | 0.483       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=440 z=0.198342 rpy=[-1.33657, -0.128897, 0.188348] v_body=[1.19709, -0.0300598, -0.388373]
+LogServer: 127.0.0.1:56789 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:60556.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299869 rpy=[-0.00117511, -0.000186495, 0.000849022]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 392          |
+|    ep_rew_mean          | 13.7         |
+| time/                   |              |
+|    fps                  | 2362         |
+|    iterations           | 36           |
+|    time_elapsed         | 1997         |
+|    total_timesteps      | 4718592      |
+| train/                  |              |
+|    approx_kl            | 0.0028655073 |
+|    clip_fraction        | 0.113        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 31.2         |
+|    explained_variance   | 0.858        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.06         |
+|    n_updates            | 350          |
+|    policy_gradient_loss | -0.00117     |
+|    std                  | 0.0661       |
+|    value_loss           | 0.518        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=367 z=0.198856 rpy=[0.0526184, 0.0854242, 0.129194] v_body=[1.11965, -0.192973, -0.573239]
+LogServer: 127.0.0.1:60556 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:47387.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299888 rpy=[4.4052e-05, -0.000143487, 0.00075572]
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 406          |
+|    ep_rew_mean          | 14.3         |
+| time/                   |              |
+|    fps                  | 2362         |
+|    iterations           | 37           |
+|    time_elapsed         | 2053         |
+|    total_timesteps      | 4849664      |
+| train/                  |              |
+|    approx_kl            | 0.0029275222 |
+|    clip_fraction        | 0.117        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 31           |
+|    explained_variance   | 0.87         |
+|    learning_rate        | 1e-05        |
+|    loss                 | 2.08         |
+|    n_updates            | 360          |
+|    policy_gradient_loss | -0.00142     |
+|    std                  | 0.0667       |
+|    value_loss           | 0.488        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=488 z=0.182323 rpy=[0.0484468, -0.0361244, -0.933274] v_body=[-0.311322, -0.886895, -1.63077]
+LogServer: 127.0.0.1:47387 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:38001.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299875 rpy=[-0.0014323, -0.000226368, 0.000704014]
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 383         |
+|    ep_rew_mean          | 13.5        |
+| time/                   |             |
+|    fps                  | 2361        |
+|    iterations           | 38          |
+|    time_elapsed         | 2108        |
+|    total_timesteps      | 4980736     |
+| train/                  |             |
+|    approx_kl            | 0.002946767 |
+|    clip_fraction        | 0.114       |
+|    clip_range           | 0.1         |
+|    clip_range_vf        | 0.2         |
+|    entropy_loss         | 30.8        |
+|    explained_variance   | 0.87        |
+|    learning_rate        | 1e-05       |
+|    loss                 | 2           |
+|    n_updates            | 370         |
+|    policy_gradient_loss | -0.00123    |
+|    std                  | 0.0672      |
+|    value_loss           | 0.478       |
+-----------------------------------------
+[HumanoidEnv] unhealthy terminate at step=313 z=0.198163 rpy=[2.45231, 0.477994, 0.346696] v_body=[-0.419654, 0.997273, 0.0158789]
+LogServer: 127.0.0.1:38001 disconnected.
+LogJob(0x76fc70001ee0) Finished
+LogServer: New client 127.0.0.1:32807.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x76fc70001ee0 period = 1  length = 0
+[HumanoidEnv] Reset state env_id=0 z=0.299801 rpy=[0.0014195, -0.000499853, 0.000613727]
+INFO:root:VecNormalize statistics saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt_vecnormalize.pkl
+INFO:root:Model saved at: /app/envpool/data/260803_torque45_Z_forcez150/model_ckpt.zip
+INFO:root:Checkpoint written at 5000960 timesteps
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 371          |
+|    ep_rew_mean          | 13           |
+| time/                   |              |
+|    fps                  | 2361         |
+|    iterations           | 39           |
+|    time_elapsed         | 2164         |
+|    total_timesteps      | 5111808      |
+| train/                  |              |
+|    approx_kl            | 0.0028958165 |
+|    clip_fraction        | 0.111        |
+|    clip_range           | 0.1          |
+|    clip_range_vf        | 0.2          |
+|    entropy_loss         | 30.6         |
+|    explained_variance   | 0.868        |
+|    learning_rate        | 1e-05        |
+|    loss                 | 1.97         |
+|    n_updates            | 380          |
+|    policy_gradient_loss | -0.00119     |
+|    std                  | 0.0678       |
+|    value_loss           | 0.503        |
+------------------------------------------
+[HumanoidEnv] unhealthy terminate at step=569 z=0.195652 rpy=[0.0543346, -0.397878, 1.3842] v_body=[-0.03636, -0.373199, -0.77764]
+LogServer: 127.0.0.1:32807 disconnected.
+LogJob(0x76fc70001ee0) Finished
