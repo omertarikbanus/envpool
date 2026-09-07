@@ -21,8 +21,13 @@ recovery with **model X unchanged — no retraining**:
 | left @20 N·s | 8/16 | **6/6** |
 | left @24 N·s | 6/16 | **4/6** |
 
-Now config-bound as `[rl_command_source] floating_base_weight`, default 1000 so
-existing runs reproduce (commit d5c798a).
+Now config-bound as `[rl_command_source] floating_base_weight`, default 1000 at
+the time so existing runs reproduced (commit d5c798a). **Stale as of Gamma1
+(2026-09-05):** the shared default in quadcontrol's `control_params.toml` is
+now 50 -- the value WBIC and the evaluation harness are validated at. Beta1-3
+overrode it to 10 for training and were evaluated at 50, a ~2x authority
+mismatch discovered and fixed in Gamma1; see
+`quadcontrol/docs/CURRENT_PLAN.md`.
 
 **`force_z_max` must stay 250.** Setting it to 150 — to centre the neutral action
 on the 147 N body weight — drops ride height 0.398 → 0.325 m and collapses J50 to
