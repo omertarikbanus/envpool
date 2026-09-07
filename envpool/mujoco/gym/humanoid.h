@@ -29,27 +29,32 @@ namespace mujoco_gym {
 
 struct RLConstants {
   static constexpr int kNumLegs = 4;
-  static constexpr int kActionDim = 24;
+  static constexpr int kActionDim = 25;
+  // Gamma1 appended the body-height residual at index 23, so phase delta moved
+  // to 24. Deriving the index keeps it last for free.
   static constexpr int kPhaseDeltaIdx = kActionDim - 1;
-  static constexpr int kObservationDim = 46;
+  static constexpr int kObservationDim = 54;
 };
 
 struct RewardWeights {
   mjtNum base_xvel{static_cast<mjtNum>(0.25)};
   mjtNum base_zvel{static_cast<mjtNum>(0.10)};
-  mjtNum base_zpos{static_cast<mjtNum>(0.20)};
+  mjtNum base_zpos{static_cast<mjtNum>(0.35)};
   mjtNum base_orientation{static_cast<mjtNum>(0.15)};
   mjtNum base_straight{static_cast<mjtNum>(0.15)};
   mjtNum base_linear_accel{static_cast<mjtNum>(0.025)};
   mjtNum base_angular_vel{static_cast<mjtNum>(0.025)};
   mjtNum action_smooth{static_cast<mjtNum>(0.10)};
   mjtNum phase_delta{static_cast<mjtNum>(0.05)};
+  mjtNum action_magnitude{static_cast<mjtNum>(0.05)};
 };
 
 struct ReferenceTargets {
   mjtNum xdot_ref{static_cast<mjtNum>(0.8)};
   mjtNum zdot_ref{static_cast<mjtNum>(0.0)};
-  mjtNum z_ref{static_cast<mjtNum>(0.35)};
+  // Overwritten every step from the controller's user_parameters.body_height;
+  // this default only covers the window before the runtime exists.
+  mjtNum z_ref{static_cast<mjtNum>(0.32)};
 };
 
 struct RewardConfig {
@@ -60,7 +65,7 @@ struct RewardConfig {
 // Computes a Cassie-inspired locomotion reward from instantaneous penalties.
 class LocomotionReward {
  public:
-  static constexpr int kNumTerms = 9;
+  static constexpr int kNumTerms = 10;
   enum TermIndex {
     kBaseXVel = 0,
     kBaseZVel,
@@ -70,7 +75,8 @@ class LocomotionReward {
     kBaseLinearAccel,
     kBaseAngularVel,
     kActionSmooth,
-    kPhaseDelta
+    kPhaseDelta,
+    kActionMagnitude
   };
 
   struct Result {
@@ -95,13 +101,18 @@ class LocomotionReward {
                  const std::vector<mjtNum>& prev_action) {
     Result result;
     constexpr mjtNum kVelPenaltyScale = static_cast<mjtNum>(3.0);
+    // Height is a POSITION error in metres against a 0.32 m stance: 3.0 prices a
+    // 4.6 cm sag at 13 % of one term (3.9 % of the total), which is why Beta3
+    // rode at 0.274 m. 20.0 prices the same sag at 60 % of the term and still
+    // saturates rather than exploding on a push transient.
+    constexpr mjtNum kPosPenaltyScale = static_cast<mjtNum>(20.0);
 
     result.penalties[kBaseXVel] =
         kVelPenaltyScale * std::abs(base_lin_vel[0] - config_.refs.xdot_ref);
     result.penalties[kBaseZVel] =
         kVelPenaltyScale * std::abs(base_lin_vel[2] - config_.refs.zdot_ref);
     result.penalties[kBaseZPos] =
-        kVelPenaltyScale * std::abs(base_pos[2] - config_.refs.z_ref);
+        kPosPenaltyScale * std::abs(base_pos[2] - config_.refs.z_ref);
 
     Eigen::Quaternion<mjtNum> q = base_quat;
     if (std::abs(static_cast<double>(q.norm() - 1.0)) > 1e-6) {
@@ -125,6 +136,7 @@ class LocomotionReward {
     result.penalties[kActionSmooth] =
         ComputeActionSmoothPenalty(action, prev_action);
     result.penalties[kPhaseDelta] = ComputePhaseDeltaPenalty(action);
+    result.penalties[kActionMagnitude] = ComputeActionMagnitudePenalty(action);
 
     result.smoothed_penalties = result.penalties;  // Legacy field, now identical to raw penalties.
     for (int idx = 0; idx < kNumTerms; ++idx) {
@@ -140,7 +152,8 @@ class LocomotionReward {
                    w.base_linear_accel * result.rewards[kBaseLinearAccel] +
                    w.base_angular_vel * result.rewards[kBaseAngularVel] +
                    w.action_smooth * result.rewards[kActionSmooth] +
-                   w.phase_delta * result.rewards[kPhaseDelta];
+                   w.phase_delta * result.rewards[kPhaseDelta] +
+                   w.action_magnitude * result.rewards[kActionMagnitude];
     return result;
   }
 
@@ -157,6 +170,39 @@ class LocomotionReward {
       diff_sq_sum += diff * diff;
     }
     return static_cast<mjtNum>(3.0) * diff_sq_sum;
+  }
+
+  // Prices how LARGE an action is; kActionSmooth prices only how fast it
+  // changes, so before Gamma1 nothing held a residual near zero in steady state.
+  //
+  // Covers the residual channels: the velocity residuals, per-leg Fx/Fy, the
+  // footstep xy residuals, and the height residual. Two channels are excluded,
+  // for different reasons.
+  //
+  // Per-leg Fz (5, 8, 11, 14): no neutral value to pull toward. It maps
+  // [-1, 1] onto [0, force_z_max], so -1 commands 0 N, which fights body
+  // support, while 0 commands force_z_max / 2 = 125 N against a 147 N robot --
+  // already enough to ride high. Penalising |a| would nominate 125 N as "free"
+  // for a reason unconnected to the dynamics.
+  //
+  // Phase delta (kPhaseDeltaIdx): a slow gait is WANTED -- it lowers cost of
+  // transport and relaxes the actuators -- and kPhaseDelta already buys it with
+  // a linear penalty whose minimum is a = -1. A quadratic term centred on
+  // a = 0 (the nominal 1/200 rate, 0.4 s period) pulls the other way and very
+  // nearly cancels it: moving a from 0 to -0.5 gains 0.0119 of reward from
+  // kPhaseDelta and loses up to 0.0111 to this term. Worse, because the penalty
+  // is exp(-sum a^2), that marginal cost depends on how active every OTHER
+  // channel is, so the gait-rate incentive would become a function of unrelated
+  // residuals. One dedicated, uncoupled term for gait rate is the point.
+  mjtNum ComputeActionMagnitudePenalty(const std::vector<mjtNum>& action) const {
+    mjtNum sq_sum = 0;
+    const int n = static_cast<int>(action.size());
+    for (int i = 0; i < n; ++i) {
+      if (i == RLConstants::kPhaseDeltaIdx) continue;
+      if (i >= 3 && i < 15 && ((i - 3) % 3) == 2) continue;  // per-leg Fz
+      sq_sum += action[i] * action[i];
+    }
+    return sq_sum;
   }
 
   mjtNum ComputePhaseDeltaPenalty(const std::vector<mjtNum>& action) const {
@@ -193,8 +239,7 @@ class HumanoidEnvFns {
         "orientation_penalty_weight"_.Bind(0.1),
         "height_penalty_weight"_.Bind(.9),
         "foot_slip_penalty_weight"_.Bind(0.1),
-        "action_penalty_weight"_.Bind(5e-2),
-        "reset_body_height"_.Bind(0.35));
+        "action_penalty_weight"_.Bind(5e-2));
   }
   template <typename Config>
   static decltype(auto) StateSpec(const Config& conf) {
@@ -218,11 +263,13 @@ class HumanoidEnvFns {
   }
   template <typename Config>
   static decltype(auto) ActionSpec(const Config& conf) {
-    // Action layout (24 dims total):
+    // Action layout (25 dims total):
     // [0] vBody_des.x residual, [1] vBody_des.y residual, [2] yaw_rate residual
     // [3..14] per-leg ground reaction force targets (4 legs x 3): [fx, fy, fz]
     // [15..22] per-leg swing foot residuals (4 legs x 2): [x, y]
-    // [23] gait phase delta_theta (normalized, mapped to 0..kMaxPhaseDelta)
+    // [23] body-height residual (mapped to +-height_residual_limit, added to
+    //      the commanded stance height in MdlRLLocomotionState)
+    // [24] gait phase delta_theta (normalized, mapped to 0..kMaxPhaseDelta)
     return MakeDict("action"_.Bind(
         Spec<mjtNum>({-1, RLConstants::kActionDim}, {-1, 1})));
   }
@@ -249,7 +296,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   quadruped::StateEstimate<float> last_state_est_{};
 
   float lastReward = 0;
-  mjtNum desired_h;
+  // Stance-height reference, refreshed from the controller every step.
+  mjtNum desired_h{static_cast<mjtNum>(0.32)};
   mjtNum velocity_tracking_weight_;
   mjtNum yaw_tracking_weight_;
   mjtNum orientation_penalty_weight_;
@@ -261,7 +309,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   std::array<mjtNum, LocomotionReward::kNumTerms> last_penalties_{};
   std::array<mjtNum, LocomotionReward::kNumTerms> last_smoothed_penalties_{};
   std::array<mjtNum, LocomotionReward::kNumTerms> last_term_rewards_{};
-  mjtNum reset_body_height_;
   std::vector<mjtNum> last_action_vector_;
   std::vector<mjtNum> prev_action_vector_;
   mjtNum last_ctrl_cost_{0.0};
@@ -299,14 +346,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         foot_slip_penalty_weight_(spec.config["foot_slip_penalty_weight"_]),
         action_penalty_weight_(spec.config["action_penalty_weight"_]),
         locomotion_reward_config_(),
-        locomotion_reward_(locomotion_reward_config_),
-        reset_body_height_(spec.config["reset_body_height"_]) {
+        locomotion_reward_(locomotion_reward_config_) {
     const std::string cfg_sim_path = spec.config["sim_config_path"_];
     if (!cfg_sim_path.empty()) {
       sim_config_path_ = cfg_sim_path;
     }
 
-    desired_h = static_cast<mjtNum>(0.35);
     {
       static std::mutex s_init_mutex;
       std::lock_guard<std::mutex> lock(s_init_mutex);
@@ -349,9 +394,6 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       std::cout << "Resetting the environment..." << std::endl;
     done_ = false;
     elapsed_step_ = 0;
-    // Keep reset initialization deterministic to avoid intermittent short
-    // episodes caused by mismatched reset heights across modules.
-    desired_h = reset_body_height_;
     if (runtime_) {
       constexpr int kMaxResetAttempts = 3;
       int reset_attempt = 0;
@@ -426,15 +468,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       contact_cost = 0.0;
     }
 
-    // if(elapsed_step_ % frame_skip_ * 15 == 0){
-    //   static std::random_device rd;
-    //   static std::mt19937 gen(rd());
-    //   // normal distribution with 0 mean and 0.003 stddev
-    //   std::normal_distribution<mjtNum> dis( 0.00, 0.003);
-    //   desired_h += dis(gen);
-    //   //clamp desired_h to [0.25, 0.4]
-    //   desired_h = std::max(0.32, std::min(0.4, desired_h));
-    // }
+    // Reference-height randomisation is deliberately absent: it is only sound
+    // now that desired_h is observed, and Gamma1 holds the reference fixed at
+    // the controller's 0.32 m so the tracking result is unambiguous.
     UpdateRewardReferences();
 
     const Eigen::Matrix<mjtNum, 3, 1> base_lin_vel(
@@ -600,11 +636,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         foot_pos_body[leg].fill(static_cast<mjtNum>(0.0));
       }
     }
-    for (int axis = 0; axis < 3; ++axis) {
-      write_value(foot_pos_body[0][axis]);
-    }
-    for (int axis = 0; axis < 3; ++axis) {
-      write_value(foot_pos_body[1][axis]);
+    // All four legs. Before Gamma1 only the front pair was written, so a
+    // backward push loaded exactly the legs the policy could not see.
+    for (int leg = 0; leg < RLConstants::kNumLegs; ++leg) {
+      for (int axis = 0; axis < 3; ++axis) {
+        write_value(foot_pos_body[leg][axis]);
+      }
     }
 
     mjtNum phi = static_cast<mjtNum>(0.0);
@@ -617,6 +654,12 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
         static_cast<mjtNum>(6.28318530717958647692);
     write_value(std::sin(kTwoPi * phi));
     write_value(std::cos(kTwoPi * phi));
+
+    // Height and its reference. The reward has always penalised |z - z_ref|,
+    // but neither term was observable, so the height task was partially
+    // observed and the policy had no way to close the loop on it.
+    write_value(static_cast<mjtNum>(last_state_est_.position[2]));
+    write_value(static_cast<mjtNum>(desired_h));
   }
 
   bool IsHealthy() {
@@ -675,6 +718,15 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
                                                             .body_velocity[0])
                                                   : static_cast<mjtNum>(0.0);
     locomotion_reward_config_.refs.zdot_ref = static_cast<mjtNum>(0.0);
+    // The controller's user_parameters.body_height is the single stance-height
+    // reference in the system -- the same 0.32 m the convex-MPC baseline
+    // commands. Before Gamma1 this read a separate envpool-side 0.35 m default
+    // that nothing overrode, so the reward asked for a height the controller
+    // never commanded. NOMINAL, deliberately: the policy's height residual is
+    // not added here, or it would be free and the sag would return.
+    if (runtime_) {
+      desired_h = static_cast<mjtNum>(runtime_->nominalBodyHeight());
+    }
     locomotion_reward_config_.refs.z_ref =
         static_cast<mjtNum>(desired_h);
     locomotion_reward_.SetReferences(locomotion_reward_config_.refs);

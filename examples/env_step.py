@@ -40,7 +40,8 @@ def gym_sync_step() -> None:
     action[env_id][8]= 0.5
     action[env_id][11]= 0.5
     action[env_id][14]= 0.5
-    action[env_id][23]= 0.0
+    action[env_id][23]= 0.0   # body-height residual (0 -> commanded stance height)
+    action[env_id][24]= 0.0   # gait phase delta
 
   # Ensure a clean initial episode state before stepping.
   try:

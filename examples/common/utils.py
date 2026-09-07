@@ -71,7 +71,13 @@ def create_ppo_model(env, policy_kwargs):
         gamma=0.995,
         gae_lambda=0.97,
         max_grad_norm=0.1,
-        ent_coef=0.05,
+        # 0.01, the RSL-RL / legged_gym value. It was 0.05, which this repo has
+        # a measured divergence for: the action std climbed 0.050 -> 0.275 over
+        # one 17 M-step run while reward fell. Note log_std_init = -3.0 starts
+        # the std at 0.050 against RSL-RL's 1.0, so the entropy bonus is doing a
+        # structurally different job here -- watch train/std rather than trusting
+        # the number because legged_gym uses it.
+        ent_coef=0.01,
         vf_coef=1.0,
         clip_range_vf=0.2,
         tensorboard_log="runs/ppo_taskspace",
