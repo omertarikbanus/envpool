@@ -69,7 +69,7 @@ class VecAdapter(VecEnvWrapper):
             obs, rewards, dones, info_dict = self.venv.step(self.actions)
         else:
             obs, rewards, terms, truncs, info_dict = self.venv.step(self.actions)
-            dones = terms + truncs
+            dones = np.logical_or(terms, truncs)
         
         # Ensure observations are float32
         obs = np.asarray(obs, dtype=np.float32)
@@ -77,8 +77,12 @@ class VecAdapter(VecEnvWrapper):
         infos = []
         for i in range(self.num_envs):
             info_i = {key: info_dict[key][i] for key in info_dict.keys() if isinstance(info_dict[key], np.ndarray)}
+            if not is_legacy_gym:
+                info_i["TimeLimit.truncated"] = bool(truncs[i] and not terms[i])
+            info_i["is_timeout"] = bool(dones[i] and info_i.get("TimeLimit.truncated", False))
+            info_i["is_fall"] = bool(dones[i] and not info_i["is_timeout"])
             if dones[i]:
-                info_i["terminal_observation"] = obs[i]
+                info_i["terminal_observation"] = obs[i].copy()
                 if is_legacy_gym:
                     reset_obs = self.venv.reset(np.array([i]))
                 else:

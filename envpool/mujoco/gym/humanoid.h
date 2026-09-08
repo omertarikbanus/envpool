@@ -229,6 +229,10 @@ class HumanoidEnvFns {
         "terminate_when_unhealthy"_.Bind(true),
         "sim_config_path"_.Bind(
             std::string("/app/quadcontrol/config/robots/sim/envpool.toml")),
+        // TOML text layered over sim_config_path. Lets a caller override force
+        // settings without writing a temp config file whose fixed name made
+        // concurrent evaluation processes clobber each other.
+        "sim_config_overlay"_.Bind(std::string("")),
         "render_mode"_.Bind(false),
         "exclude_current_positions_from_observation"_.Bind(true),
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
@@ -254,6 +258,13 @@ class HumanoidEnvFns {
                     "info:reward_linvel"_.Bind(Spec<mjtNum>({-1})),
                     "info:reward_quadctrl"_.Bind(Spec<mjtNum>({-1})),
                     "info:reward_alive"_.Bind(Spec<mjtNum>({-1})),
+                    "info:sim_time"_.Bind(Spec<mjtNum>({-1})),
+                    "info:force_onset"_.Bind(Spec<mjtNum>({-1})),
+                    "info:force_phase"_.Bind(Spec<mjtNum>({-1})),
+                    "info:force_applied"_.Bind(Spec<mjtNum>({3})),
+                    "info:force_direction"_.Bind(Spec<int>({-1})),
+                    "info:force_requested_impulse"_.Bind(Spec<mjtNum>({-1})),
+                    "info:body_height"_.Bind(Spec<mjtNum>({-1})),
                     "info:reward_impact"_.Bind(Spec<mjtNum>({-1})),
                     "info:x_position"_.Bind(Spec<mjtNum>({-1})),
                     "info:y_position"_.Bind(Spec<mjtNum>({-1})),
@@ -322,6 +333,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   std::string last_done_reason_{"init"};
   std::string sim_config_path_{
       "/app/quadcontrol/config/robots/sim/envpool.toml"};
+  std::string sim_config_overlay_;
 
  public:
   HumanoidEnv(const Spec& spec, int env_id)
@@ -351,6 +363,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     if (!cfg_sim_path.empty()) {
       sim_config_path_ = cfg_sim_path;
     }
+    sim_config_overlay_ = spec.config["sim_config_overlay"_];
 
     {
       static std::mutex s_init_mutex;
@@ -358,6 +371,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       quadruped::RLPipelineRuntime::Options rt_opts;
       rt_opts.env_id = env_id_;
       rt_opts.sim_config_path = sim_config_path_;
+      rt_opts.sim_config_overlay = sim_config_overlay_;
       runtime_ = std::make_unique<quadruped::RLPipelineRuntime>(rt_opts);
       runtime_->initialize();
       disabled_ = runtime_->disabled();
@@ -790,6 +804,16 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
                   mjtNum healthy_reward) {
     State state = Allocate();
     state["reward"_] = reward;
+    const SimForceState force = runtime_ ? runtime_->forceState() : SimForceState{};
+    state["info:sim_time"_] = force.time;
+    state["info:force_onset"_] = force.onset;
+    state["info:force_phase"_] = force.phase;
+    state["info:force_direction"_] = force.direction;
+    state["info:force_requested_impulse"_] = force.requested_impulse;
+    state["info:body_height"_] = last_state_est_.position[2];
+    auto applied = state["info:force_applied"_];
+    auto* force_data = static_cast<mjtNum*>(applied.Data());
+    for (int i = 0; i < 3; ++i) force_data[i] = force.applied[i];
     // Debug the state allocation - check if it's properly created
     // std::cout << "State obs buffer size: "
     // << state["obs"_].Shape()[0]  << state["obs"_].Shape()[1] << std::endl;

@@ -56,7 +56,7 @@ def create_policy_kwargs():
     )
 
 
-def create_ppo_model(env, policy_kwargs):
+def create_ppo_model(env, policy_kwargs, seed=None):
     """Create a new PPO model with specified hyperparameters."""
     return PPO(
         policy="MlpPolicy",
@@ -82,6 +82,7 @@ def create_ppo_model(env, policy_kwargs):
         clip_range_vf=0.2,
         tensorboard_log="runs/ppo_taskspace",
         policy_kwargs=policy_kwargs,
+        seed=seed,
         verbose=1,
     )
 
@@ -116,7 +117,7 @@ def ask_continue_or_restart(model_path):
 
 
 def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=True, 
-                        force_new=False, continue_training=False):
+                        force_new=False, continue_training=False, seed=None):
     """Create a new model or load existing one based on user choice."""
     model_exists = os.path.exists(f"{model_save_path}.zip")
     vecnorm_exists = os.path.exists(f"{model_save_path}_vecnormalize.pkl")
@@ -152,6 +153,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
             vecnormalize_wrapper = VecNormalize.load(f"{model_save_path}_vecnormalize.pkl", base_env)
             # continue updating normalisation statistics during training
             vecnormalize_wrapper.training = True
+            vecnormalize_wrapper.norm_reward = True
 
             if monitor_wrapper is not None:
                 monitor_wrapper.venv = vecnormalize_wrapper
@@ -165,7 +167,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
                 model_save_path,
             )
         
-        model = PPO.load(f"{model_save_path}.zip", env=env)
+        model = PPO.load(f"{model_save_path}.zip", env=env, seed=seed)
         
         print("Model loaded successfully. Continuing training...")
         print(f"Model hyperparameters: {model.policy_kwargs}")
@@ -186,12 +188,11 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
 
         # model.ent_coef = 0.2e-4
 
-        # Update log_std bounds
-        with th.no_grad():
-            model.policy.log_std.clamp_(min=np.log(0.05), max=np.log(0.30))
+        # Exploration bounds are configured by the training callback. Loading
+        # a checkpoint must not silently change its distribution.
     else:
         print("Creating new model...")
-        model = create_ppo_model(env, policy_kwargs)
+        model = create_ppo_model(env, policy_kwargs, seed=seed)
         print("New model created.")
     
     return model, env
