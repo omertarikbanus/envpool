@@ -17,7 +17,7 @@ from datetime import datetime
 from .asymmetric_policy import ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
 from .vec_adapter import VecAdapter
 
-FIXED_LEARNING_RATE = 1e-6
+FIXED_LEARNING_RATE = 1e-5
 
 
 def setup_environment(env_name, num_envs, seed, render_mode=None, env_config=None):

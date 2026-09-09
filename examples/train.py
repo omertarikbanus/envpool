@@ -298,7 +298,7 @@ class AdaptiveLRCallback(BaseCallback):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool_train_Delta.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
+    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool_train_Delta2.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
     parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
     parser.add_argument("--num-threads", type=int, default=0, metavar="N",
                         help="EnvPool worker threads; 0 (default) means one per env. "
@@ -306,10 +306,10 @@ def parse_args():
                              "scheduler in every env past the thread count, so those "
                              "envs never latch a force onset and never get pushed.")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=20_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=10_000_000, help="Total training timesteps")
     parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
-    parser.add_argument("--tb-log-dir", type=str, default="./data/delta/tb", help="TensorBoard log directory")
-    parser.add_argument("--model-save-path", type=str, default="./data/delta/quadruped_ppo_model", help="Model save path")
+    parser.add_argument("--tb-log-dir", type=str, default="./data/delta2_stage1/tb", help="TensorBoard log directory")
+    parser.add_argument("--model-save-path", type=str, default="./data/delta2_stage1/quadruped_ppo_model", help="Model save path")
     parser.add_argument("--continue-training", action="store_true", default=False, help="Continue training from existing model if available")
     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
     parser.add_argument("--use-vecnormalize", dest="use_vecnormalize", action="store_true", help="Enable VecNormalize wrapper (normalize observations and rewards)")
