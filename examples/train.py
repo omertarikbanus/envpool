@@ -298,7 +298,7 @@ class AdaptiveLRCallback(BaseCallback):
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
     parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool_train_Gamma4.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
+    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool_train_Delta.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
     parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
     parser.add_argument("--num-threads", type=int, default=0, metavar="N",
                         help="EnvPool worker threads; 0 (default) means one per env. "
@@ -306,25 +306,17 @@ def parse_args():
                              "scheduler in every env past the thread count, so those "
                              "envs never latch a force onset and never get pushed.")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=40_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int, default=20_000_000, help="Total training timesteps")
     parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
-    parser.add_argument("--tb-log-dir", type=str, default="./data/gamma4/tb", help="TensorBoard log directory")
-    parser.add_argument("--model-save-path", type=str, default="./data/gamma4/quadruped_ppo_model", help="Model save path")
-    # Gamma4 is a continuation of Gamma3, so this defaults True: the run is
-    # launched non-interactively (docker exec, no TTY), and create_or_load_model
-    # falls back to an interactive y/n prompt when neither this nor --force-new
-    # is set -- which would hang forever with nothing to answer it. The actual
-    # weights being resumed are a COPY of Gamma3's final model placed at
-    # ./data/gamma4/quadruped_ppo_model.zip before launch, not Gamma3's own
-    # file, so checkpointing here cannot touch the Gamma3 model still being
-    # evaluated.
-    parser.add_argument("--continue-training", action="store_true", default=True, help="Continue training from existing model if available")
+    parser.add_argument("--tb-log-dir", type=str, default="./data/delta/tb", help="TensorBoard log directory")
+    parser.add_argument("--model-save-path", type=str, default="./data/delta/quadruped_ppo_model", help="Model save path")
+    parser.add_argument("--continue-training", action="store_true", default=False, help="Continue training from existing model if available")
     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
     parser.add_argument("--use-vecnormalize", dest="use_vecnormalize", action="store_true", help="Enable VecNormalize wrapper (normalize observations and rewards)")
     parser.add_argument("--no-vecnormalize", dest="use_vecnormalize", action="store_false", help="Disable VecNormalize wrapper")
     parser.add_argument("--checkpoint-freq", type=int, default=2_000_000, help="Save a checkpoint every N timesteps as <model-save-path>_ckpt_<steps> (0 disables). Kept for the whole run: checkpoint history cannot be recovered afterwards.")
     parser.add_argument("--learning-rate", type=float, default=None, help="Override common.utils.FIXED_LEARNING_RATE for this run")
-    parser.add_argument("--adaptive-lr", type=float, default=0.01, metavar="DESIRED_KL",
+    parser.add_argument("--adaptive-lr", type=float, default=0.0, metavar="DESIRED_KL",
                         help="KL-adaptive learning rate (RSL-RL style) at the given desired KL, "
                              "bounded to [AdaptiveLRCallback.LR_MIN, LR_MAX]. Moves PPO's target_kl "
                              "out to 4x desired so it backstops instead of competing; "
@@ -353,7 +345,7 @@ def parse_args():
                         help="Multiplicative LR step for --adaptive-lr (default 1.5). "
                              "Use a smaller value (~1.1) with a tight --kl-tol, or the "
                              "coarse jumps hunt around the equilibrium.")
-    parser.add_argument("--target-kl", type=float, default=None,
+    parser.add_argument("--target-kl", type=float, default=0.01,
                         help="Set PPO's own target_kl for this run. Only meaningful with "
                              "--adaptive-lr 0: when the adaptive controller is on it owns "
                              "target_kl (4x desired_kl) and this is ignored. Needed because "
