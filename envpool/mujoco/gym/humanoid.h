@@ -33,7 +33,9 @@ struct RLConstants {
   // Gamma1 appended the body-height residual at index 23, so phase delta moved
   // to 24. Deriving the index keeps it last for free.
   static constexpr int kPhaseDeltaIdx = kActionDim - 1;
-  static constexpr int kObservationDim = 54;
+  static constexpr int kActorObservationDim = 54;
+  static constexpr int kPrivilegedObservationDim = 7;
+  static constexpr int kObservationDim = 61;
 };
 
 struct RewardWeights {
@@ -674,6 +676,17 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     // observed and the policy had no way to close the loop on it.
     write_value(static_cast<mjtNum>(last_state_est_.position[2]));
     write_value(static_cast<mjtNum>(desired_h));
+
+    // Delta asymmetric actor-critic: these final seven simulator-truth values
+    // are sliced away before the actor network and are consumed only by the
+    // critic. Force is the applied world-frame vector; contacts come from
+    // MuJoCo's physical foot contacts rather than the commanded gait schedule.
+    const SimForceState force = runtime_ ? runtime_->forceState() : SimForceState{};
+    for (int axis = 0; axis < 3; ++axis) write_value(force.applied[axis]);
+    const std::array<float, RLConstants::kNumLegs> contacts =
+        runtime_ ? runtime_->footContactState()
+                 : std::array<float, RLConstants::kNumLegs>{};
+    for (float contact : contacts) write_value(static_cast<mjtNum>(contact));
   }
 
   bool IsHealthy() {

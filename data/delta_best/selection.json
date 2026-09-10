@@ -1,0 +1,27 @@
+{
+  "name": "delta_best_26M",
+  "selected_at": "2026-09-10",
+  "source_model": "../delta_refine_lr1e7/quadruped_ppo_model_ckpt_6000384.zip",
+  "source_vecnormalize": "../delta_refine_lr1e7/quadruped_ppo_model_ckpt_6000384_vecnormalize.pkl",
+  "training_recipe": "Delta 20M checkpoint followed by 6,000,384 steps at fixed learning rate 1e-7",
+  "total_environment_steps": 26000384,
+  "held_out_evaluation": {
+    "run_dir": "20260910_delta_refine_26M_final",
+    "noforce": "32/32",
+    "survival_counts": {
+      "fwd": "34/64",
+      "back": "45/64",
+      "left": "64/64",
+      "right": "59/64",
+      "up": "52/64",
+      "down": "64/64"
+    },
+    "directions_won": 5,
+    "mean_survival": 0.828125,
+    "worst_survival": 0.53125
+  },
+  "sha256": {
+    "model": "1c2c9823a566884250305938ca2088fe98804ab08999674e79cb51d51fcd205a",
+    "vecnormalize": "2664fd1744bfe637ea65d851a0a7b396d6d5ecf8ae5a60d43ff39236c43dc034"
+  }
+}

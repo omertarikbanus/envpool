@@ -14,6 +14,7 @@ from stable_baselines3.common.utils import get_schedule_fn
 from stable_baselines3.common.logger import configure
 from datetime import datetime
 
+from .asymmetric_policy import ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
 from .vec_adapter import VecAdapter
 
 FIXED_LEARNING_RATE = 1e-5
@@ -46,6 +47,7 @@ def setup_environment(env_name, num_envs, seed, render_mode=None, env_config=Non
 def create_policy_kwargs():
     """Create policy kwargs for PPO model."""
     return dict(
+        actor_obs_dim=ACTOR_OBSERVATION_DIM,
         activation_fn=th.nn.Tanh,
         net_arch=[dict(pi=[256, 128], vf=[256, 128])],
         log_std_init=-3.0,
@@ -59,7 +61,7 @@ def create_policy_kwargs():
 def create_ppo_model(env, policy_kwargs, seed=None):
     """Create a new PPO model with specified hyperparameters."""
     return PPO(
-        policy="MlpPolicy",
+        policy=AsymmetricActorCriticPolicy,
         env=env,
         # PPO hyper-parameters
         learning_rate=FIXED_LEARNING_RATE,

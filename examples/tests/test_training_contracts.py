@@ -12,6 +12,7 @@ import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecNormalize
 from common import vec_adapter
+from common.asymmetric_policy import AsymmetricActorCriticPolicy
 from common.utils import create_or_load_model, save_model_and_stats, find_vecnormalize_wrapper
 from train import LogStdClampCallback
 
@@ -55,6 +56,35 @@ class TrainingContracts(unittest.TestCase):
         self.assertTrue(info[1]["is_fall"])
         obs[:] = 0
         np.testing.assert_array_equal(info[0]["terminal_observation"], [10, 20])
+
+    def test_privileged_observations_reach_only_the_critic(self):
+        observation_space = gym.spaces.Box(
+            -np.inf, np.inf, (61,), dtype=np.float32)
+        action_space = gym.spaces.Box(-1, 1, (25,), dtype=np.float32)
+        policy = AsymmetricActorCriticPolicy(
+            observation_space,
+            action_space,
+            lr_schedule=lambda _: 1e-3,
+            actor_obs_dim=54,
+            net_arch=dict(pi=[16], vf=[16]),
+        )
+
+        actor_layer = policy.mlp_extractor.policy_net[0]
+        critic_layer = policy.mlp_extractor.value_net[0]
+        self.assertEqual(actor_layer.in_features, 54)
+        self.assertEqual(critic_layer.in_features, 61)
+
+        plain = torch.zeros((1, 61), dtype=torch.float32)
+        privileged_changed = plain.clone()
+        privileged_changed[:, 54:] = torch.arange(1, 8, dtype=torch.float32)
+        plain_mean = policy.get_distribution(plain).distribution.mean
+        changed_mean = policy.get_distribution(privileged_changed).distribution.mean
+        torch.testing.assert_close(plain_mean, changed_mean, rtol=0, atol=0)
+
+        privileged_changed.requires_grad_(True)
+        value = policy.predict_values(privileged_changed).sum()
+        value.backward()
+        self.assertTrue(torch.any(privileged_changed.grad[:, 54:] != 0))
 
     def test_std_bound_holds_inside_updates_and_after_final_update(self):
         env = DummyVecEnv([ToyEnv])
