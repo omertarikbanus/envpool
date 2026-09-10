@@ -80,7 +80,8 @@ produce at the tested rates:
 Gamma1 run 2's setting (`desired_kl=0.01`, `LR_MAX=5e-05`) is the one
 combination measured stable across a full 40M-step run and is the default
 to restore unless there's a specific reason to change it (see
-`quadcontrol/docs/CURRENT_PLAN.md` for what each line actually used and why).
+`quadcontrol/docs/archive/gamma-line-record.md` for what each line actually
+used and why; note the arms are now `kim`/`rudin`/`ours`).
 
 ## Training artifacts are committed, not gitignored
 

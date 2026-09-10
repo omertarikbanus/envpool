@@ -27,7 +27,7 @@ the time so existing runs reproduced (commit d5c798a). **Stale as of Gamma1
 now 50 -- the value WBIC and the evaluation harness are validated at. Beta1-3
 overrode it to 10 for training and were evaluated at 50, a ~2x authority
 mismatch discovered and fixed in Gamma1; see
-`quadcontrol/docs/CURRENT_PLAN.md`.
+`quadcontrol/docs/archive/gamma-line-record.md`.
 
 **`force_z_max` must stay 250.** Setting it to 150 — to centre the neutral action
 on the 147 N body weight — drops ride height 0.398 → 0.325 m and collapses J50 to
