@@ -170,3 +170,9 @@ data/alpha/backups/
 # is for build and scratch output. data/current/ stays excluded as a whole, so
 # its rebuild logs are unaffected.
 !data/**/*.log
+
+# Superseded training output, moved out of the working tree 2026-09-10 so
+# `git status` reflects work in progress. Kept on disk, not in git: ~100 MB,
+# dominated by the gamma5_scratch run that the ICRA record explicitly does
+# not use. Placed after the !data/**/*.log negation above so it wins.
+data/_archive/
