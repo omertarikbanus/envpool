@@ -21,7 +21,9 @@ import numpy as np
 import envpool
 
 SIM_CONFIG = "/app/quadcontrol/config/robots/sim/envpool_train_rudin.toml"
-TORQUE_LIMITS = np.array([23.7, 23.7, 35.55] * 4)
+# The plant's limits, from the Go2 MJCF forcerange — not the recipe's stale
+# Go1 calf effort (35.55 N.m); see quadruped_pd.h, PDConstants.
+TORQUE_LIMITS = np.array([23.7, 23.7, 45.43] * 4)
 FAILS: list[str] = []
 
 
@@ -62,12 +64,12 @@ def main() -> None:
           "commands: zeroed below 0.2, within [-1, 1]")
     check(np.all(np.abs(obs[:, 11] / 0.25) <= 1.0 + 1e-9), "yaw-rate command clipped to [-1, 1]")
 
-    # Torque clip at the Go2 URDF efforts: saturate every joint.
+    # Torque clip at the Go2 MJCF forcerange: saturate every joint.
     obs, rew, term, trunc, info = env.step(np.full((n, 12), 100.0))
     torques_term = np.asarray(info["reward_terms"])[:, 4]
     expected = -(TORQUE_LIMITS ** 2).sum() * 0.0002 * 0.02
     frac = np.mean(np.isclose(torques_term, expected, rtol=1e-3))
-    check(frac > 0.9, f"saturated torques clip at [23.7, 23.7, 35.55] "
+    check(frac > 0.9, f"saturated torques clip at [23.7, 23.7, 45.43] "
                       f"(term {np.median(torques_term):.5f}, expected {expected:.5f}, "
                       f"{frac:.0%} of envs match)")
     env.close()
