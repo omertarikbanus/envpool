@@ -10,7 +10,7 @@ for threads in (int(x) for x in sys.argv[1].split(",")):
     cfg = {"sim_config_path": "/app/quadcontrol/config/robots/sim/envpool_train_Gamma6.toml",
            "max_episode_steps": 1550}
     if threads: cfg["num_threads"] = threads
-    env = setup_environment("Humanoid-v4", n, 7, env_config=cfg)
+    env = setup_environment("QuadrupedWBC-v1", n, 7, env_config=cfg)
     path = "/app/envpool/data/gamma5_stage2/quadruped_ppo_model"
     model, env = load_model_and_normalization(path + ".zip", env, path + "_vecnormalize.pkl")
     obs = env.reset()

@@ -27,7 +27,7 @@ def fz_action(newtons):
     return (newtons / FORCE_Z_MAX) * 2.0 - 1.0
 
 def main():
-    env = envpool.make_gym("Humanoid-v4", num_envs=1, sim_config_path=SIM_CONFIG)
+    env = envpool.make_gym("QuadrupedWBC-v1", num_envs=1, sim_config_path=SIM_CONFIG)
     adim = env.action_space.shape[0]
     print(f"action dim = {adim}, obs dim = {env.observation_space.shape}")
 

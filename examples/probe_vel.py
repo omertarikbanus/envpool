@@ -21,7 +21,7 @@ def fz_action(newtons):
 def main():
     cfg = sys.argv[1]
     tag = sys.argv[2] if len(sys.argv) > 2 else cfg
-    env = envpool.make_gym("Humanoid-v4", num_envs=1, sim_config_path=cfg)
+    env = envpool.make_gym("QuadrupedWBC-v1", num_envs=1, sim_config_path=cfg)
     adim = env.action_space.shape[0]
 
     a = np.zeros((1, adim), dtype=np.float32)

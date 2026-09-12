@@ -14,7 +14,7 @@ from stable_baselines3.common.utils import get_schedule_fn
 from stable_baselines3.common.logger import configure
 from datetime import datetime
 
-from .asymmetric_policy import ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
+from .asymmetric_policy import AsymmetricActorCriticPolicy
 from .vec_adapter import VecAdapter
 
 FIXED_LEARNING_RATE = 1e-5
@@ -44,35 +44,42 @@ def setup_environment(env_name, num_envs, seed, render_mode=None, env_config=Non
     return env
 
 
-def create_policy_kwargs():
+def create_policy_kwargs(actor_obs_dim, recipe="gamma"):
     """Create policy kwargs for PPO model."""
+    unitree = recipe == "unitree"
     return dict(
-        actor_obs_dim=ACTOR_OBSERVATION_DIM,
-        activation_fn=th.nn.Tanh,
-        net_arch=[dict(pi=[256, 128], vf=[256, 128])],
-        log_std_init=-3.0,
+        actor_obs_dim=actor_obs_dim,
+        activation_fn=th.nn.ELU if unitree else th.nn.Tanh,
+        net_arch=[dict(pi=[512, 256, 128], vf=[512, 256, 128])]
+                 if unitree else [dict(pi=[256, 128], vf=[256, 128])],
+        log_std_init=0.0 if unitree else -3.0,
         full_std=False,          # important
         use_expln=False,
-   
-        # ortho_init=False,
+        # rsl_rl v1.0.2 leaves PyTorch's Linear initialization in place.
+        # SB3 otherwise applies orthogonal initialization by default.
+        ortho_init=not unitree,
     )
 
 
-def create_ppo_model(env, policy_kwargs, seed=None):
+def create_ppo_model(env, policy_kwargs, seed=None, recipe="gamma"):
     """Create a new PPO model with specified hyperparameters."""
+    unitree = recipe == "unitree"
+    # RSL-RL uses four minibatches per rollout. Preserve that geometry for
+    # smaller smoke runs as well as the 256-env main run.
+    unitree_batch = max(1, (384 * env.num_envs) // 4)
     return PPO(
         policy=AsymmetricActorCriticPolicy,
         env=env,
         # PPO hyper-parameters
-        learning_rate=FIXED_LEARNING_RATE,
-        clip_range=0.1,
+        learning_rate=1e-3 if unitree else FIXED_LEARNING_RATE,
+        clip_range=0.2 if unitree else 0.1,
         target_kl=0.01,
-        n_steps=512,
-        batch_size=1024,
-        n_epochs=10,
-        gamma=0.995,
-        gae_lambda=0.97,
-        max_grad_norm=0.1,
+        n_steps=384 if unitree else 512,
+        batch_size=unitree_batch if unitree else 1024,
+        n_epochs=5 if unitree else 10,
+        gamma=0.99 if unitree else 0.995,
+        gae_lambda=0.95 if unitree else 0.97,
+        max_grad_norm=1.0 if unitree else 0.1,
         # 0.01, the RSL-RL / legged_gym value. It was 0.05, which this repo has
         # a measured divergence for: the action std climbed 0.050 -> 0.275 over
         # one 17 M-step run while reward fell. Note log_std_init = -3.0 starts
@@ -119,7 +126,8 @@ def ask_continue_or_restart(model_path):
 
 
 def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=True, 
-                        force_new=False, continue_training=False, seed=None):
+                        force_new=False, continue_training=False, seed=None,
+                        recipe="gamma"):
     """Create a new model or load existing one based on user choice."""
     model_exists = os.path.exists(f"{model_save_path}.zip")
     vecnorm_exists = os.path.exists(f"{model_save_path}_vecnormalize.pkl")
@@ -182,7 +190,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         # model.n_epochs = 5
 
         # Update learning rate; also refresh PPO's lr schedule so it is not overwritten
-        new_learning_rate = FIXED_LEARNING_RATE
+        new_learning_rate = 1e-3 if recipe == "unitree" else FIXED_LEARNING_RATE
         model.learning_rate = new_learning_rate
         model.lr_schedule = get_schedule_fn(new_learning_rate)
         for param_group in model.policy.optimizer.param_groups:
@@ -194,7 +202,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
         # a checkpoint must not silently change its distribution.
     else:
         print("Creating new model...")
-        model = create_ppo_model(env, policy_kwargs, seed=seed)
+        model = create_ppo_model(env, policy_kwargs, seed=seed, recipe=recipe)
         print("New model created.")
     
     return model, env

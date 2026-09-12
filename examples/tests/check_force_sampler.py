@@ -7,12 +7,8 @@ import numpy as np
 from common import setup_environment, load_model_and_normalization
 
 n = 128
-# One thread per env, as training does: with fewer threads than envs, every env
-# past the thread count keeps a frozen gait phase, never reaches the onset cycle
-# and is never pushed. Without this the audit below fails on ~n-num_threads envs.
-env = setup_environment("Humanoid-v4", n, 7, env_config={
-    "sim_config_path": "/app/quadcontrol/config/robots/sim/envpool_train_Gamma6.toml",
-    "num_threads": n})
+env = setup_environment("QuadrupedWBC-v1", n, 7, env_config={
+    "sim_config_path": "/app/quadcontrol/config/robots/sim/envpool_train_Gamma6.toml"})
 path = "/app/envpool/data/gamma3/quadruped_ppo_model_ckpt_30001920"
 model, env = load_model_and_normalization(path + ".zip", env, path + "_vecnormalize.pkl")
 obs = env.reset()

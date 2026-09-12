@@ -1,0 +1,1615 @@
+diff --git a/config/robots/sim/envpool.toml b/config/robots/sim/envpool.toml
+index 5f6b2b9..8c4d21d 100644
+--- a/config/robots/sim/envpool.toml
++++ b/config/robots/sim/envpool.toml
+@@ -97,8 +97,9 @@ policy_base_velocity = [0.0, 0.0, 0.0]
+ #   abs(vy) <= base_vy_cap + policy_linear_limit
+ #   abs(yaw) <= base_yaw_cap + policy_yaw_limit
+ # with base caps from sampled ranges (or policy_base_velocity when sampling is off).
+-# A negative seed initializes each environment from std::random_device. The
+-# generator then advances on every episode reset, producing a new command.
++# A nonnegative seed is mixed with the environment id and episode number, so
++# the experiment is replayable while workers and resets receive distinct
++# commands. A negative seed initializes each module from std::random_device.
+ policy_random_velocity_enabled = true
+ policy_random_vx_min = -0.5
+ policy_random_vx_max = 2.7
+diff --git a/docs/DELTA_LADDER_PLAN.md b/docs/DELTA_LADDER_PLAN.md
+index f5c9190..33a1704 100644
+--- a/docs/DELTA_LADDER_PLAN.md
++++ b/docs/DELTA_LADDER_PLAN.md
+@@ -103,7 +103,7 @@ is answerable from the data rather than from git archaeology.
+    hand-write `docker run`, never pip-install envpool piecemeal.)*
+ 2. Confirm the width:
+    ```
+-   python -c "import envpool; e=envpool.make('Humanoid-v4','gym',num_envs=1); print(e.observation_space.shape)"
++   python -c "import envpool; e=envpool.make('QuadrupedWBC-v1','gym',num_envs=1); print(e.observation_space.shape)"
+    ```
+    Expect `(61,)`. If it prints `(54,)` the rebuild did not take.
+ 3. Re-assert actor invariance (Delta's authors report this; make it a gate):
+diff --git a/docs/RL_ONLY_BASELINE_PLAN.md b/docs/RL_ONLY_BASELINE_PLAN.md
+index 1800791..724d5ea 100644
+--- a/docs/RL_ONLY_BASELINE_PLAN.md
++++ b/docs/RL_ONLY_BASELINE_PLAN.md
+@@ -1,8 +1,11 @@
+ # Plan — the end-to-end RL baseline arm, and the env reorganisation
+ 
+ **Date:** 2026-09-10
+-**Status:** planned, not started. Branch `rl-only-baseline` in both `envpool`
+-and `quadcontrol`.
++**Status (2026-09-11):** A–D implemented. The `rudin` arm is now an **exact
++recreation** of `unitree_rl_gym`'s Go2 task on `QuadrupedPD-v1`, trained with
++vendored `rsl_rl` v1.0.2 — see "2026-09-11 revision" below, which supersedes D2,
++D5, D6's step arithmetic and Workstreams C/D. Branch `rl-only-baseline` in both
++repositories. Current state: `RL_ONLY_BASELINE_STATUS.md`.
+ **Supersedes:** nothing. Complements `docs/archive/gamma-line-record.md`.
+ 
+ ## Why
+@@ -91,6 +94,95 @@ not an arm in this paper.
+ | **D6** | Match Unitree's ~147M-step budget | Removes "you under-trained the baseline" as a reviewer objection; costs ~5.5 h/seed |
+ | **D7** | `QuadrupedWBC-v0` = Gamma (54 obs), `-v1` = Delta (61 obs) | Lets `gamma5_stage3` be evaluated natively, retiring the observation-width adapter for the headline result |
+ 
++**D2 and D5 are superseded** (2026-09-11): the arm follows the recipe exactly —
++50 Hz, observation noise, friction randomisation and `push_robots` included.
++
++## 2026-09-11 revision — exact recreation of the Unitree Go2 recipe
++
++Instruction: stick to the `unitree_rl_gym` Go2 implementation and recreate it
++exactly; for the first trial, switch external disturbance off where the
++original has none. Everything below was read from source —
++`unitreerobotics/unitree_rl_gym` @ `276801e` (`go2_config.py`,
++`legged_robot_config.py`, `legged_robot.py`, `resources/robots/go2/urdf/go2.urdf`)
++and `leggedrobotics/rsl_rl` @ `v1.0.2` (`2ad79cf`), the version Unitree's setup
++doc pins.
++
++### Why the earlier port was replaced
++
++The 16 dev runs of 2026-09-10/11 (`data/rudin_*`, task `QuadrupedPD-v0`) were a
++partial port: 100 Hz, SB3 instead of `rsl_rl`, a hand-tuned default pose, and —
++decisively — termination at this project's z-band floor of 0.20 m. Under the
++recipe's zero action the Kp = 20 PD sags the body to **0.218 m mean, 0.188 m
++min** (measured, `examples/tests/unitree_recipe_check.py`), so that floor
++terminated the recipe's own default stance. `legged_gym` terminates on base
++contact instead. Those runs are dev artefacts, not results.
++
++### Disturbance for the first trial
++
++The recipe's only external disturbance is `legged_gym`'s `push_robots`
++(`LeggedRobotCfg.domain_rand`, inherited by Go2): the base's world x/y velocity
++is overwritten with U(−1, 1) m/s every 750 policy steps (15 s) and — because
++`_push_robots` runs after `reset_idx` with `episode_length_buf == 0` — on every
++reset except the first. **It is on.** This project's impulse sampler is not part
++of the recipe and is **off** (`external_force_enable = false`).
++
++### What is reproduced exactly
++
++| aspect | recipe | here |
++|---|---|---|
++| policy rate / decimation | 50 Hz; target held, PD re-evaluated each physics step | 50 Hz (`frame_skip` 10 × 2 ms, asserted by the env); PD re-evaluated each 1 ms physics step |
++| PD law, clip | `clip(Kp(a·0.25 + q₀ − q) − Kd·q̇, ±effort)`, Kp 20, Kd 0.5 | same; clip by MuJoCo actuator force range at every physics step, leg-controller clamp lifted so no feedforward residual |
++| torque limits | URDF efforts **23.7 / 23.7 / 35.55** N·m | same (verified: saturated torque term matches to 1e-3) |
++| default pose | hip ±0.1, thigh 0.8 / 1.0, calf −1.5 | same, mapped `q_here = [q_hip, −q_thigh, −q_calf]` (MJCF axes (0,−1,0) vs URDF (0,1,0), same zero pose) |
++| observation | 48: lin vel ×2, ang vel ×0.25, projected gravity, commands ×(2, 2, 0.25), q − q₀, q̇ ×0.05, actions; uniform noise per `_get_noise_scale_vec`; clip ±100 | same, from simulator ground truth (Isaac root/DOF tensors) |
++| actions | clip ±100, scale 0.25 | same |
++| commands | vx, vy ∈ U(−1, 1), heading ∈ U(−3.14, 3.14), zeroed if ‖(vx, vy)‖ ≤ 0.2; resampled every 500 steps and on reset; yaw = clip(0.5·wrap(heading error), ±1) every step | same (env-side sampler; quadcontrol's command sampler disabled) |
++| rewards | 10 terms, scales × dt, total clipped at 0; `dof_acc` with policy dt; torques of last physics substep; air time on foot z-force > 1 N, `last_contacts` not cleared on reset; collision = thigh/calf bodies > 0.1 N; soft limits from URDF, rear thigh distinct | same |
++| termination | base contact > 1 N, \|pitch\| > 1.0, \|roll\| > 0.8, `episode_length_buf > 1000` | same |
++| reset | base (0, 0, 0.42), identity, lin/ang vel U(−0.5, 0.5); q = q₀ · U(0.5, 1.5), q̇ = 0 | same |
++| randomisation | friction: 64 buckets U(0.5, 1.25), one per env, for life; `init_at_random_ep_len` | same (buckets seeded from the pool seed; first episode length U{0..999}) |
++| algorithm | `rsl_rl` v1.0.2 PPO, ActorCritic ELU 512-256-128, std 1.0, adaptive LR (KL 0.01), 5 epochs × 4 minibatches, clip 0.2, value clip, ent 0.01, γ 0.99, λ 0.95, grad 1.0, 24 steps × 4096 envs, 1500 iterations, seed 1 | the same code, vendored unmodified (`examples/third_party/rsl_rl`, SHA256SUMS) |
++
++### Residual deviations (unavoidable or declared)
++
++Simulator-level — inherent to running the recipe outside Isaac Gym:
++
++1. **Physics engine.** MuJoCo, 1 ms step, vs PhysX TGS at 5 ms. PD evaluated at
++   1 kHz rather than 200 Hz.
++2. **Robot model.** This project's Go2 MJCF: same masses and inertias, but mesh
++   collision geometry instead of the URDF's primitives; the foot sphere is a geom
++   of the calf body, so collision counting excludes it and a 4 cm support patch
++   of the calf mesh; the MJCF limits every thigh to the front range (the reward's
++   soft limits still use the URDF's per-leg values). The base mesh may include
++   the head, which in the URDF is a separate, non-terminating body.
++3. **Friction combination.** PhysX averages the pair (robot f, ground 1.0);
++   MuJoCo takes the max, so (f + 1)/2 is written to every geom. MuJoCo's
++   torsional/rolling terms (0.005, 0.0001) are kept.
++4. **Contact thresholds** are applied per contact rather than to the body's net
++   force; identical for the single sphere–plane contact of a foot.
++5. **First observation after a reset** is the true reset state. `legged_gym`'s
++   is a stale mix (terminal base velocity and yaw command, reset joints) —
++   an artefact of its vectorised update order.
++6. **Joint velocity limits** (URDF 30.1 / 20.07 rad/s) are not enforced; not
++   verified whether Isaac Gym enforces them for effort-driven DOFs.
++7. **RNG streams** are per-env mt19937, not torch's; runs are reproducible here
++   but not numerically identical to Isaac Gym.
++
++Paper-level — the recipe differs from the other two arms, and the table caption
++must say so:
++
++- **Calf torque limit 35.55 N·m vs 45.43 N·m** for `kim` and `ours`. The recipe
++  gives this arm 22 % less knee torque.
++- **Friction:** trained on effective μ ∈ [0.75, 1.125]; the shared evaluation
++  runs at μ = 0.6, below that range. The other arms train and evaluate at 0.6.
++- **50 Hz** vs 100 Hz; **observation noise, pushes and friction randomisation**
++  for this arm only (reversing D5).
++
++### Cost
++
++4096 envs: construction ≈ 20 min (serialised by the env's init mutex),
++≈ 37 MB per env (≈ 150 GB resident). Throughput: see the status document.
++
+ ## What the Unitree recipe actually specifies
+ 
+ Read from their config files, not from memory:
+@@ -100,13 +192,15 @@ Read from their config files, not from memory:
+ | `num_observations` / `num_privileged_obs` / `num_actions` | 48 / **None** / 12 |
+ | PD gains | `stiffness = 20.0`, `damping = 0.5` |
+ | `action_scale` / `decimation` | 0.25 / 4 (→ 50 Hz at their 200 Hz sim) |
++| observation / action clipping | ±100 / ±100 |
++| observation / reward running normalization | none (the pinned `rsl_rl` v1.0.2 runner consumes the scaled observations and raw rewards directly) |
+ | `default_joint_angles` | hip ±0.1, thigh 0.8/1.0, calf −1.5 rad |
+ | `episode_length_s` | 20 |
+ | commands | vx [−1, 1], vy [−1, 1], yaw [−1, 1] |
+ | `obs_scales` | lin_vel 2.0, ang_vel 0.25, dof_pos 1.0, dof_vel 0.05 |
+ | reward scales | `tracking_lin_vel` 1.0, `tracking_ang_vel` 0.5, `lin_vel_z` −2.0, `ang_vel_xy` −0.05, `torques` **−0.0002**, `dof_acc` −2.5e-7, `feet_air_time` 1.0, `collision` −1.0, `action_rate` −0.01, `dof_pos_limits` **−10.0** |
+ | `base_height_target` / `soft_dof_pos_limit` | 0.25 / 0.9 |
+-| PPO | lr 1e-3 **adaptive** to `desired_kl` 0.01, `init_noise_std` 1.0, ELU [512, 256, 128] actor and critic, 5 epochs, 4 minibatches, clip 0.2, `ent_coef` 0.01, γ 0.99, λ 0.95, `max_grad_norm` 1.0, 24 steps × 4096 envs, 1500 iterations ≈ 147M steps |
++| PPO | lr 1e-3 **adaptive** to `desired_kl` 0.01, `init_noise_std` 1.0, ELU [512, 256, 128] actor and critic, 5 epochs, 4 minibatches, policy/value clip 0.2, `ent_coef` 0.01, γ 0.99, λ 0.95, `max_grad_norm` 1.0, 24 steps × 4096 envs, 1500 iterations ≈ 147M steps |
+ 
+ Two of those are Go2 overrides that differ from stock `legged_gym`, and both
+ matter: `torques = −0.0002` is **20× the base −0.00001**, and `dof_pos_limits
+@@ -154,10 +248,10 @@ removed for every arm equally.
+ 1. `git mv envpool/mujoco/gym/humanoid.h envpool/mujoco/gym/quadruped_wbc.h`;
+    `HumanoidEnv*` → `QuadrupedWBCEnv*`. The name has been wrong since the env
+    was repurposed from Gym's humanoid.
+-2. Split the observation behind a traits parameter: one templated env class,
+-   two `EnvFns` — `QuadrupedWBCV0EnvFns` (`kObservationDim = 54`, privileged
+-   tail suppressed) and `QuadrupedWBCV1EnvFns` (61). The privileged values are
+-   already written last, so v0 is v1 with the tail withheld — **verify against
++2. Split the observation using the existing configuration idiom: one env class
++   with `privileged_observations = false` for v0 (54) and `true` for v1 (61).
++   This avoids templating churn in the shared implementation. The privileged
++   values are written last through the same bounded writer — **verify against
+    git `0fd79b7` rather than assume it.**
+ 3. Register both in `mujoco_envpool.cc`, `mujoco/gym/__init__.py` and
+    `mujoco/gym/registration.py`.
+@@ -169,9 +263,17 @@ removed for every arm equally.
+    `startswith("Humanoid")` branch, and the hardcoded `env_name="Humanoid-v4"`
+    in `evaluations/core/_rl_eval.py`.
+ 
+-**Gate:** re-run one `gamma5_stage3@4000256` evaluation cell on
+-`QuadrupedWBC-v0` *without* `ObsWidthAdapter` and confirm the trace matches the
+-adapter-bridged result. If it does not, v0 is not faithful — stop and report.
++**Gate:** verify the shared observation writer structurally, then compare
++`gamma5_stage3@4000256` on native v0 and v1 + `ObsWidthAdapter` in the standard
++controlled evaluation (nominal 0.8 m/s; command randomization disabled). Run
++two seed batches of 64 episodes at the saved forward WBIC threshold, 47.46 N·s,
++and audit force delivery and the 5.5 s scoring window. Report per-episode
++outcomes, onsets, and rewards as well as aggregate survival. A mismatch needs
++investigation; similar aggregate rates alone do not establish equivalence.
++Passed on 2026-09-10: zero differences in these quantities across 128 paired
++episodes. This is a one-cell regression, not a six-direction J50 measurement.
++The original uncontrolled trace probe used a configuration with an independent
++command RNG seeded from entropy; an EnvPool seed alone is insufficient there.
+ 
+ ### B — `MdlRLJointPD`  (`quadcontrol`)
+ 
+@@ -225,7 +327,7 @@ Assumption to revisit if it misbehaves: episode length 20 s = 2000 steps
+ - A `--recipe unitree` preset in `create_ppo_model`, leaving the Gamma defaults
+   untouched: ELU [512, 256, 128] ×2, `init_noise_std` 1.0, lr 1e-3 adaptive to
+   KL 0.01, γ 0.99, λ 0.95, 5 epochs, clip 0.2, `vf_coef` 1.0, `max_grad_norm`
+-  1.0, `n_steps = 384` at 256 envs.
++  1.0, `n_steps = 384` at 256 envs, and no `VecNormalize` wrapper.
+ - `--std-max 0`, with the std-divergence abort from the collisions list.
+ - New `config/robots/sim/envpool_train_rudin.toml`: Gamma5's force block verbatim,
+   a `[rl_joint_pd]` table for gains and action scale, no friction or push
+diff --git a/docs/RL_ONLY_BASELINE_STATUS.md b/docs/RL_ONLY_BASELINE_STATUS.md
+new file mode 100644
+index 0000000..94a0e96
+--- /dev/null
++++ b/docs/RL_ONLY_BASELINE_STATUS.md
+@@ -0,0 +1,167 @@
++# Status — RL-only baseline implementation
++
++**Updated:** 2026-09-11
++**Plan:** `docs/RL_ONLY_BASELINE_PLAN.md` — read its "2026-09-11 revision"
++**Branches:** `rl-only-baseline` in `envpool` and `quadcontrol` (uncommitted)
++**State:** Workstreams A–D implemented. The `rudin` arm is an exact recreation
++of `unitree_rl_gym`'s Go2 task (`QuadrupedPD-v1`, vendored `rsl_rl` v1.0.2).
++Deterministic recipe checks pass. No trial run yet. E (runs) and F (evaluation
++integration, which needs an `rsl_rl` checkpoint loader) remain.
++
++## 2026-09-11 — what went wrong with the first port, and what replaced it
++
++Sixteen dev runs (`data/rudin_smoke*`, `data/rudin_flat*`, task
++`QuadrupedPD-v0`, SB3) produced no usable arm. Causes, from their manifests,
++TensorBoard logs and surviving console logs:
++
++- **Judged too early.** 5M steps is 51 PPO iterations of the recipe's 1500
++  (3.4 %). The "stable gait at 5M" gate came from Gamma, whose policy starts on
++  top of a walking WBIC with std 0.05; this arm starts from std 1.0.
++- **Smoke gate overridden five times.** Smokes v1–v5 had 20–105-step episodes
++  (the robot never stood), and a 5M run followed each.
++- **A change that never reached training.** v3 and v4 are identical to the digit
++  despite different simulator binaries.
++- **No provenance.** Seven simulator binaries across sixteen runs, nothing
++  committed, console logs written to container `/tmp` and overwritten; why v5
++  stopped at 1.08M is unknowable.
++- **Termination at the 0.20 m evaluation floor** — a height constraint the
++  recipe's reward never prices (its `base_height` scale is 0). The recipe's own
++  zero-action stance sags to 0.218 m mean, 0.188 m min.
++- **Undeclared recipe changes:** v8 narrowed commands to vx only; the default
++  pose was hand-tuned; a 0.05 std floor was added.
++
++Replacement (this revision):
++
++| piece | where |
++|---|---|
++| exact task | `envpool/envpool/mujoco/gym/quadruped_wbc.h`, joint-PD branch (`InitJointPD`, `ResetJointPD`, `StepJointPD`, `ComputeJointPDReward`); registered as `QuadrupedPD-v1` (`frame_skip` 10, `max_episode_steps` 1001). `QuadrupedPD-v0` is gone. |
++| simulator access | `SimRobotState` + get/set state, base-velocity push, friction, actuator force limits, base contact force: `MdlSimDriver`, `SimHW`, `RLPipelineRuntime` |
++| arm config | `config/robots/sim/envpool_train_rudin.toml` — our impulse sampler off, leg-controller clamp lifted, Unitree default pose mapped, command sampler off |
++| algorithm | `envpool/examples/third_party/rsl_rl` (v1.0.2, unmodified, `SHA256SUMS`) |
++| adapter / trainer | `envpool/examples/common/rsl_vec_env.py`, `envpool/examples/train_unitree.py` (refuses to overwrite a run dir; writes both repos' HEAD + diffs, `.so` hash, full config before step 1) |
++| smoke gate | `envpool/examples/tests/unitree_recipe_check.py` — deterministic, no PPO |
++| retired | `examples/train.py --recipe unitree` now exits and points to the new trainer |
++
++### Recipe checks (64 envs) — all pass
++
++obs/action dims 48/12 · reset base height 0.42 · policy dt 0.020 s ·
++commands zeroed below 0.2 and within ±1, yaw command within ±1 · saturated
++torque term −0.03819 = the value for 23.7/23.7/35.55 N·m limits (100 % of envs) ·
++zero-action stand: 64/64 reach the 20 s timeout at step 1001, 0 early
++terminations, mean base height 0.218 m · observation noise within
++`_get_noise_scale_vec` bounds.
++
++### Launching a trial
++
++Inside the container, one run per directory, console inside it:
++
++```bash
++RUN=data/rudin_unitree/trial1_seed1
++mkdir -p $RUN && python3 examples/train_unitree.py --run-dir $RUN > $RUN/console.log 2>&1
++```
++
++Judge a trial on the full 1500 iterations (plus `final_eval.py` once F exists),
++not on an early slice.
++
++## 2026-09-10 — Workstream A (record)
++
++- Renamed the custom Gym `humanoid.h` to `quadruped_wbc.h`, including bindings,
++  registration, examples, and live evaluation references. Real Gym
++  `HumanoidStandup` and DeepMind Control Humanoid remain untouched.
++- One class, `privileged_observations` configuration switch: `QuadrupedWBC-v0`
++  emits 54 observations and `QuadrupedWBC-v1` emits 61. This follows the existing
++  Ant configuration idiom instead of introducing the planned templated classes.
++- The first 54 writes share one bounded `FillObservation` implementation.
++  The earlier review against `0fd79b7` found only additive changes for the
++  privileged tail and force-overlay/telemetry plumbing, with no changes to
++  reward, action, physics, or the first 54 writes.
++- Evaluation chooses the task from checkpoint width before loading normalization.
++  Gamma and Delta checkpoints use their native task; the adapter remains only
++  as the existing fallback for other widths.
++- The parity check now fails for a missing renamed header when the sibling
++  envpool checkout is present instead of silently skipping it.
++- Removed the obsolete Gym Humanoid alignment and determinism cases. The latter
++  was missed in the original handoff: it still requested removed `Humanoid-v4`
++  and creates three simultaneous pools with uncontrolled custom-runtime RNGs.
++  The dedicated controlled split regression is `evaluations/wbc_split_gate.py`.
++
++## Controlled regression result
++
++Checkpoint: `gamma5_stage3/quadruped_ppo_model_ckpt_4000256.zip`, with its matching
++VecNormalize file. The existing vectorized evaluator ran serial processes for
++native v0 and v1 with the 54-column adapter. No production task mapping was
++edited to force the comparison; the adapter variant overrides the mapping only
++inside its own diagnostic process.
++
++Protocol: forward 47.46 N·s (237.3 N for 0.2 s), body frame latched at onset,
++nominal initialization, fixed command 0.8 m/s, random onset phase after three
++gait cycles, common 5.5 s recovery window. Two batches of 64 episodes per path.
++The shared simulator lock was held. No WBIC evaluations or training ran.
++
++| Seed | Native v0 survivors | v1 + adapter survivors | Paired outcome differences |
++|---|---:|---:|---:|
++| 4242 | 32/64 | 32/64 | 0 |
++| 14242 | 24/64 | 24/64 | 0 |
++
++**All 128 pairs also had exactly equal onset times and total rewards.** All
++surviving episodes passed force-delivery integration and scoring-window checks.
++These are regression results for one challenging cell, not a six-direction
++J50 estimate or statistical proof of equivalence across all conditions.
++
++Artifacts (local, results are git-ignored):
++`evaluations/results/20260910_wbc_split_gate/`, containing `report.json`, all
++four `summary.csv` and `force_audit.json` files, evaluator logs, build logs,
++and the exact launch script `run_gate.py`.
++
++Reproduce in a new output directory from the host:
++
++```bash
++python3 evaluations/wbc_split_gate.py --run-dir wbc_split_gate_repeat
++```
++
++The maintained script additionally records checkpoint and normalization hashes
++and writes a paired comparison report, failing on any survival/onset/reward
++difference. Differences call for investigation, not automatic attribution to
++the observation split.
++
++## Correction to the earlier reproducibility finding
++
++The handoff reported max first-54-column differences of 8.54 across v0/v1 and
++18.72 across two v0 processes, beginning at reset. That uncontrolled probe did
++not establish that fully specified seeds fail to reproduce the runtime.
++
++`envpool.toml` enables command randomization with `policy_random_seed = -1`.
++`MdlRLCommandSource` seeds that RNG using `std::random_device`, independently of
++EnvPool's seed. Thus setting only the EnvPool seed leaves a source of entropy.
++The controlled evaluator explicitly disables command randomization, and its
++paired metrics matched exactly. This identifies a confound in the earlier
++probe, not a complete investigation of every source of nondeterminism. Training
++with entropy-seeded commands is not made replayable by setting EnvPool's seed
++alone; training RNG plumbing was not changed in this workstream.
++
++## Validation and unresolved runtime failure
++
++- Host `python3 -m pytest evaluations/tests/test_parameter_parity.py -q`:
++  **47 passed**.
++- `make run` in the existing `envpool-dev` container: first attempt built and
++  installed the wheel, then the 5,000-step `examples/env_step.py` aborted after
++  several resets with **`double free or corruption (fasttop)`**, exit 134
++  (make exit 2). See `build.log`.
++- An unchanged repeat of `make run` **passed, exit 0**, total execution 18 s.
++  See `build_retry.log`. A passing retry does not resolve the intermittent abort.
++- All four checkpoint-evaluation processes completed successfully.
++- Full host evaluation-test collection is blocked by an existing missing
++  `autotune.core.storage` import in `test_run_lock.py`; no dependency installs
++  or unrelated autotune changes were made.
++- The initial diagnostic command used Docker's `/app` cwd, which shadowed the
++  installed package with a source import and failed on `jaraco`. Launching in
++  `/app/quadcontrol` after the sanctioned `make run` resolved that import path.
++
++The heap-corruption cause is **unknown**. Do not label it fixed, attribute it to
++the rename without evidence, or hide it by shortening the normal build example.
++Before B, isolate the repeated-reset/logging crash so later pipeline changes do
++not obscure its origin. Then implement `MdlRLJointPD`, explicitly zero the absent
++cached gait schedule and derive the default pose from our simulator config.
++
++`msc-thesis` remains on `master` with its pre-existing `agents.md` path correction;
++this continuation did not modify or commit that repository.
+diff --git a/evaluations/core/_rl_eval.py b/evaluations/core/_rl_eval.py
+index ee392d7..431d2df 100644
+--- a/evaluations/core/_rl_eval.py
++++ b/evaluations/core/_rl_eval.py
+@@ -80,15 +80,29 @@ SUMMARY_COLS = (["episode"] + M.METRIC_KEYS + M.RL_ACTION_KEYS
+                 + ["ep_reward", "ep_steps"] + PREPUSH_COLS)
+ 
+ 
++# Observation width -> task id. The WBIC env serves both natively, so a
++# checkpoint is evaluated on the env whose width it was trained on and the
++# adapter never engages. Anything else (a pre-Gamma1 46-dim checkpoint, say)
++# falls back to the default env plus the adapter, as before.
++OBS_DIM_TO_ENV = {
++    48: "QuadrupedPD-v1",
++    54: "QuadrupedWBC-v0",
++    61: "QuadrupedWBC-v1",
++}
++DEFAULT_ENV_NAME = "QuadrupedWBC-v1"
++
++
++def _env_name_for_obs_dim(want):
++    return OBS_DIM_TO_ENV.get(want, DEFAULT_ENV_NAME)
++
++
+ def _make_env(config_path, overlay, seed, model_path, vecnorm_path, num_envs=1,
+               terminate_when_unhealthy=True):
++    # Resolved before the env is built, because it selects the env.
++    want = checkpoint_obs_dim(model_path, vecnorm_path)
++    env_name = _env_name_for_obs_dim(want)
+     env = setup_environment(
+-        env_name="Humanoid-v4", num_envs=num_envs, seed=seed, render_mode=None,
+-        # One worker thread per env. Under the EnvPool default of
+-        # min(num_envs, cpu_count), every env past the thread count keeps a
+-        # frozen gait phase and never latches a force onset, so it is scored as
+-        # a survivor that was never actually pushed. Harmless while runs stay
+-        # below the core count, fatal the first time they do not.
++        env_name=env_name, num_envs=num_envs, seed=seed, render_mode=None,
+         env_config={"sim_config_path": str(config_path),
+                     "sim_config_overlay": overlay,
+                     "max_episode_steps": EVALUATION_MAX_STEPS,
+@@ -102,15 +116,12 @@ def _make_env(config_path, overlay, seed, model_path, vecnorm_path, num_envs=1,
+                     # traces incomparable for failure-shape analysis. Survival
+                     # scoring is unaffected either way: it is computed from the
+                     # z band, not from the done flag.
+-                    "terminate_when_unhealthy": terminate_when_unhealthy,
+-                    "num_threads": num_envs},
++                    "terminate_when_unhealthy": terminate_when_unhealthy},
+     )
+-    # Reconcile observation width before VecNormalize is applied. A Delta-line
+-    # checkpoint expects 61 (its critic was fed 7 privileged values); this build
+-    # emits 54. The actor provably ignores 54-60, so padding here reproduces its
+-    # true input exactly while leaving the simulator binary -- and therefore
+-    # comparability with every already-measured controller -- untouched.
+-    want = checkpoint_obs_dim(model_path, vecnorm_path)
++    # Reconcile observation width before VecNormalize is applied. With the env
++    # chosen by width above this is normally a no-op; it remains as the fallback
++    # for a checkpoint whose width no task id serves. The actor provably ignores
++    # 54-60, so padding reproduces its true input exactly.
+     have = int(env.observation_space.shape[0])
+     if want is not None and want != have:
+         print(f"[obs] checkpoint expects {want}, env emits {have}; "
+@@ -340,7 +351,11 @@ def main():
+         obs = None
+         if not args.randomize_init:
+             # Shared-env path: build once and reuse for the whole batch.
+-            base, body = _split_stub(stub_text)
++            # Training configs disable LogServer for throughput. Full
++            # evaluation requires its simulator/controller columns for the
++            # tracking, torque, and CoT metrics, so enable it last here.
++            base, body = _split_stub(
++                stub_text.rstrip("\n") + "\n[logserver]\nenabled = true\n")
+             model, env = _make_env(
+                 base, body, args.seed, model_path, vecnorm,
+                 terminate_when_unhealthy=not args.run_past_unhealthy)
+@@ -364,7 +379,8 @@ def main():
+                 base, body = _split_stub(
+                     stub_text.rstrip("\n") + "\n"
+                     + f"external_force_seed = {episode_seed}\n"
+-                    + "\n".join(I.lines_for("rl", episode_seed)) + "\n")
++                    + "\n".join(I.lines_for("rl", episode_seed)) + "\n"
++                    + "[logserver]\nenabled = true\n")
+                 model, env = _make_env(
+                     base, body, episode_seed, model_path, vecnorm,
+                     terminate_when_unhealthy=not args.run_past_unhealthy)
+diff --git a/evaluations/core/metrics.py b/evaluations/core/metrics.py
+index bc1ca6e..1878b90 100644
+--- a/evaluations/core/metrics.py
++++ b/evaluations/core/metrics.py
+@@ -66,6 +66,7 @@ COL_RPY_CMD = "MdlConvexMPC_mpc_body_rpy_cmd[{}]"
+ # command); these columns are its logged equivalent.
+ COL_POS_CMD_RL = "MdlRLLocomotionState_rl_body_pos_cmd[{}]"
+ COL_RPY_CMD_RL = "MdlRLLocomotionState_rl_body_rpy_cmd[{}]"
++COL_CMD_VEL_PD = "MdlRLJointPD_cmd_vel[{}]"
+ COL_JOINT_TAU = "MdlSimDriver_joint_tau_mapped[{}]"
+ COL_JOINT_VEL = "MdlSimDriver_joint_vel_mapped[{}]"
+ 
+@@ -291,6 +292,8 @@ def _tracking(window: List[dict], tcol: str, onset: float) -> Dict[str, float]:
+         pos_cmd_col, rpy_cmd_col = COL_POS_CMD, COL_RPY_CMD
+     elif _col(window[0], COL_POS_CMD_RL.format(0)) is not None:
+         pos_cmd_col, rpy_cmd_col = COL_POS_CMD_RL, COL_RPY_CMD_RL
++    elif _col(window[0], COL_CMD_VEL_PD.format(0)) is not None:
++        return _tracking_joint_pd(window, tcol, onset)
+     else:
+         return out
+     samples = []
+@@ -356,6 +359,92 @@ def _tracking(window: List[dict], tcol: str, onset: float) -> Dict[str, float]:
+     return {key: _round(value) for key, value in out.items()}
+ 
+ 
++def _tracking_joint_pd(window: List[dict], tcol: str,
++                       onset: float) -> Dict[str, float]:
++    """Construct the joint-PD policy's commanded body trajectory.
++
++    The end-to-end policy has no body-pose controller. Its only exogenous
++    command is body-frame [vx, vy, yaw_rate], logged by MdlRLJointPD. Anchor the
++    planar trajectory and yaw at onset, integrate those commands, and use the
++    Unitree recipe's 0.25 m height with level roll/pitch.
++    """
++    out = {key: float("nan") for key in TRACKING_KEYS}
++    if len(window) < 2:
++        return out
++    anchor_pos = [_col(window[0], COL_POS.format(i)) for i in range(3)]
++    anchor_rpy = [_col(window[0], COL_RPY.format(i)) for i in range(3)]
++    if any(value is None for value in (*anchor_pos, *anchor_rpy)):
++        return out
++    desired_x, desired_y = anchor_pos[0], anchor_pos[1]
++    desired_yaw = anchor_rpy[2]
++    previous_t = _col(window[0], tcol)
++    samples = []
++    for row in window:
++        t = _col(row, tcol)
++        command = [_col(row, COL_CMD_VEL_PD.format(i)) for i in range(3)]
++        actual_pos = [_col(row, COL_POS.format(i)) for i in range(3)]
++        actual_rpy = [_col(row, COL_RPY.format(i)) for i in range(3)]
++        values = [t, *command, *actual_pos, *actual_rpy]
++        if any(value is None or not math.isfinite(value) for value in values):
++            continue
++        dt = max(0.0, t - previous_t)
++        desired_x += (math.cos(desired_yaw) * command[0] -
++                      math.sin(desired_yaw) * command[1]) * dt
++        desired_y += (math.sin(desired_yaw) * command[0] +
++                      math.cos(desired_yaw) * command[1]) * dt
++        desired_yaw += command[2] * dt
++        previous_t = t
++        pos_error = (actual_pos[0] - desired_x,
++                     actual_pos[1] - desired_y,
++                     actual_pos[2] - 0.25)
++        rpy_error = (actual_rpy[0], actual_rpy[1],
++                     _angle_error(actual_rpy[2], desired_yaw))
++        samples.append((t, pos_error, rpy_error))
++    return _tracking_from_error_samples(samples, onset)
++
++
++def _tracking_from_error_samples(samples, onset):
++    out = {key: float("nan") for key in TRACKING_KEYS}
++    if len(samples) < 2:
++        return out
++    duration = samples[-1][0] - samples[0][0]
++    if duration <= 0.0:
++        return out
++    for i, name in enumerate(("x", "y", "z")):
++        out[f"tracking_pos_rmse_{name}_m"] = math.sqrt(
++            _trapz(samples, lambda sample, j=i: sample[1][j] ** 2) / duration)
++        out[f"tracking_pos_iae_{name}_m_s"] = _trapz(
++            samples, lambda sample, j=i: abs(sample[1][j]))
++    for i, name in enumerate(("roll", "pitch", "yaw")):
++        out[f"tracking_rpy_rmse_{name}_rad"] = math.sqrt(
++            _trapz(samples, lambda sample, j=i: sample[2][j] ** 2) / duration)
++        out[f"tracking_rpy_iae_{name}_rad_s"] = _trapz(
++            samples, lambda sample, j=i: abs(sample[2][j]))
++    pos_norms = [math.sqrt(sum(value * value for value in sample[1]))
++                 for sample in samples]
++    rpy_norms = [math.sqrt(sum(value * value for value in sample[2]))
++                 for sample in samples]
++    out["tracking_peak_pos_error_m"] = max(pos_norms)
++    out["tracking_peak_rpy_error_rad"] = max(rpy_norms)
++    out["tracking_end_pos_error_m"] = pos_norms[-1]
++    out["tracking_end_rpy_error_rad"] = rpy_norms[-1]
++    within = [
++        all(abs(value) <= POSITION_SETTLE_TOL_M[i]
++            for i, value in enumerate(sample[1])) and
++        all(abs(value) <= ORIENTATION_SETTLE_TOL_RAD for value in sample[2])
++        for sample in samples
++    ]
++    settling = float("nan")
++    if samples[-1][0] >= onset + T_EVAL - WINDOW_TOL:
++        suffix = True
++        for i in range(len(samples) - 1, -1, -1):
++            suffix = suffix and within[i]
++            if suffix:
++                settling = max(0.0, samples[i][0] - onset)
++    out["tracking_settling_time_s"] = settling
++    return {key: _round(value) for key, value in out.items()}
++
++
+ def _percentile(values: List[float], fraction: float) -> float:
+     if not values:
+         return float("nan")
+diff --git a/evaluations/core/runner.py b/evaluations/core/runner.py
+index 619da78..b17fb0e 100644
+--- a/evaluations/core/runner.py
++++ b/evaluations/core/runner.py
+@@ -293,7 +293,11 @@ def run_rl(spec: ForceSpec, runs: int, out_dir_container: str,
+     90s keeps a comfortable margin over normal runtime while capping the
+     damage from a hang to a fraction of the old cost.
+     """
+-    stub_text = spec.to_rl_stub()
++    # The 48-wide checkpoint belongs to the end-to-end joint-PD task and must
++    # load its controller/reward config. WBC checkpoints retain envpool.toml.
++    base_config = ("envpool_train_rudin.toml"
++                   if _checkpoint_obs_dim(model_path) == 48 else "envpool.toml")
++    stub_text = spec.to_rl_stub(base_config=base_config)
+     import base64
+     stub_b64 = base64.b64encode(stub_text.encode()).decode()
+     seed = spec.seed
+diff --git a/evaluations/core/trace.py b/evaluations/core/trace.py
+index 7060bad..0d55084 100644
+--- a/evaluations/core/trace.py
++++ b/evaluations/core/trace.py
+@@ -62,6 +62,8 @@ TRACE_COLS_RL: List[str] = (
+     [M.COL_ACTION.format(i) for i in range(25)]  # [23] height residual, [24] phase delta
+     + [M.COL_POS_CMD_RL.format(i) for i in range(3)]
+     + [M.COL_RPY_CMD_RL.format(i) for i in range(3)]
++    + [M.COL_CMD_VEL_PD.format(i) for i in range(3)]
++    + [f"MdlRLJointPD_q_des[{i}]" for i in range(12)]
+ )
+ 
+ # Full-rate window around onset (s), and decimation factor outside it.
+diff --git a/evaluations/parity_check.py b/evaluations/parity_check.py
+index 34ab391..b424b67 100644
+--- a/evaluations/parity_check.py
++++ b/evaluations/parity_check.py
+@@ -112,7 +112,7 @@ def _run_proposed() -> str:
+     """
+     program = (
+         "import envpool; "
+-        f"envpool.make_gym('Humanoid-v4', num_envs=1, "
++        f"envpool.make_gym('QuadrupedWBC-v1', num_envs=1, "
+         f"sim_config_path='{RL_SIM_CONFIG}').reset()"
+     )
+     proc = subprocess.run(
+diff --git a/evaluations/probe_curriculum_scale.py b/evaluations/probe_curriculum_scale.py
+index fdbc8c9..86299a3 100644
+--- a/evaluations/probe_curriculum_scale.py
++++ b/evaluations/probe_curriculum_scale.py
+@@ -3,7 +3,7 @@ from stable_baselines3 import PPO
+ from stable_baselines3.common.vec_env import VecNormalize
+ sys.path.insert(0, "/app/envpool/examples")
+ ck = sys.argv[1]
+-e = envpool.make("Humanoid-v4", env_type="gym", num_envs=1, seed=11,
++e = envpool.make("QuadrupedWBC-v1", env_type="gym", num_envs=1, seed=11,
+                  sim_config_path="/app/quadcontrol/config/robots/sim/envpool_curr_probe.toml")
+ m = PPO.load(ck, device="cpu")
+ try:
+diff --git a/evaluations/tests/test_journal_metrics.py b/evaluations/tests/test_journal_metrics.py
+index 1be2dab..d3da96b 100644
+--- a/evaluations/tests/test_journal_metrics.py
++++ b/evaluations/tests/test_journal_metrics.py
+@@ -80,6 +80,34 @@ def test_trace_archives_effort_channels():
+         assert f"MdlLegController_tau_ff[{i}]" in T.TRACE_COLS_COMMON
+ 
+ 
++def test_joint_pd_tracking_integrates_logged_body_command():
++    rows = []
++    for t in (0.0, 2.75, 5.5):
++        row = _row(t, x=0.8 * t, x_error=0.0)
++        for i in range(3):
++            row.pop(M.COL_POS_CMD.format(i))
++            row.pop(M.COL_RPY_CMD.format(i))
++            row[M.COL_CMD_VEL_PD.format(i)] = str((0.8, 0.0, 0.0)[i])
++        row[M.COL_Z] = "0.25"
++        row[M.COL_POS.format(2)] = "0.25"
++        rows.append(row)
++
++    result = M.compute_metrics(rows)
++
++    assert result["tracking_pos_rmse_x_m"] == pytest.approx(0.0)
++    assert result["tracking_pos_rmse_z_m"] == pytest.approx(0.0)
++    assert result["tracking_rpy_rmse_yaw_rad"] == pytest.approx(0.0)
++    assert result["tracking_settling_time_s"] == pytest.approx(0.0)
++    assert M.nonfinite_required_journal_metrics(result) == []
++
++
++def test_trace_archives_joint_pd_command_and_targets():
++    for i in range(3):
++        assert M.COL_CMD_VEL_PD.format(i) in T.TRACE_COLS_RL
++    for i in range(12):
++        assert f"MdlRLJointPD_q_des[{i}]" in T.TRACE_COLS_RL
++
++
+ def test_required_journal_metrics_detect_missing_instrumentation():
+     result = M.compute_metrics([
+         {key: value for key, value in _row(0.0).items()
+diff --git a/evaluations/tests/test_parameter_parity.py b/evaluations/tests/test_parameter_parity.py
+index 0dd2335..bff648f 100644
+--- a/evaluations/tests/test_parameter_parity.py
++++ b/evaluations/tests/test_parameter_parity.py
+@@ -196,8 +196,28 @@ ACTOR_OBS_DIM = 54
+ PRIVILEGED_OBS_DIM = 7
+ OBS_DIM = 61
+ REWARD_TERMS = 10
++PD_ACTION_DIM = 12
++PD_OBS_DIM = 48
+ 
+-ENVPOOL_HUMANOID = REPO.parent / "envpool" / "envpool" / "mujoco" / "gym" / "humanoid.h"
++ENVPOOL_GYM_DIR = REPO.parent / "envpool" / "envpool" / "mujoco" / "gym"
++ENVPOOL_QUADRUPED_WBC = ENVPOOL_GYM_DIR / "quadruped_wbc.h"
++
++
++def _envpool_env_header():
++    """The env header, or a skip -- but never a silent pass on a rename.
++
++    This guarded on `humanoid.h` existing, so renaming the file would have
++    turned the whole parity check into a skip instead of a failure. The
++    skip is now conditioned on the envpool checkout being absent, which is
++    the case it was actually written for.
++    """
++    if not ENVPOOL_GYM_DIR.is_dir():
++        pytest.skip("envpool checkout not present next to quadcontrol")
++    assert ENVPOOL_QUADRUPED_WBC.exists(), (
++        f"envpool is checked out but {ENVPOOL_QUADRUPED_WBC.name} is missing; "
++        "was the env header renamed again?"
++    )
++    return ENVPOOL_QUADRUPED_WBC
+ 
+ 
+ def _constants(path, names):
+@@ -225,10 +245,8 @@ def test_rl_action_and_obs_dims_agree_across_the_interface():
+     assert quad["kRewardTermDim"] == REWARD_TERMS
+     assert src["kPolicyActionDim"] == ACTION_DIM
+ 
+-    if not ENVPOOL_HUMANOID.exists():
+-        pytest.skip("envpool checkout not present next to quadcontrol")
+     env = _constants(
+-        ENVPOOL_HUMANOID,
++        _envpool_env_header(),
+         ["kActionDim", "kActorObservationDim", "kPrivilegedObservationDim",
+          "kObservationDim", "kNumTerms"],
+     )
+@@ -239,6 +257,45 @@ def test_rl_action_and_obs_dims_agree_across_the_interface():
+     assert env["kNumTerms"] == REWARD_TERMS
+ 
+ 
++def test_joint_pd_dimensions_and_default_pose_are_config_derived():
++    import re
++
++    header = _envpool_env_header().read_text()
++    match = re.search(r"struct PDConstants\s*\{(.*?)\};", header, re.S)
++    assert match, "PDConstants is missing from the EnvPool environment"
++    pd = _constants_from_text(match.group(1), ["kActionDim", "kObservationDim"])
++    assert pd == {"kActionDim": PD_ACTION_DIM,
++                  "kObservationDim": PD_OBS_DIM}
++
++    config = _shared("envpool_train_rudin.toml")
++    assert config["simulation"]["initial_leg_joint_deg"] == [10.0, -50.0, 90.0]
++    joint_pd = config["rl_joint_pd"]
++    assert joint_pd["stiffness"] == 20.0
++    assert joint_pd["damping"] == 0.5
++    assert joint_pd["action_scale"] == 0.25
++    assert joint_pd["base_height_target"] == 0.25
++    assert joint_pd["soft_dof_pos_limit"] == 0.9
++    assert joint_pd["default_joint_positions"] == [
++        -0.062733463, -0.763667688, 1.464601836,
++         0.062733463, -0.763667688, 1.464601836,
++        -0.062733463, -1.063667688, 1.464601836,
++         0.062733463, -1.063667688, 1.464601836,
++    ]
++    module = (REPO / "src/modules/MdlRLJointPD.cc").read_text()
++    assert 'getArray("initial_leg_joint_deg"' in module
++    assert 'getArray("default_joint_positions"' in module
++
++
++def _constants_from_text(text, names):
++    import re
++    out = {}
++    for name in names:
++        match = re.search(rf"{name}\s*=\s*(\d+)\s*;", text)
++        assert match, f"constant {name} is missing"
++        out[name] = int(match.group(1))
++    return out
++
++
+ def test_rl_reward_tracks_the_configured_body_height():
+     """The reward reference must be the controller's knob, not a private copy.
+ 
+@@ -246,10 +303,7 @@ def test_rl_reward_tracks_the_configured_body_height():
+     reward asked 0.35 (an envpool-side default nothing overrode), the controller
+     commanded 0.32, and the floor was 0.20.
+     """
+-    humanoid = ENVPOOL_HUMANOID
+-    if not humanoid.exists():
+-        pytest.skip("envpool checkout not present next to quadcontrol")
+-    text = humanoid.read_text()
++    text = _envpool_env_header().read_text()
+     assert "reset_body_height" not in text, (
+         "envpool still carries its own stance-height constant"
+     )
+diff --git a/evaluations/wbc_split_gate.py b/evaluations/wbc_split_gate.py
+new file mode 100644
+index 0000000..a26ec38
+--- /dev/null
++++ b/evaluations/wbc_split_gate.py
+@@ -0,0 +1,76 @@
++"""Workstream A diagnostic; run on host, simulations serial in envpool-dev."""
++import argparse
++import base64
++import hashlib
++import csv
++import json
++from pathlib import Path
++import subprocess
++import sys
++
++ROOT = Path(__file__).resolve().parents[1]
++sys.path[:0] = [str(ROOT), str(ROOT / 'evaluations')]
++from simulator_lock import SimulatorLock
++from core.forces import impulse
++
++parser = argparse.ArgumentParser(description=__doc__)
++parser.add_argument('--run-dir', required=True, help='New results directory name')
++args = parser.parse_args()
++if not args.run_dir or Path(args.run_dir).name != args.run_dir or args.run_dir in ('.', '..'):
++    parser.error('--run-dir must be a single directory name')
++OUT = ROOT / 'evaluations' / 'results' / args.run_dir
++OUT.mkdir(parents=True, exist_ok=False)
++MODEL = '/app/envpool/data/gamma5_stage3/quadruped_ppo_model_ckpt_4000256.zip'
++report = []
++model_host = ROOT.parent / MODEL.removeprefix('/app/')
++artifacts = [model_host, model_host.with_name(model_host.stem + '_vecnormalize.pkl')]
++(OUT / 'protocol.json').write_text(json.dumps({
++    'model': MODEL, 'runs_per_path_per_seed': 64, 'seeds': [4242, 14242],
++    'direction': 'fwd', 'impulse_Ns': 47.46, 'speed_mps': 0.8,
++    'criterion': 'Exact paired survival, onset and reward equality; investigate any mismatch',
++    'artifact_sha256': {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in artifacts},
++}, indent=2) + '\n')
++with SimulatorLock(purpose='Workstream A native versus adapted observation regression'):
++    for seed in (4242, 14242):
++        for variant in ('native', 'adapter'):
++            name = f'{variant}_{seed}'
++            directory = OUT / name
++            directory.mkdir(exist_ok=True)
++            stub = base64.b64encode(impulse(47.46, 'fwd', seed=seed).to_rl_stub().encode()).decode()
++            code = "import sys; sys.path.insert(0, '/app/quadcontrol/evaluations'); from core import _rl_eval as e; "
++            if variant == 'adapter':
++                code += "e.OBS_DIM_TO_ENV[54] = 'QuadrupedWBC-v1'; "
++            code += 'e.main()'
++            args = ['docker', 'exec', '-w', '/app/quadcontrol', 'envpool-dev', 'python3', '-c', code,
++                    '--stub-b64', stub, '--runs', '64', '--model', MODEL,
++                    '--out', '/app/quadcontrol/' + str(directory.relative_to(ROOT)),
++                    '--seed', str(seed), '--trace-runs', '0', '--survival-only']
++            print('Starting', name, flush=True)
++            with (directory / 'eval.log').open('w') as log:
++                subprocess.run(args, stdout=log, stderr=subprocess.STDOUT, check=True)
++            rows = list(csv.DictReader((directory / 'summary.csv').open()))
++            audit = json.loads((directory / 'force_audit.json').read_text())
++            assert len(rows) == len(audit['episodes']) == 64
++            for ep in audit['episodes']:
++                if ep['survived']:
++                    assert ep['onset_time'] >= 0
++                    assert abs(ep['delivered_impulse_Ns'] - 47.46) <= 47.46 * .06
++                    assert ep['end_time'] >= ep['onset_time'] + 5.5
++            result = dict(variant=variant, seed=seed, survived=sum(int(r['survived']) for r in rows), n=len(rows))
++            report.append(result)
++            (OUT / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
++            print(result, flush=True)
++
++comparisons = []
++for seed in (4242, 14242):
++    def rows(variant):
++        with (OUT / f'{variant}_{seed}' / 'summary.csv').open() as stream:
++            return list(csv.DictReader(stream))
++    native, adapted = rows('native'), rows('adapter')
++    differences = {key: sum(a[key] != b[key] for a, b in zip(native, adapted))
++                   for key in ('survived', 'onset_time', 'ep_reward')}
++    comparisons.append(dict(seed=seed, differing_episodes=differences))
++(OUT / 'comparison.json').write_text(json.dumps(comparisons, indent=2) + '\n')
++if any(any(c['differing_episodes'].values()) for c in comparisons):
++    raise SystemExit('Paired metrics differ; investigate before accepting the split.')
++print('PASS: 128 paired episodes match in survival, onset and reward.')
+diff --git a/include/hardware/SimHW.hh b/include/hardware/SimHW.hh
+index b739596..c97f138 100644
+--- a/include/hardware/SimHW.hh
++++ b/include/hardware/SimHW.hh
+@@ -29,7 +29,39 @@ struct SimForceState {
+   double requested_impulse = 0.0;
+ };
+ SimForceState simHWGetForceState(MdlSimDriver* driver);
+-std::array<float, 4> simHWGetFootContactState(MdlSimDriver* driver);
++std::array<float, 4> simHWGetFootContactState(
++    MdlSimDriver* driver, float min_normal_force = 0.0f);
++int simHWGetPenalizedCollisionCount(MdlSimDriver* driver);
++
++// Ground-truth rigid-body state of the simulated robot, in the controller's
++// joint convention (axis = leg * 3 + joint, legs FR, FL, RR, RL). The base
++// velocities are WORLD-frame, matching Isaac Gym's root-state tensor, which is
++// what legged_gym reads and writes. `tau` is the torque MuJoCo actually applied
++// on the last physics step, i.e. after the actuator force-range clip.
++struct SimRobotState {
++  double base_pos[3] = {0.0, 0.0, 0.0};
++  double base_quat_wxyz[4] = {1.0, 0.0, 0.0, 0.0};
++  double lin_vel_world[3] = {0.0, 0.0, 0.0};
++  double ang_vel_world[3] = {0.0, 0.0, 0.0};
++  double q[12] = {};
++  double qd[12] = {};
++  double tau[12] = {};
++};
++SimRobotState simHWGetRobotState(MdlSimDriver* driver);
++// Overwrite pose and velocities (tau is ignored), then re-run forward
++// kinematics and refresh the driver's sensor caches.
++void simHWSetRobotState(MdlSimDriver* driver, const SimRobotState& state);
++// legged_gym's push: overwrite only the base's world-frame x/y velocity.
++void simHWSetBaseLinearVelocityXY(MdlSimDriver* driver, double vx, double vy);
++// Sliding friction of every geom, floor included. MuJoCo combines a contact
++// pair's friction with max(), so this sets every contact's coefficient.
++void simHWSetFriction(MdlSimDriver* driver, double mu);
++// Per-joint [abad, hip, knee] actuator force range, applied at every physics
++// step by MuJoCo's ctrl clamp.
++void simHWSetActuatorForceLimits(MdlSimDriver* driver,
++                                 const std::array<double, 3>& limits);
++// Norm of the net contact force on the floating-base body (world frame).
++double simHWGetBaseContactForceNorm(MdlSimDriver* driver);
+ MdlSimDriver* simHWGetDriver(rtcore::ModuleManager* mm);
+ MotorHW* simHWGetMotorHW(rtcore::ModuleManager* mm);
+ IMUHW* simHWGetIMUHW(rtcore::ModuleManager* mm);
+diff --git a/include/modules/MdlRLCommandSource.hh b/include/modules/MdlRLCommandSource.hh
+index ea62175..7c24b8d 100644
+--- a/include/modules/MdlRLCommandSource.hh
++++ b/include/modules/MdlRLCommandSource.hh
+@@ -11,6 +11,7 @@
+ 
+ #include <array>
+ #include <cstddef>
++#include <cstdint>
+ #include <random>
+ #include <string>
+ 
+@@ -49,6 +50,10 @@ class MdlRLCommandSource : public rtcore::Module {
+   void setPolicyPhaseDelta(float phase_delta);
+   void setPolicyActionNormalized(const std::array<float, kPolicyActionDim>& action,
+                                  std::size_t count);
++  // Select a deterministic substream before activation. RLPipelineRuntime
++  // assigns one stream per environment and episode so a fixed experiment seed
++  // remains replayable without collapsing every worker onto one command.
++  void setRandomStream(std::uint64_t stream_id);
+ 
+   bool usesPolicyInputs() const { return _mode == Mode::kPolicy; }
+   Mode mode() const { return _mode; }
+@@ -87,6 +92,7 @@ class MdlRLCommandSource : public rtcore::Module {
+   float _policy_random_yaw_min = -0.3f;
+   float _policy_random_yaw_max = 0.3f;
+   int _policy_random_seed = -1;
++  std::uint64_t _policy_random_stream = 0;
+   bool _policy_seed_initialized = false;
+   std::mt19937 _policy_rng;
+   float _policy_linear_limit = 0.5f;
+diff --git a/include/supervisor/RLPipelineRuntime.hh b/include/supervisor/RLPipelineRuntime.hh
+index 989d1f8..0ae5343 100644
+--- a/include/supervisor/RLPipelineRuntime.hh
++++ b/include/supervisor/RLPipelineRuntime.hh
+@@ -38,6 +38,7 @@ class MdlCtGaitScheduler;
+ class MdlFootstepPlanner;
+ class MdlLegController;
+ class MdlRLCommandSource;
++class MdlRLJointPD;
+ class MdlRLLocomotionState;
+ class MdlStateEstimator;
+ }  // namespace quadruped
+@@ -46,6 +47,11 @@ namespace quadruped {
+ 
+ class RLPipelineRuntime {
+  public:
++  enum class Pipeline {
++    kWbic,
++    kJointPD,
++  };
++
+   struct EnvDebugFrame {
+     static constexpr std::size_t kActionDim = 25;
+     static constexpr std::size_t kObsDim = 54;
+@@ -70,6 +76,7 @@ class RLPipelineRuntime {
+ 
+   struct Options {
+     int env_id = 0;
++    Pipeline pipeline = Pipeline::kWbic;
+     std::string sim_config_path = "/app/quadcontrol/config/robots/sim/envpool.toml";
+     // TOML text layered OVER sim_config_path, applied between appendConfigFile
+     // and finalizeConfig so it wins (the config database is last-one-wins).
+@@ -111,7 +118,19 @@ class RLPipelineRuntime {
+   // NOMINAL value, not the value after the policy's height residual.
+   float nominalBodyHeight() const;
+   SimForceState forceState() const;
+-  std::array<float, 4> footContactState() const;
++  std::array<float, 4> footContactState(float min_normal_force = 0.0f) const;
++  int penalizedCollisionCount() const;
++  // Ground-truth simulator access for the end-to-end joint-PD task, which
++  // reproduces legged_gym's semantics directly on simulator state (as Isaac
++  // Gym's root/DOF-state tensors do) rather than through the estimator.
++  SimRobotState robotState() const;
++  void setRobotState(const SimRobotState& state);
++  void setBaseLinearVelocityXY(double vx, double vy);
++  void setFriction(double mu);
++  void setActuatorForceLimits(const std::array<double, 3>& limits);
++  double baseContactForceNorm() const;
++  // Seconds per control tick (one stepFrame()).
++  double stepPeriodSeconds() const;
+ 
+   const quadruped::StateEstimate<float>& stateEstimate() const {
+     return last_state_est_;
+@@ -120,6 +139,7 @@ class RLPipelineRuntime {
+   const quadruped::GaitSchedule& gaitSchedule() const { return last_gait_schedule_; }
+ 
+   LegController<float>* legController() const;
++  std::array<float, 12> jointDefaultPosition() const;
+   quadruped::MdlWBIC* wbic() const { return wbic_; }
+ 
+  private:
+@@ -150,6 +170,7 @@ class RLPipelineRuntime {
+   bool disabled_{false};
+ 
+   rtcore::ModuleManager module_manager_;
++  double step_period_s_{0.0};
+ 
+   MdlSimDriver* sim_driver_{nullptr};
+   quadruped::MdlControlParams* control_params_{nullptr};
+@@ -159,6 +180,7 @@ class RLPipelineRuntime {
+   quadruped::MdlCtGaitScheduler* ct_gait_scheduler_{nullptr};
+   quadruped::MdlFootstepPlanner* footstep_planner_{nullptr};
+   quadruped::MdlRLLocomotionState* rl_state_module_{nullptr};
++  quadruped::MdlRLJointPD* rl_joint_pd_{nullptr};
+   quadruped::MdlWBIC* wbic_{nullptr};
+ 
+   rtcore::LogServer* logserver_{nullptr};
+@@ -193,6 +215,7 @@ class RLPipelineRuntime {
+ 
+   quadruped::GaitSchedule last_gait_schedule_{};
+   quadruped::StateEstimate<float> last_state_est_{};
++  std::uint64_t command_episode_{0};
+ };
+ 
+ }  // namespace quadruped
+diff --git a/src/core/RLPipelineRuntime.cc b/src/core/RLPipelineRuntime.cc
+index 9dbd8d1..8de437d 100644
+--- a/src/core/RLPipelineRuntime.cc
++++ b/src/core/RLPipelineRuntime.cc
+@@ -18,6 +18,7 @@
+ #include "modules/MdlLegController.hh"
+ #include "modules/MdlRLCommandSource.hh"
+ #include "modules/MdlRLLocomotionState.hh"
++#include "modules/MdlRLJointPD.hh"
+ #include "modules/MdlStateEstimator.hh"
+ #include "modules/MdlWBIC.hh"
+ #include "rtcore/ClockHW.hh"
+@@ -38,6 +39,7 @@ constexpr int kOrderGaitScheduler = 200;
+ constexpr int kOrderFootstepPlanner = 210;
+ constexpr int kOrderRlState = 220;
+ constexpr int kOrderWBIC = 300;
++constexpr int kOrderJointPD = 300;
+ constexpr int kOrderLegController = 400;
+ constexpr int kOrderStateEstimator = 32000;
+ constexpr bool kEnableLocalLoggingWithModuleRebuild = true;
+@@ -109,6 +111,7 @@ void RLPipelineRuntime::shutdown() {
+   ct_gait_scheduler_ = nullptr;
+   footstep_planner_ = nullptr;
+   rl_state_module_ = nullptr;
++  rl_joint_pd_ = nullptr;
+   wbic_ = nullptr;
+   sim_driver_ = nullptr;
+   motor_hw_ = nullptr;
+@@ -132,6 +135,7 @@ void RLPipelineRuntime::resetEpisode() {
+   // Stop local streaming first to avoid clients reading stale var layouts.
+   shutdownLocalLogging();
+   resetSimulation();
++  ++command_episode_;
+   resetModules();
+   // Prime-frame logs belong to the new episode.  Clear the persistent debug
+   // buffer before those frames so a terminal health/done flag from the prior
+@@ -206,6 +210,21 @@ void RLPipelineRuntime::setPhaseDelta(float delta) {
+ 
+ void RLPipelineRuntime::setPolicyAction(const mjtNum* action,
+                                         std::size_t action_count) {
++  if (options_.pipeline == Pipeline::kJointPD) {
++    if (!rl_joint_pd_) return;
++    std::array<float, MdlRLJointPD::kActionDim> action_buffer{};
++    const std::size_t count = action
++                                  ? std::min(action_count,
++                                             MdlRLJointPD::kActionDim)
++                                  : 0;
++    for (std::size_t idx = 0; idx < count; ++idx) {
++      action_buffer[idx] = std::isfinite(static_cast<double>(action[idx]))
++                               ? static_cast<float>(action[idx])
++                               : 0.0f;
++    }
++    rl_joint_pd_->setPolicyAction(action_buffer, count);
++    return;
++  }
+   if (!rl_command_source_) {
+     return;
+   }
+@@ -297,6 +316,11 @@ LegController<float>* RLPipelineRuntime::legController() const {
+   return leg_controller_module_ ? leg_controller_module_->legController() : nullptr;
+ }
+ 
++std::array<float, 12> RLPipelineRuntime::jointDefaultPosition() const {
++  return rl_joint_pd_ ? rl_joint_pd_->defaultJointPosition()
++                      : std::array<float, 12>{};
++}
++
+ void RLPipelineRuntime::initializeQuadcontrol() {
+   if (disabled_) {
+     return;
+@@ -405,6 +429,8 @@ void RLPipelineRuntime::initializeQuadcontrol() {
+     module_manager_.setStepPeriod(sim_period);
+   }
+   simHWSetPeriod(sim_driver_, module_manager_.getStepPeriod());
++  step_period_s_ =
++      static_cast<double>(module_manager_.getStepPeriod()) * 1e-6;
+   if (options_.env_id == 0 && MdlControlParams::parityDumpEnabled()) {
+     std::cout << "PARITY step_period_us=" << module_manager_.getStepPeriod()
+               << std::endl;
+@@ -416,7 +442,7 @@ void RLPipelineRuntime::initializeQuadcontrol() {
+ 
+ void RLPipelineRuntime::createPipelineModules_() {
+   if (control_params_ || rl_command_source_ || ct_gait_scheduler_ ||
+-      footstep_planner_ || rl_state_module_ || wbic_ ||
++      footstep_planner_ || rl_state_module_ || rl_joint_pd_ || wbic_ ||
+       leg_controller_module_ || state_estimator_) {
+     return;
+   }
+@@ -426,29 +452,41 @@ void RLPipelineRuntime::createPipelineModules_() {
+   module_manager_.activateModule(control_params_);
+ 
+   rl_command_source_ = new quadruped::MdlRLCommandSource();
++  const std::uint64_t command_stream =
++      (command_episode_ << 32U) |
++      static_cast<std::uint32_t>(options_.env_id);
++  rl_command_source_->setRandomStream(command_stream);
+   module_manager_.addModule(rl_command_source_, 1, 0, kOrderRlCommandSource);
+   module_manager_.activateModule(rl_command_source_);
+ 
+-  ct_gait_scheduler_ = new quadruped::MdlCtGaitScheduler();
+-  module_manager_.addModule(ct_gait_scheduler_, 1, 0, kOrderGaitScheduler);
+-  module_manager_.activateModule(ct_gait_scheduler_);
++  if (options_.pipeline == Pipeline::kWbic) {
++    ct_gait_scheduler_ = new quadruped::MdlCtGaitScheduler();
++    module_manager_.addModule(ct_gait_scheduler_, 1, 0, kOrderGaitScheduler);
++    module_manager_.activateModule(ct_gait_scheduler_);
+ 
+-  footstep_planner_ = new quadruped::MdlFootstepPlanner();
+-  module_manager_.addModule(footstep_planner_, 1, 0, kOrderFootstepPlanner);
+-  module_manager_.activateModule(footstep_planner_);
++    footstep_planner_ = new quadruped::MdlFootstepPlanner();
++    module_manager_.addModule(footstep_planner_, 1, 0, kOrderFootstepPlanner);
++    module_manager_.activateModule(footstep_planner_);
+ 
+-  rl_state_module_ = new quadruped::MdlRLLocomotionState();
+-  module_manager_.addModule(rl_state_module_, 1, 0, kOrderRlState);
+-  module_manager_.activateModule(rl_state_module_);
++    rl_state_module_ = new quadruped::MdlRLLocomotionState();
++    module_manager_.addModule(rl_state_module_, 1, 0, kOrderRlState);
++    module_manager_.activateModule(rl_state_module_);
+ 
+-  wbic_ = new quadruped::MdlWBIC();
+-  module_manager_.addModule(wbic_, 1, 0, kOrderWBIC);
+-  module_manager_.activateModule(wbic_);
++    wbic_ = new quadruped::MdlWBIC();
++    module_manager_.addModule(wbic_, 1, 0, kOrderWBIC);
++    module_manager_.activateModule(wbic_);
++  }
+ 
+   leg_controller_module_ = new quadruped::MdlLegController();
+   module_manager_.addModule(leg_controller_module_, 1, 0, kOrderLegController);
+   module_manager_.activateModule(leg_controller_module_);
+ 
++  if (options_.pipeline == Pipeline::kJointPD) {
++    rl_joint_pd_ = new quadruped::MdlRLJointPD();
++    module_manager_.addModule(rl_joint_pd_, 1, 0, kOrderJointPD);
++    module_manager_.activateModule(rl_joint_pd_);
++  }
++
+   state_estimator_ = new quadruped::MdlStateEstimator();
+   module_manager_.addModule(state_estimator_, 1, 0, kOrderStateEstimator);
+   module_manager_.activateModule(state_estimator_);
+@@ -486,6 +524,10 @@ void RLPipelineRuntime::destroyPipelineModules_() {
+   destroy_module(wbic);
+   wbic_ = nullptr;
+ 
++  rtcore::Module* joint_pd = rl_joint_pd_;
++  destroy_module(joint_pd);
++  rl_joint_pd_ = nullptr;
++
+   rtcore::Module* rl_state = rl_state_module_;
+   destroy_module(rl_state);
+   rl_state_module_ = nullptr;
+@@ -527,8 +569,42 @@ SimForceState RLPipelineRuntime::forceState() const {
+   return simHWGetForceState(sim_driver_);
+ }
+ 
+-std::array<float, 4> RLPipelineRuntime::footContactState() const {
+-  return simHWGetFootContactState(sim_driver_);
++std::array<float, 4> RLPipelineRuntime::footContactState(
++    float min_normal_force) const {
++  return simHWGetFootContactState(sim_driver_, min_normal_force);
++}
++
++int RLPipelineRuntime::penalizedCollisionCount() const {
++  return simHWGetPenalizedCollisionCount(sim_driver_);
++}
++
++SimRobotState RLPipelineRuntime::robotState() const {
++  return simHWGetRobotState(sim_driver_);
++}
++
++void RLPipelineRuntime::setRobotState(const SimRobotState& state) {
++  simHWSetRobotState(sim_driver_, state);
++}
++
++void RLPipelineRuntime::setBaseLinearVelocityXY(double vx, double vy) {
++  simHWSetBaseLinearVelocityXY(sim_driver_, vx, vy);
++}
++
++void RLPipelineRuntime::setFriction(double mu) {
++  simHWSetFriction(sim_driver_, mu);
++}
++
++void RLPipelineRuntime::setActuatorForceLimits(
++    const std::array<double, 3>& limits) {
++  simHWSetActuatorForceLimits(sim_driver_, limits);
++}
++
++double RLPipelineRuntime::baseContactForceNorm() const {
++  return simHWGetBaseContactForceNorm(sim_driver_);
++}
++
++double RLPipelineRuntime::stepPeriodSeconds() const {
++  return step_period_s_;
+ }
+ 
+ void RLPipelineRuntime::resetSimulation() {
+@@ -541,6 +617,10 @@ void RLPipelineRuntime::resetSimulation() {
+ void RLPipelineRuntime::cacheModuleState() {
+   if (ct_gait_scheduler_ && ct_gait_scheduler_->hasSchedule()) {
+     last_gait_schedule_ = ct_gait_scheduler_->gaitSchedule();
++  } else {
++    // The joint-PD pipeline has no gait scheduler. Never retain a schedule
++    // copied from a module that was destroyed during an episode reset.
++    last_gait_schedule_ = quadruped::GaitSchedule{};
+   }
+   if (state_estimator_) {
+     last_state_est_ = state_estimator_->getCheetahStateEstimate();
+diff --git a/src/hardware/mujocohw/MdlSimDriver.cc b/src/hardware/mujocohw/MdlSimDriver.cc
+index 0c446e5..110fd24 100644
+--- a/src/hardware/mujocohw/MdlSimDriver.cc
++++ b/src/hardware/mujocohw/MdlSimDriver.cc
+@@ -793,6 +793,9 @@ void MdlSimDriver::_createSimulation() {
+     _external_force_onset_cycle = static_cast<int>(simConfig.getInt(
+         "external_force_onset_cycle",
+         static_cast<int64_t>(_external_force_onset_cycle)));
++    _external_force_fallback_phase_period = simConfig.getDouble(
++        "external_force_fallback_phase_period",
++        _external_force_fallback_phase_period);
+     // -1 (or any negative value) means "seed from entropy" -- see the header.
+     // Read as signed first: casting -1 straight to unsigned would silently
+     // become 4294967295 and look like an ordinary fixed seed.
+@@ -842,9 +845,13 @@ void MdlSimDriver::_createSimulation() {
+     if (_external_force_onset_phase >= 1.0) {
+       _external_force_onset_phase = -1.0;
+     }
+-    if (_external_force_onset_cycle < 0) {
+-      _external_force_onset_cycle = 0;
+-    }
++  if (_external_force_onset_cycle < 0) {
++    _external_force_onset_cycle = 0;
++  }
++  if (!std::isfinite(_external_force_fallback_phase_period) ||
++      _external_force_fallback_phase_period < 0.0) {
++    _external_force_fallback_phase_period = 0.0;
++  }
+     _reseedExternalForce();
+     _external_force_next_time = 0.0;
+     _external_force_window_index = -1;
+@@ -1731,6 +1738,14 @@ float MdlSimDriver::_gaitPhase() const {
+     // full-cycle phase is what places the onset.
+     return _convex_mpc->gaitPhase();
+   }
++  if (_data && _external_force_fallback_phase_period > 0.0) {
++    // The end-to-end policy has no scheduler by design. This clock exists only
++    // to place evaluation/training impulses over a repeatable phase-like
++    // interval; it is not exposed to or consumed by the controller.
++    return static_cast<float>(
++        std::fmod(_data->time, _external_force_fallback_phase_period) /
++        _external_force_fallback_phase_period);
++  }
+   return -1.0f;
+ }
+ 
+@@ -1990,7 +2005,118 @@ SimForceState MdlSimDriver::forceState() const {
+   return out;
+ }
+ 
+-std::array<float, 4> MdlSimDriver::footContactState() const {
++namespace {
++// The floating base is the body that owns the model's free joint.
++int floatingBaseBody(const mjModel* m) {
++  if (!m) return -1;
++  for (int j = 0; j < m->njnt; ++j) {
++    if (m->jnt_type[j] == mjJNT_FREE) return m->jnt_bodyid[j];
++  }
++  return -1;
++}
++}  // namespace
++
++SimRobotState MdlSimDriver::robotState() const {
++  SimRobotState out;
++  if (!_model || !_data || _model->nq < 7 || _model->nv < 6) return out;
++  for (int i = 0; i < 3; ++i) out.base_pos[i] = _data->qpos[i];
++  for (int i = 0; i < 4; ++i) out.base_quat_wxyz[i] = _data->qpos[3 + i];
++  for (int i = 0; i < 3; ++i) out.lin_vel_world[i] = _data->qvel[i];
++  // MuJoCo stores a free joint's angular velocity in the body frame; Isaac
++  // Gym's root state (and so legged_gym) holds it in the world frame.
++  mjtNum omega_world[3];
++  mju_rotVecQuat(omega_world, _data->qvel + 3, _data->qpos + 3);
++  for (int i = 0; i < 3; ++i) out.ang_vel_world[i] = omega_world[i];
++  if (_joint_mapping_valid) {
++    for (int axis = 0; axis < kNumAxes; ++axis) {
++      const int qadr = _axis_qpos_adr[axis];
++      const int dadr = _axis_dof_adr[axis];
++      const int act = _axis_to_actuator[axis];
++      out.q[axis] = (qadr >= 0) ? _data->qpos[qadr] : 0.0;
++      out.qd[axis] = (dadr >= 0) ? _data->qvel[dadr] : 0.0;
++      out.tau[axis] = (act >= 0 && act < _model->nu) ? _data->actuator_force[act]
++                                                      : 0.0;
++    }
++  }
++  return out;
++}
++
++void MdlSimDriver::setRobotState(const SimRobotState& state) {
++  if (!_model || !_data || _model->nq < 7 || _model->nv < 6) return;
++  for (int i = 0; i < 3; ++i) _data->qpos[i] = state.base_pos[i];
++  mjtNum quat[4];
++  for (int i = 0; i < 4; ++i) quat[i] = state.base_quat_wxyz[i];
++  mju_normalize4(quat);
++  for (int i = 0; i < 4; ++i) _data->qpos[3 + i] = quat[i];
++  for (int i = 0; i < 3; ++i) _data->qvel[i] = state.lin_vel_world[i];
++  // World-frame angular velocity -> free-joint body frame.
++  mjtNum quat_inv[4];
++  mju_negQuat(quat_inv, quat);
++  mjtNum omega_world[3] = {state.ang_vel_world[0], state.ang_vel_world[1],
++                           state.ang_vel_world[2]};
++  mju_rotVecQuat(_data->qvel + 3, omega_world, quat_inv);
++  if (_joint_mapping_valid) {
++    for (int axis = 0; axis < kNumAxes; ++axis) {
++      if (_axis_qpos_adr[axis] >= 0) _data->qpos[_axis_qpos_adr[axis]] = state.q[axis];
++      if (_axis_dof_adr[axis] >= 0) _data->qvel[_axis_dof_adr[axis]] = state.qd[axis];
++    }
++  }
++  mju_zero(_data->qacc_warmstart, _model->nv);
++  mj_forward(_model, _data);
++  _readJointStates();
++  _readIMUData();
++}
++
++void MdlSimDriver::setBaseLinearVelocityXY(double vx, double vy) {
++  if (!_model || !_data || _model->nv < 6) return;
++  _data->qvel[0] = vx;
++  _data->qvel[1] = vy;
++}
++
++void MdlSimDriver::setFriction(double mu) {
++  if (!_model || !std::isfinite(mu) || mu < 0.0) return;
++  for (int g = 0; g < _model->ngeom; ++g) {
++    _model->geom_friction[3 * g] = mu;
++  }
++}
++
++void MdlSimDriver::setActuatorForceLimits(const std::array<double, 3>& limits) {
++  if (!_model || !_joint_mapping_valid) return;
++  for (int axis = 0; axis < kNumAxes; ++axis) {
++    const int act = _axis_to_actuator[axis];
++    const double limit = limits[static_cast<std::size_t>(axis % 3)];
++    if (act < 0 || act >= _model->nu || !(limit > 0.0)) continue;
++    _model->actuator_forcelimited[act] = 1;
++    _model->actuator_forcerange[2 * act] = -limit;
++    _model->actuator_forcerange[2 * act + 1] = limit;
++  }
++}
++
++double MdlSimDriver::baseContactForceNorm() const {
++  if (!_model || !_data) return 0.0;
++  const int base = floatingBaseBody(_model);
++  if (base < 0) return 0.0;
++  mjtNum net[3] = {0.0, 0.0, 0.0};
++  for (int c = 0; c < _data->ncon; ++c) {
++    const mjContact& contact = _data->contact[c];
++    const bool on1 = contact.geom1 >= 0 && _model->geom_bodyid[contact.geom1] == base;
++    const bool on2 = contact.geom2 >= 0 && _model->geom_bodyid[contact.geom2] == base;
++    if (on1 == on2) continue;  // not touching the base, or base-base
++    mjtNum local[6];
++    mj_contactForce(_model, _data, c, local);
++    // Contact frame rows are the axes (normal first). The returned wrench is
++    // the one geom1 exerts on geom2, so flip it when the base is geom1.
++    const mjtNum sign = on2 ? 1.0 : -1.0;
++    for (int i = 0; i < 3; ++i) {
++      net[i] += sign * (contact.frame[i] * local[0] + contact.frame[3 + i] * local[1] +
++                        contact.frame[6 + i] * local[2]);
++    }
++  }
++  return std::sqrt(net[0] * net[0] + net[1] * net[1] + net[2] * net[2]);
++}
++
++std::array<float, 4> MdlSimDriver::footContactState(
++    float min_normal_force) const {
+   std::array<float, 4> state{};
+   if (!_model || !_data) return state;
+ 
+@@ -2002,6 +2128,11 @@ std::array<float, 4> MdlSimDriver::footContactState() const {
+ 
+   for (int contact_idx = 0; contact_idx < _data->ncon; ++contact_idx) {
+     const mjContact& contact = _data->contact[contact_idx];
++    if (min_normal_force > 0.0f) {
++      mjtNum force[6]{};
++      mj_contactForce(_model, _data, contact_idx, force);
++      if (std::abs(force[0]) <= min_normal_force) continue;
++    }
+     for (int leg = 0; leg < 4; ++leg) {
+       const int foot_geom = foot_geom_ids[leg];
+       if (foot_geom >= 0 &&
+@@ -2013,6 +2144,64 @@ std::array<float, 4> MdlSimDriver::footContactState() const {
+   return state;
+ }
+ 
++int MdlSimDriver::penalizedCollisionCount() const {
++  if (!_model || !_data) return 0;
++  // MuJoCo folds each URDF fixed foot link into its parent knee body. A
++  // foot-ground contact therefore reports the knee as geom_bodyid even though
++  // the contacting geom is the named foot sphere. Exclude those four geoms
++  // explicitly so ordinary support contacts are not charged as calf strikes.
++  std::array<int, 4> foot_geom_ids{};
++  for (int leg = 0; leg < 4; ++leg) {
++    const std::string name = "go2/foot_" + std::to_string(leg + 1);
++    foot_geom_ids[leg] = mj_name2id(_model, mjOBJ_GEOM, name.c_str());
++  }
++  std::vector<bool> colliding_body(static_cast<std::size_t>(_model->nbody),
++                                   false);
++  for (int contact_idx = 0; contact_idx < _data->ncon; ++contact_idx) {
++    const mjContact& contact = _data->contact[contact_idx];
++    mjtNum force[6]{};
++    mj_contactForce(_model, _data, contact_idx, force);
++    if (std::sqrt(force[0] * force[0] + force[1] * force[1] +
++                  force[2] * force[2]) <= 0.1) {
++      continue;
++    }
++    for (const int geom : {contact.geom1, contact.geom2}) {
++      if (geom < 0 || geom >= _model->ngeom) continue;
++      if (std::find(foot_geom_ids.begin(), foot_geom_ids.end(), geom) !=
++          foot_geom_ids.end()) {
++        continue;
++      }
++      const int body = _model->geom_bodyid[geom];
++      // The detailed URDF calf mesh reaches into the foot sphere's support
++      // patch (unlike Unitree's simplified training collision capsules), so a
++      // normal stance also creates a second floor contact on the knee body.
++      // Treat contacts inside the corresponding foot sphere's immediate
++      // support neighbourhood as foot support. Calf contacts farther up the
++      // link remain penalized.
++      bool in_foot_support_patch = false;
++      for (const int foot_geom : foot_geom_ids) {
++        if (foot_geom < 0 || _model->geom_bodyid[foot_geom] != body) continue;
++        const mjtNum* foot_position = _data->geom_xpos + 3 * foot_geom;
++        const mjtNum dx = contact.pos[0] - foot_position[0];
++        const mjtNum dy = contact.pos[1] - foot_position[1];
++        const mjtNum dz = contact.pos[2] - foot_position[2];
++        if (std::sqrt(dx * dx + dy * dy + dz * dz) <= 0.04) {
++          in_foot_support_patch = true;
++          break;
++        }
++      }
++      if (in_foot_support_patch) continue;
++      const char* name = mj_id2name(_model, mjOBJ_BODY, body);
++      if (name && (std::strstr(name, "/hip_") ||
++                   std::strstr(name, "/knee_"))) {
++        colliding_body[static_cast<std::size_t>(body)] = true;
++      }
++    }
++  }
++  return static_cast<int>(
++      std::count(colliding_body.begin(), colliding_body.end(), true));
++}
++
+ void MdlSimDriver::setBaseHeight(mjtNum z) {
+   if (!_data) return;
+   _data->qpos[2] = z;
+diff --git a/src/hardware/mujocohw/MdlSimDriver.hh b/src/hardware/mujocohw/MdlSimDriver.hh
+index 8187dce..14eb0c8 100644
+--- a/src/hardware/mujocohw/MdlSimDriver.hh
++++ b/src/hardware/mujocohw/MdlSimDriver.hh
+@@ -89,7 +89,14 @@ public:
+   // Returns current simulation time in microseconds
+   rtcore::CLOCK readClock() { return _now; };
+   SimForceState forceState() const;
+-  std::array<float, 4> footContactState() const;
++  std::array<float, 4> footContactState(float min_normal_force = 0.0f) const;
++  int penalizedCollisionCount() const;
++  SimRobotState robotState() const;
++  void setRobotState(const SimRobotState& state);
++  void setBaseLinearVelocityXY(double vx, double vy);
++  void setFriction(double mu);
++  void setActuatorForceLimits(const std::array<double, 3>& limits);
++  double baseContactForceNorm() const;
+ 
+   /** Sets the update period, which is also the integration time step
+       between updates */
+@@ -294,6 +301,9 @@ private:
+   // external_force_onset_phase < 0 means "draw U(0,1) every episode reset".
+   mjtNum _external_force_onset_phase = -1.0;
+   int _external_force_onset_cycle = 3;
++  // Test-protocol phase clock used only when the active controller has no gait
++  // source (the end-to-end joint-PD policy). Zero disables the fallback.
++  double _external_force_fallback_phase_period = 0.0;
+   mjtNum _external_force_onset_phase_target = 0.0;
+   int _external_force_cycles_elapsed = 0;
+   float _external_force_prev_gait_phase = 0.f;
+diff --git a/src/hardware/mujocohw/SimHW.cc b/src/hardware/mujocohw/SimHW.cc
+index e7c48ee..de2ac7e 100644
+--- a/src/hardware/mujocohw/SimHW.cc
++++ b/src/hardware/mujocohw/SimHW.cc
+@@ -77,8 +77,14 @@ SimForceState simHWGetForceState(MdlSimDriver* driver) {
+   return driver ? driver->forceState() : SimForceState{};
+ }
+ 
+-std::array<float, 4> simHWGetFootContactState(MdlSimDriver* driver) {
+-  return driver ? driver->footContactState() : std::array<float, 4>{};
++std::array<float, 4> simHWGetFootContactState(MdlSimDriver* driver,
++                                              float min_normal_force) {
++  return driver ? driver->footContactState(min_normal_force)
++                : std::array<float, 4>{};
++}
++
++int simHWGetPenalizedCollisionCount(MdlSimDriver* driver) {
++  return driver ? driver->penalizedCollisionCount() : 0;
+ }
+ 
+ rtcore::CLOCK simHWGetStepPeriod(MdlSimDriver* driver) {
+@@ -90,6 +96,31 @@ void simHWSetPeriod(MdlSimDriver* driver, rtcore::CLOCK period) {
+   driver->setPeriod(period);
+ }
+ 
++SimRobotState simHWGetRobotState(MdlSimDriver* driver) {
++  return driver ? driver->robotState() : SimRobotState{};
++}
++
++void simHWSetRobotState(MdlSimDriver* driver, const SimRobotState& state) {
++  if (driver) driver->setRobotState(state);
++}
++
++void simHWSetBaseLinearVelocityXY(MdlSimDriver* driver, double vx, double vy) {
++  if (driver) driver->setBaseLinearVelocityXY(vx, vy);
++}
++
++void simHWSetFriction(MdlSimDriver* driver, double mu) {
++  if (driver) driver->setFriction(mu);
++}
++
++void simHWSetActuatorForceLimits(MdlSimDriver* driver,
++                                 const std::array<double, 3>& limits) {
++  if (driver) driver->setActuatorForceLimits(limits);
++}
++
++double simHWGetBaseContactForceNorm(MdlSimDriver* driver) {
++  return driver ? driver->baseContactForceNorm() : 0.0;
++}
++
+ void simHWResetSimulation(MdlSimDriver* driver) {
+   if (!driver) return;
+   driver->resetSimulation();
+diff --git a/src/modules/MdlRLCommandSource.cc b/src/modules/MdlRLCommandSource.cc
+index f70536c..b351b01 100644
+--- a/src/modules/MdlRLCommandSource.cc
++++ b/src/modules/MdlRLCommandSource.cc
+@@ -84,6 +84,11 @@ void MdlRLCommandSource::setPolicyActionNormalized(
+   _policy_action_count = std::min(count, kPolicyActionDim);
+ }
+ 
++void MdlRLCommandSource::setRandomStream(std::uint64_t stream_id) {
++  _policy_random_stream = stream_id;
++  _policy_seed_initialized = false;
++}
++
+ void MdlRLCommandSource::resolveModules_() {
+   if (!_mgr) return;
+   if (!_gait_scheduler) {
+@@ -195,7 +200,12 @@ void MdlRLCommandSource::loadConfig_() {
+   _policy_random_seed =
+       static_cast<int>(cfg.getInt("policy_random_seed", _policy_random_seed));
+   if (_policy_random_seed >= 0 && !_policy_seed_initialized) {
+-    _policy_rng.seed(static_cast<unsigned int>(_policy_random_seed));
++    const auto stream_lo = static_cast<std::uint32_t>(_policy_random_stream);
++    const auto stream_hi =
++        static_cast<std::uint32_t>(_policy_random_stream >> 32U);
++    std::seed_seq seed{
++        static_cast<std::uint32_t>(_policy_random_seed), stream_lo, stream_hi};
++    _policy_rng.seed(seed);
+     _policy_seed_initialized = true;
+   } else if (_policy_random_seed < 0 && !_policy_seed_initialized) {
+     std::random_device rd;
+@@ -294,10 +304,6 @@ void MdlRLCommandSource::samplePolicyBaseVelocity_() {
+ }
+ 
+ void MdlRLCommandSource::applyCommand_() {
+-  if (!_gait_scheduler || !_footstep_planner || !_rl_state) {
+-    return;
+-  }
+-
+   const bool use_fixed = (_mode == Mode::kTomlFixed);
+ 
+   RlDesiredVelocity desired{};
+@@ -416,11 +422,15 @@ void MdlRLCommandSource::applyCommand_() {
+   }
+ 
+   _effective_desired = desired;
+-  _gait_scheduler->setPhaseDelta(phase_delta);
+-  _footstep_planner->setDesiredVelocity(desired);
+-  _footstep_planner->setFootstepResiduals(residuals);
+-  _rl_state->setDesiredVelocity(desired);
+-  _rl_state->setFootForces(forces);
++  if (_gait_scheduler) _gait_scheduler->setPhaseDelta(phase_delta);
++  if (_footstep_planner) {
++    _footstep_planner->setDesiredVelocity(desired);
++    _footstep_planner->setFootstepResiduals(residuals);
++  }
++  if (_rl_state) {
++    _rl_state->setDesiredVelocity(desired);
++    _rl_state->setFootForces(forces);
++  }
+ }
+ 
+ }  // namespace quadruped

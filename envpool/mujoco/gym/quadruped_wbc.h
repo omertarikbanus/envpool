@@ -1,15 +1,36 @@
-#ifndef ENVPOOL_MUJOCO_GYM_HUMANOID_H_
-#define ENVPOOL_MUJOCO_GYM_HUMANOID_H_
+// Unitree Go2 quadruped driven by the quadcontrol WBIC stack.
+//
+// This file began life as EnvPool's Gym MuJoCo Humanoid environment and kept
+// that name long after every line of its dynamics, observation, action and
+// reward had been replaced. Nothing here relates to Gym's Humanoid any more.
+//
+// Two task ids share this class, differing only in observation width:
+//
+//   QuadrupedWBC-v0  54 obs  symmetric        (the "Gamma" line)
+//   QuadrupedWBC-v1  61 obs  privileged tail  (the "Delta" line, asymmetric
+//                                              actor-critic; the trailing 7
+//                                              values go to the critic only)
+//
+// The privileged values are written last and FillObservation is bounded by the
+// buffer it is handed, so v0 is exactly v1 with the tail withheld. Verified
+// against commit 0fd79b7 (the pre-Delta 54-dim env): the first 54 writes are
+// unchanged.
+
+#ifndef ENVPOOL_MUJOCO_GYM_QUADRUPED_WBC_H_
+#define ENVPOOL_MUJOCO_GYM_QUADRUPED_WBC_H_
 
 #include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>  // For std::sqrt, std::abs
+#include <random>
+#include <stdexcept>
 #include <cstdio>
 #include <iostream>
 #include <limits>
 #include <memory>
 #include <mutex>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -222,7 +243,7 @@ class LocomotionReward {
   RewardConfig config_;
 };
 
-class HumanoidEnvFns {
+class QuadrupedWBCEnvFns {
  public:
   static decltype(auto) DefaultConfig() {
     return MakeDict(
@@ -237,6 +258,10 @@ class HumanoidEnvFns {
         "sim_config_overlay"_.Bind(std::string("")),
         "render_mode"_.Bind(false),
         "exclude_current_positions_from_observation"_.Bind(true),
+        // false -> 54-dim actor observation (QuadrupedWBC-v0).
+        // true  -> 61-dim, appending the 7 simulator-truth values
+        // the asymmetric critic consumes (QuadrupedWBC-v1).
+        "privileged_observations"_.Bind(true),
         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
@@ -250,9 +275,10 @@ class HumanoidEnvFns {
   template <typename Config>
   static decltype(auto) StateSpec(const Config& conf) {
     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
-    return MakeDict("obs"_.Bind(
-                        Spec<mjtNum>({RLConstants::kObservationDim},
-                                     {-inf, inf})),
+    const int obs_n = conf["privileged_observations"_]
+                          ? RLConstants::kObservationDim
+                          : RLConstants::kActorObservationDim;
+    return MakeDict("obs"_.Bind(Spec<mjtNum>({obs_n}, {-inf, inf})),
 #ifdef ENVPOOL_TEST
                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
@@ -267,6 +293,16 @@ class HumanoidEnvFns {
                     "info:force_direction"_.Bind(Spec<int>({-1})),
                     "info:force_requested_impulse"_.Bind(Spec<mjtNum>({-1})),
                     "info:body_height"_.Bind(Spec<mjtNum>({-1})),
+                    // legged_gym's time_out_buf. EnvPool's own `trunc` counts
+                    // steps since reset, which the recipe's randomised first
+                    // episode length makes wrong, so the flag is explicit.
+                    "info:time_out"_.Bind(Spec<int>({-1})),
+                    // Always 0 here. The joint-PD task uses it for
+                    // legged_gym's fall rule; kept so both environments emit
+                    // the same info keys.
+                    "info:fall"_.Bind(Spec<int>({-1})),
+                    "info:reward_terms"_.Bind(
+                        Spec<mjtNum>({LocomotionReward::kNumTerms})),
                     "info:reward_impact"_.Bind(Spec<mjtNum>({-1})),
                     "info:x_position"_.Bind(Spec<mjtNum>({-1})),
                     "info:y_position"_.Bind(Spec<mjtNum>({-1})),
@@ -284,13 +320,13 @@ class HumanoidEnvFns {
     //      the commanded stance height in MdlRLLocomotionState)
     // [24] gait phase delta_theta (normalized, mapped to 0..kMaxPhaseDelta)
     return MakeDict("action"_.Bind(
-        Spec<mjtNum>({-1, RLConstants::kActionDim}, {-1, 1})));
+        Spec<mjtNum>({-1, RLConstants::kActionDim}, {-1.0, 1.0})));
   }
 };
 
-using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
+using QuadrupedWBCEnvSpec = EnvSpec<QuadrupedWBCEnvFns>;
 
-class HumanoidEnv : public Env<HumanoidEnvSpec> {
+class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
  protected:
   bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_;
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
@@ -338,8 +374,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   std::string sim_config_overlay_;
 
  public:
-  HumanoidEnv(const Spec& spec, int env_id)
-      : Env<HumanoidEnvSpec>(spec, env_id),
+  QuadrupedWBCEnv(const Spec& spec, int env_id)
+      : Env<QuadrupedWBCEnvSpec>(spec, env_id),
         terminate_when_unhealthy_(spec.config["terminate_when_unhealthy"_]),
         no_pos_(spec.config["exclude_current_positions_from_observation"_]),
         use_contact_force_(spec.config["use_contact_force"_]),
@@ -374,6 +410,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       rt_opts.env_id = env_id_;
       rt_opts.sim_config_path = sim_config_path_;
       rt_opts.sim_config_overlay = sim_config_overlay_;
+      rt_opts.pipeline = quadruped::RLPipelineRuntime::Pipeline::kWbic;
       runtime_ = std::make_unique<quadruped::RLPipelineRuntime>(rt_opts);
       runtime_->initialize();
       disabled_ = runtime_->disabled();
@@ -391,7 +428,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     prev_action_vector_.clear();
   }
 
-  ~HumanoidEnv() override = default;
+  ~QuadrupedWBCEnv() override = default;
 
   bool IsDone() override { return done_; }
 
@@ -423,7 +460,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
           break;
         }
         if (env_id_ == 0) {
-          std::cerr << "[HumanoidEnv] Reset health retry " << (reset_attempt + 1)
+          std::cerr << "[QuadrupedWBCEnv] Reset health retry " << (reset_attempt + 1)
                     << "/" << kMaxResetAttempts
                     << " (z=" << z << ", bounds=[" << healthy_z_min_ << ", "
                     << healthy_z_max_ << "])\n";
@@ -431,7 +468,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       }
       if (env_id_ == 0) {
         const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
-        std::cout << "[HumanoidEnv] Reset state env_id=" << env_id_
+        std::cout << "[QuadrupedWBCEnv] Reset state env_id=" << env_id_
                   << " z=" << z
                   << " rpy=[" << static_cast<mjtNum>(last_state_est_.rpy[0]) << ", "
                   << static_cast<mjtNum>(last_state_est_.rpy[1]) << ", "
@@ -460,7 +497,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       }
     }
     if (invalid_action && env_id_ == 0) {
-      std::cerr << "[HumanoidEnv] Non-finite action detected; replaced with zeros." << std::endl;
+      std::cerr << "[QuadrupedWBCEnv] Non-finite action detected; replaced with zeros." << std::endl;
     }
     last_action_vector_.assign(act, act + action_count);
     if (runtime_) {
@@ -520,7 +557,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
 
     if (!std::isfinite(static_cast<double>(reward))) {
       if (env_id_ == 0) {
-        std::cerr << "[HumanoidEnv] Non-finite reward detected; forcing termination." << std::endl;
+        std::cerr << "[QuadrupedWBCEnv] Non-finite reward detected; forcing termination." << std::endl;
       }
       done_ = true;
       last_done_reason_ = "nonfinite_reward";
@@ -554,7 +591,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       } else if (hit_unhealthy) {
         last_done_reason_ = "unhealthy";
         if (env_id_ == 0) {
-          std::cerr << "[HumanoidEnv] unhealthy terminate at step=" << elapsed_step_
+          std::cerr << "[QuadrupedWBCEnv] unhealthy terminate at step=" << elapsed_step_
                     << " z=" << static_cast<mjtNum>(last_state_est_.position[2])
                     << " rpy=[" << static_cast<mjtNum>(last_state_est_.rpy[0]) << ", "
                     << static_cast<mjtNum>(last_state_est_.rpy[1]) << ", "
@@ -824,6 +861,14 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
     state["info:force_direction"_] = force.direction;
     state["info:force_requested_impulse"_] = force.requested_impulse;
     state["info:body_height"_] = last_state_est_.position[2];
+    state["info:time_out"_] =
+        (done_ && last_done_reason_ == "timeout") ? 1 : 0;
+    state["info:fall"_] = 0;
+    auto reward_terms = state["info:reward_terms"_];
+    auto* reward_term_data = static_cast<mjtNum*>(reward_terms.Data());
+    for (std::size_t i = 0; i < last_term_rewards_.size(); ++i) {
+      reward_term_data[i] = last_term_rewards_[i];
+    }
     auto applied = state["info:force_applied"_];
     auto* force_data = static_cast<mjtNum*>(applied.Data());
     for (int i = 0; i < 3; ++i) force_data[i] = force.applied[i];
@@ -842,7 +887,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
       }
     }
     if (invalid_obs && env_id_ == 0) {
-      std::cerr << "[HumanoidEnv] Non-finite observation detected; replaced with zeros." << std::endl;
+      std::cerr << "[QuadrupedWBCEnv] Non-finite observation detected; replaced with zeros." << std::endl;
     }
     obs_array.Assign(obs, obs_array.size);
 
@@ -879,8 +924,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
   }
 };
 
-using HumanoidEnvPool = AsyncEnvPool<HumanoidEnv>;
+using QuadrupedWBCEnvPool = AsyncEnvPool<QuadrupedWBCEnv>;
 
 }  // namespace mujoco_gym
 
-#endif  // ENVPOOL_MUJOCO_GYM_HUMANOID_H_
+#endif  // ENVPOOL_MUJOCO_GYM_QUADRUPED_WBC_H_

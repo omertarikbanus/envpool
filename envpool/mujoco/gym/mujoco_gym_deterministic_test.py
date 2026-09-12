@@ -51,9 +51,6 @@ class _MujocoGymDeterministicTest(absltest.TestCase):
   def test_hopper(self) -> None:
     self.check("Hopper-v4")
 
-  def test_humanoid(self) -> None:
-    self.check("Humanoid-v4")
-
   def test_humanoid_standup(self) -> None:
     self.check("HumanoidStandup-v4")
 

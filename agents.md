@@ -8,8 +8,12 @@ if `docker ps --filter name=envpool-dev` comes back empty.
 The command `make run` builds, installs, and runs the python package
 (`docker exec envpool-dev bash -lc 'cd /app/envpool && make run'`).
 
-We work on `./envpool/mujoco/gym/humanoid.h`, rewriting it as a custom gym
-environment dependent on the quadcontrol module. Its `kActionDim`,
+We work on `./envpool/mujoco/gym/quadruped_wbc.h`, a custom gym environment
+dependent on the quadcontrol module. (It was called `humanoid.h` until the
+2026-09 rename; nothing in it relates to Gym's Humanoid.) It backs two task
+ids that differ only in observation width -- `QuadrupedWBC-v0` (54, the Gamma
+line) and `QuadrupedWBC-v1` (61, the Delta line's privileged critic tail).
+Its `kActionDim`,
 `kObservationDim`, and `LocomotionReward::kNumTerms` are pinned against
 quadcontrol's `include/supervisor/RLPipelineRuntime.hh` and
 `include/modules/MdlRLCommandSource.hh` by

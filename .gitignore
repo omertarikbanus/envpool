@@ -176,3 +176,17 @@ data/alpha/backups/
 # dominated by the gamma5_scratch run that the ICRA record explicitly does
 # not use. Placed after the !data/**/*.log negation above so it wins.
 data/_archive/
+
+# Vendored rsl_rl v1.0.2 (2ad79cf), unmodified upstream. Not ours to carry;
+# each run dir records the commit it was trained against.
+examples/third_party/rsl_rl
+
+# The rudin (end-to-end RL) baseline runs. Only trial1_seed1 is evidence: keep
+# its console log, TensorBoard events and the final checkpoint the ICRA record
+# evaluates, and drop the 30 intermediate ones (4.6 MB each). rudin_flat_* and
+# rudin_smoke_* are the failed first port (SB3, 100 Hz, QuadrupedPD-v0), kept on
+# disk but not in git. Placed after the !data/**/*.log negation so it wins.
+data/rudin_flat_*/
+data/rudin_smoke*/
+data/rudin_unitree/**/model_*.pt
+!data/rudin_unitree/**/model_1500.pt

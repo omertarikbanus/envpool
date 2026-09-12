@@ -41,8 +41,8 @@ def parse_args():
     print("Parsing command-line arguments for evaluation...")
     parser = argparse.ArgumentParser(description="Evaluate trained PPO models with EnvPool.")
     parser.add_argument("--model-path", type=str, default="data/current/quadruped_ppo_model.zip", help="Path to the saved model (without .zip extension)")
-    parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
+    parser.add_argument("--env-name", type=str, default="QuadrupedWBC-v1", help="EnvPool environment ID")
+    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool.toml", help="Path to quadcontrol simulation TOML used by the quadruped envs")
     parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel evaluation environments")
     parser.add_argument("--n-eval-episodes", type=int, default=5, help="Number of episodes for evaluation")
     parser.add_argument("--seed", type=int, default=0, help="Random seed for evaluation")
@@ -70,7 +70,7 @@ def parse_args():
 def setup_evaluation_environment(args):
     """Set up the evaluation environment with proper wrappers."""
     env_config = {}
-    if args.env_name.startswith("Humanoid"):
+    if args.env_name.startswith("Quadruped"):
         env_config["sim_config_path"] = args.sim_config_path
 
     return setup_environment(

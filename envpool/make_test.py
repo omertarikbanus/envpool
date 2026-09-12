@@ -132,8 +132,6 @@ class _MakeTest(absltest.TestCase):
         "HalfCheetah-v4",
         "Hopper-v3",
         "Hopper-v4",
-        "Humanoid-v3",
-        "Humanoid-v4",
         "HumanoidStandup-v2",
         "HumanoidStandup-v4",
         "InvertedDoublePendulum-v2",

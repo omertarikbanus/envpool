@@ -22,19 +22,19 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 def gym_sync_step() -> None:
   num_envs = 1
   env = envpool.make_gym(
-      "Humanoid-v4",
+      "QuadrupedWBC-v1",
       num_envs=num_envs,
       sim_config_path="/app/quadcontrol/config/robots/sim/envpool.toml",
   )
   
-  print("\n\n\nCreated envpool env Humanoid-v4 with : ", num_envs, " environments\n\n\n")
+  print("\n\n\nCreated envpool env QuadrupedWBC-v1 with : ", num_envs, " environments\n\n\n")
   print(f"Observation space: {env.observation_space}")
   print(f"Observation shape: {env.observation_space.shape}")
 
   action= np.zeros((num_envs, env.action_space.shape[0]), dtype=np.float32)
   for env_id in range(num_envs):
     action[env_id][0]= 0.0
-    # Contiguous force block layout in Humanoid-v4:
+    # Contiguous force block layout in QuadrupedWBC-v1:
     # [3..14] -> per-leg [fx, fy, fz], so z-force indices are 5, 8, 11, 14.
     action[env_id][5]= 0.5
     action[env_id][8]= 0.5

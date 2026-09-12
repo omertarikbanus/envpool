@@ -1,0 +1,1676 @@
+diff --git a/WORKSPACE b/WORKSPACE
+index f5f4a26..5fca4e4 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
+@@ -43,6 +43,7 @@ cc_library(
+         "src/modules/MdlLegController.cc",
+         "src/modules/MdlRLCommandSource.cc",
+         "src/modules/MdlRLLocomotionState.cc",
++        "src/modules/MdlRLJointPD.cc",
+         "src/modules/MdlStateEstimator.cc",
+         "src/modules/MdlWBIC.cc",
+         "src/supervisor/SupervisorStates.cc",
+diff --git a/agents.md b/agents.md
+index 9ae3766..32115e0 100644
+--- a/agents.md
++++ b/agents.md
+@@ -8,8 +8,12 @@ if `docker ps --filter name=envpool-dev` comes back empty.
+ The command `make run` builds, installs, and runs the python package
+ (`docker exec envpool-dev bash -lc 'cd /app/envpool && make run'`).
+ 
+-We work on `./envpool/mujoco/gym/humanoid.h`, rewriting it as a custom gym
+-environment dependent on the quadcontrol module. Its `kActionDim`,
++We work on `./envpool/mujoco/gym/quadruped_wbc.h`, a custom gym environment
++dependent on the quadcontrol module. (It was called `humanoid.h` until the
++2026-09 rename; nothing in it relates to Gym's Humanoid.) It backs two task
++ids that differ only in observation width -- `QuadrupedWBC-v0` (54, the Gamma
++line) and `QuadrupedWBC-v1` (61, the Delta line's privileged critic tail).
++Its `kActionDim`,
+ `kObservationDim`, and `LocomotionReward::kNumTerms` are pinned against
+ quadcontrol's `include/supervisor/RLPipelineRuntime.hh` and
+ `include/modules/MdlRLCommandSource.hh` by
+diff --git a/envpool/make_test.py b/envpool/make_test.py
+index 628a95c..3517609 100644
+--- a/envpool/make_test.py
++++ b/envpool/make_test.py
+@@ -132,8 +132,6 @@ class _MakeTest(absltest.TestCase):
+         "HalfCheetah-v4",
+         "Hopper-v3",
+         "Hopper-v4",
+-        "Humanoid-v3",
+-        "Humanoid-v4",
+         "HumanoidStandup-v2",
+         "HumanoidStandup-v4",
+         "InvertedDoublePendulum-v2",
+diff --git a/envpool/mujoco/BUILD b/envpool/mujoco/BUILD
+index f7420e2..a469e2c 100644
+--- a/envpool/mujoco/BUILD
++++ b/envpool/mujoco/BUILD
+@@ -119,7 +119,7 @@ cc_library(
+         "gym/ant.h",
+         "gym/half_cheetah.h",
+         "gym/hopper.h",
+-        "gym/humanoid.h",
++        "gym/quadruped_wbc.h",
+         "gym/humanoid_standup.h",
+         "gym/inverted_double_pendulum.h",
+         "gym/inverted_pendulum.h",
+diff --git a/envpool/mujoco/gym/__init__.py b/envpool/mujoco/gym/__init__.py
+index a60cd2e..d72af60 100644
+--- a/envpool/mujoco/gym/__init__.py
++++ b/envpool/mujoco/gym/__init__.py
+@@ -20,8 +20,6 @@ from envpool.mujoco.mujoco_gym_envpool import (
+   _GymHalfCheetahEnvSpec,
+   _GymHopperEnvPool,
+   _GymHopperEnvSpec,
+-  _GymHumanoidEnvPool,
+-  _GymHumanoidEnvSpec,
+   _GymHumanoidStandupEnvPool,
+   _GymHumanoidStandupEnvSpec,
+   _GymInvertedDoublePendulumEnvPool,
+@@ -30,6 +28,8 @@ from envpool.mujoco.mujoco_gym_envpool import (
+   _GymInvertedPendulumEnvSpec,
+   _GymPusherEnvPool,
+   _GymPusherEnvSpec,
++  _GymQuadrupedWBCEnvPool,
++  _GymQuadrupedWBCEnvSpec,
+   _GymReacherEnvPool,
+   _GymReacherEnvSpec,
+   _GymSwimmerEnvPool,
+@@ -51,10 +51,6 @@ from envpool.python.api import py_env
+   GymHopperEnvSpec, GymHopperDMEnvPool, GymHopperGymEnvPool,
+   GymHopperGymnasiumEnvPool
+ ) = py_env(_GymHopperEnvSpec, _GymHopperEnvPool)
+-(
+-  GymHumanoidEnvSpec, GymHumanoidDMEnvPool, GymHumanoidGymEnvPool,
+-  GymHumanoidGymnasiumEnvPool
+-) = py_env(_GymHumanoidEnvSpec, _GymHumanoidEnvPool)
+ (
+   GymHumanoidStandupEnvSpec,
+   GymHumanoidStandupDMEnvPool,
+@@ -79,6 +75,12 @@ from envpool.python.api import py_env
+   GymPusherEnvSpec, GymPusherDMEnvPool, GymPusherGymEnvPool,
+   GymPusherGymnasiumEnvPool
+ ) = py_env(_GymPusherEnvSpec, _GymPusherEnvPool)
++(
++  GymQuadrupedWBCEnvSpec,
++  GymQuadrupedWBCDMEnvPool,
++  GymQuadrupedWBCGymEnvPool,
++  GymQuadrupedWBCGymnasiumEnvPool,
++) = py_env(_GymQuadrupedWBCEnvSpec, _GymQuadrupedWBCEnvPool)
+ (
+   GymReacherEnvSpec, GymReacherDMEnvPool, GymReacherGymEnvPool,
+   GymReacherGymnasiumEnvPool
+@@ -105,14 +107,14 @@ __all__ = [
+   "GymHopperDMEnvPool",
+   "GymHopperGymEnvPool",
+   "GymHopperGymnasiumEnvPool",
+-  "GymHumanoidEnvSpec",
+-  "GymHumanoidDMEnvPool",
+-  "GymHumanoidGymEnvPool",
+-  "GymHumanoidGymnasiumEnvPool",
+   "GymHumanoidStandupEnvSpec",
+   "GymHumanoidStandupDMEnvPool",
+   "GymHumanoidStandupGymEnvPool",
+   "GymHumanoidStandupGymnasiumEnvPool",
++  "GymQuadrupedWBCEnvSpec",
++  "GymQuadrupedWBCDMEnvPool",
++  "GymQuadrupedWBCGymEnvPool",
++  "GymQuadrupedWBCGymnasiumEnvPool",
+   "GymInvertedDoublePendulumEnvSpec",
+   "GymInvertedDoublePendulumDMEnvPool",
+   "GymInvertedDoublePendulumGymEnvPool",
+diff --git a/envpool/mujoco/gym/mujoco_envpool.cc b/envpool/mujoco/gym/mujoco_envpool.cc
+index 1c8450b..1b1f2b7 100644
+--- a/envpool/mujoco/gym/mujoco_envpool.cc
++++ b/envpool/mujoco/gym/mujoco_envpool.cc
+@@ -16,11 +16,11 @@
+ #include "envpool/mujoco/gym/ant.h"
+ #include "envpool/mujoco/gym/half_cheetah.h"
+ #include "envpool/mujoco/gym/hopper.h"
+-#include "envpool/mujoco/gym/humanoid.h"
+ #include "envpool/mujoco/gym/humanoid_standup.h"
+ #include "envpool/mujoco/gym/inverted_double_pendulum.h"
+ #include "envpool/mujoco/gym/inverted_pendulum.h"
+ #include "envpool/mujoco/gym/pusher.h"
++#include "envpool/mujoco/gym/quadruped_wbc.h"
+ #include "envpool/mujoco/gym/reacher.h"
+ #include "envpool/mujoco/gym/swimmer.h"
+ #include "envpool/mujoco/gym/walker2d.h"
+@@ -34,9 +34,6 @@ using GymHalfCheetahEnvPool = PyEnvPool<mujoco_gym::HalfCheetahEnvPool>;
+ using GymHopperEnvSpec = PyEnvSpec<mujoco_gym::HopperEnvSpec>;
+ using GymHopperEnvPool = PyEnvPool<mujoco_gym::HopperEnvPool>;
+ 
+-using GymHumanoidEnvSpec = PyEnvSpec<mujoco_gym::HumanoidEnvSpec>;
+-using GymHumanoidEnvPool = PyEnvPool<mujoco_gym::HumanoidEnvPool>;
+-
+ using GymHumanoidStandupEnvSpec = PyEnvSpec<mujoco_gym::HumanoidStandupEnvSpec>;
+ using GymHumanoidStandupEnvPool = PyEnvPool<mujoco_gym::HumanoidStandupEnvPool>;
+ 
+@@ -53,6 +50,9 @@ using GymInvertedPendulumEnvPool =
+ using GymPusherEnvSpec = PyEnvSpec<mujoco_gym::PusherEnvSpec>;
+ using GymPusherEnvPool = PyEnvPool<mujoco_gym::PusherEnvPool>;
+ 
++using GymQuadrupedWBCEnvSpec = PyEnvSpec<mujoco_gym::QuadrupedWBCEnvSpec>;
++using GymQuadrupedWBCEnvPool = PyEnvPool<mujoco_gym::QuadrupedWBCEnvPool>;
++
+ using GymReacherEnvSpec = PyEnvSpec<mujoco_gym::ReacherEnvSpec>;
+ using GymReacherEnvPool = PyEnvPool<mujoco_gym::ReacherEnvPool>;
+ 
+@@ -66,12 +66,12 @@ PYBIND11_MODULE(mujoco_gym_envpool, m) {
+   REGISTER(m, GymAntEnvSpec, GymAntEnvPool)
+   REGISTER(m, GymHalfCheetahEnvSpec, GymHalfCheetahEnvPool)
+   REGISTER(m, GymHopperEnvSpec, GymHopperEnvPool)
+-  REGISTER(m, GymHumanoidEnvSpec, GymHumanoidEnvPool)
+   REGISTER(m, GymHumanoidStandupEnvSpec, GymHumanoidStandupEnvPool)
+   REGISTER(m, GymInvertedDoublePendulumEnvSpec,
+            GymInvertedDoublePendulumEnvPool)
+   REGISTER(m, GymInvertedPendulumEnvSpec, GymInvertedPendulumEnvPool)
+   REGISTER(m, GymPusherEnvSpec, GymPusherEnvPool)
++  REGISTER(m, GymQuadrupedWBCEnvSpec, GymQuadrupedWBCEnvPool)
+   REGISTER(m, GymReacherEnvSpec, GymReacherEnvPool)
+   REGISTER(m, GymSwimmerEnvSpec, GymSwimmerEnvPool)
+   REGISTER(m, GymWalker2dEnvSpec, GymWalker2dEnvPool)
+diff --git a/envpool/mujoco/gym/mujoco_gym_align_test.py b/envpool/mujoco/gym/mujoco_gym_align_test.py
+index 4079770..079d825 100644
+--- a/envpool/mujoco/gym/mujoco_gym_align_test.py
++++ b/envpool/mujoco/gym/mujoco_gym_align_test.py
+@@ -129,24 +129,6 @@ class _MujocoGymAlignTest(absltest.TestCase):
+     self.run_space_check(env0, env1)
+     self.run_align_check(env0, env1, no_time_limit=True)
+ 
+-  def test_humanoid(self) -> None:
+-    env0 = gym.make("Humanoid-v4")
+-    env1 = make_gym("Humanoid-v4")
+-    self.run_space_check(env0, env1)
+-    self.run_align_check(env0, env1)
+-    env0 = gym.make(
+-      "Humanoid-v4",
+-      terminate_when_unhealthy=False,
+-      exclude_current_positions_from_observation=False,
+-    )
+-    env1 = make_gym(
+-      "Humanoid-v4",
+-      terminate_when_unhealthy=False,
+-      exclude_current_positions_from_observation=False,
+-    )
+-    self.run_space_check(env0, env1)
+-    self.run_align_check(env0, env1, no_time_limit=True)
+-
+   def test_humanoid_standup(self) -> None:
+     env0 = gym.make("HumanoidStandup-v4")
+     env1 = make_gym("HumanoidStandup-v4")
+diff --git a/envpool/mujoco/gym/mujoco_gym_deterministic_test.py b/envpool/mujoco/gym/mujoco_gym_deterministic_test.py
+index d251636..c1d3314 100644
+--- a/envpool/mujoco/gym/mujoco_gym_deterministic_test.py
++++ b/envpool/mujoco/gym/mujoco_gym_deterministic_test.py
+@@ -51,9 +51,6 @@ class _MujocoGymDeterministicTest(absltest.TestCase):
+   def test_hopper(self) -> None:
+     self.check("Hopper-v4")
+ 
+-  def test_humanoid(self) -> None:
+-    self.check("Humanoid-v4")
+-
+   def test_humanoid_standup(self) -> None:
+     self.check("HumanoidStandup-v4")
+ 
+diff --git a/envpool/mujoco/gym/humanoid.h b/envpool/mujoco/gym/quadruped_wbc.h
+similarity index 59%
+rename from envpool/mujoco/gym/humanoid.h
+rename to envpool/mujoco/gym/quadruped_wbc.h
+index 8b5d522..18239c8 100644
+--- a/envpool/mujoco/gym/humanoid.h
++++ b/envpool/mujoco/gym/quadruped_wbc.h
+@@ -1,15 +1,38 @@
+-#ifndef ENVPOOL_MUJOCO_GYM_HUMANOID_H_
+-#define ENVPOOL_MUJOCO_GYM_HUMANOID_H_
++// Unitree Go2 quadruped driven by the quadcontrol WBIC stack.
++//
++// This file began life as EnvPool's Gym MuJoCo Humanoid environment and kept
++// that name long after every line of its dynamics, observation, action and
++// reward had been replaced. Nothing here relates to Gym's Humanoid any more.
++//
++// Three task ids share this runtime wrapper:
++//
++//   QuadrupedWBC-v0  54 obs  symmetric        (the "Gamma" line)
++//   QuadrupedWBC-v1  61 obs  privileged tail  (the "Delta" line, asymmetric
++//                                              actor-critic; the trailing 7
++//                                              values go to the critic only)
++//   QuadrupedPD-v1   48 obs / 12 actions, end-to-end joint-position policy:
++//                    an exact recreation of unitree_rl_gym's Go2 task
++//
++// The privileged values are written last and FillObservation is bounded by the
++// buffer it is handed, so v0 is exactly v1 with the tail withheld. Verified
++// against commit 0fd79b7 (the pre-Delta 54-dim env): the first 54 writes are
++// unchanged.
++
++#ifndef ENVPOOL_MUJOCO_GYM_QUADRUPED_WBC_H_
++#define ENVPOOL_MUJOCO_GYM_QUADRUPED_WBC_H_
+ 
+ #include <algorithm>
+ #include <array>
+ #include <atomic>
+ #include <cmath>  // For std::sqrt, std::abs
++#include <random>
++#include <stdexcept>
+ #include <cstdio>
+ #include <iostream>
+ #include <limits>
+ #include <memory>
+ #include <mutex>
++#include <numeric>
+ #include <string>
+ #include <vector>
+ 
+@@ -38,6 +61,42 @@ struct RLConstants {
+   static constexpr int kObservationDim = 61;
+ };
+ 
++// unitree_rl_gym (commit 276801e), GO2RoughCfg over LeggedRobotCfg. Every value
++// here is read from that source; see docs/RL_ONLY_BASELINE_PLAN.md in
++// quadcontrol for the deviation table.
++struct PDConstants {
++  static constexpr int kActionDim = 12;
++  static constexpr int kObservationDim = 48;
++  static constexpr int kRewardTermDim = 10;
++  static constexpr double kPolicyDt = 0.02;          // sim.dt 0.005 x decimation 4
++  static constexpr int kMaxEpisodeLength = 1000;     // ceil(episode_length_s 20 / dt)
++  static constexpr int kResampleSteps = 500;         // commands.resampling_time 10 s
++  static constexpr int kPushInterval = 750;          // ceil(push_interval_s 15 / dt)
++  static constexpr double kMaxPushVelXY = 1.0;       // domain_rand.max_push_vel_xy
++  static constexpr double kClipObservations = 100.0;
++  static constexpr double kClipActions = 100.0;
++  static constexpr double kTrackingSigma = 0.25;
++  static constexpr double kSoftDofPosLimit = 0.9;    // GO2 override
++  static constexpr double kInitHeight = 0.42;        // GO2 init_state.pos z
++  // Go2 URDF efforts [hip, thigh, calf]; legged_gym clips torques to these.
++  static constexpr double kTorqueLimits[3] = {23.7, 23.7, 35.55};
++  // Go2 URDF joint limits in URDF convention, [lower, upper] per joint type.
++  // Front and rear thighs differ.
++  static constexpr double kHipLimits[2] = {-1.0472, 1.0472};
++  static constexpr double kFrontThighLimits[2] = {-1.5708, 3.4907};
++  static constexpr double kRearThighLimits[2] = {-0.5236, 4.5379};
++  static constexpr double kCalfLimits[2] = {-2.7227, -0.83776};
++  // This MJCF's thigh and knee axes are (0,-1,0) against the URDF's (0,1,0):
++  // q_urdf = kUrdfSign * q_here, per [abad, hip, knee].
++  static constexpr double kUrdfSign[3] = {1.0, -1.0, -1.0};
++  // Friction: PhysX averages the two shapes' coefficients; the ground plane is
++  // static_friction 1.0. MuJoCo takes the max, so the effective pair value
++  // (f + 1) / 2 is written to every geom.
++  static constexpr double kGroundFriction = 1.0;
++  static constexpr double kFrictionRange[2] = {0.5, 1.25};
++  static constexpr int kFrictionBuckets = 64;
++};
++
+ struct RewardWeights {
+   mjtNum base_xvel{static_cast<mjtNum>(0.25)};
+   mjtNum base_zvel{static_cast<mjtNum>(0.10)};
+@@ -222,7 +281,7 @@ class LocomotionReward {
+   RewardConfig config_;
+ };
+ 
+-class HumanoidEnvFns {
++class QuadrupedWBCEnvFns {
+  public:
+   static decltype(auto) DefaultConfig() {
+     return MakeDict(
+@@ -237,6 +296,22 @@ class HumanoidEnvFns {
+         "sim_config_overlay"_.Bind(std::string("")),
+         "render_mode"_.Bind(false),
+         "exclude_current_positions_from_observation"_.Bind(true),
++        // false -> 54-dim actor observation (QuadrupedWBC-v0).
++        // true  -> 61-dim, appending the 7 simulator-truth values
++        // the asymmetric critic consumes (QuadrupedWBC-v1).
++        "privileged_observations"_.Bind(true),
++        // Select the end-to-end PPO -> joint-position PD pipeline. The WBC
++        // tasks leave this false; QuadrupedPD-v0 registers it true.
++        "joint_pd"_.Bind(false),
++        // Joint-PD task switches, all ON in the recipe. Exposed so an
++        // evaluation can turn training-only randomisation off.
++        "pd_obs_noise"_.Bind(true), "pd_push_robots"_.Bind(true),
++        "pd_randomize_friction"_.Bind(true),
++        "pd_init_at_random_ep_len"_.Bind(true),
++        // Evaluation: replace legged_gym's command sampler with a fixed
++        // (vx, vy, heading) command. Heading mode stays on, as in the recipe.
++        "pd_fixed_command"_.Bind(false), "pd_command_vx"_.Bind(0.0),
++        "pd_command_vy"_.Bind(0.0), "pd_command_heading"_.Bind(0.0),
+         "ctrl_cost_weight"_.Bind(2e-4), "healthy_reward"_.Bind(1.0),
+         "healthy_z_min"_.Bind(0.20), "healthy_z_max"_.Bind(0.75),
+         "contact_cost_weight"_.Bind(5e-7), "contact_cost_max"_.Bind(10.0),
+@@ -250,9 +325,14 @@ class HumanoidEnvFns {
+   template <typename Config>
+   static decltype(auto) StateSpec(const Config& conf) {
+     mjtNum inf = std::numeric_limits<mjtNum>::infinity();
++    const int obs_n = conf["joint_pd"_]
++                          ? PDConstants::kObservationDim
++                          : (conf["privileged_observations"_]
++                                 ? RLConstants::kObservationDim
++                                 : RLConstants::kActorObservationDim);
++    const mjtNum obs_limit = conf["joint_pd"_] ? 100.0 : inf;
+     return MakeDict("obs"_.Bind(
+-                        Spec<mjtNum>({RLConstants::kObservationDim},
+-                                     {-inf, inf})),
++                        Spec<mjtNum>({obs_n}, {-obs_limit, obs_limit})),
+ #ifdef ENVPOOL_TEST
+                     "info:qpos0"_.Bind(Spec<mjtNum>({24})),
+                     "info:qvel0"_.Bind(Spec<mjtNum>({23})),
+@@ -267,6 +347,12 @@ class HumanoidEnvFns {
+                     "info:force_direction"_.Bind(Spec<int>({-1})),
+                     "info:force_requested_impulse"_.Bind(Spec<mjtNum>({-1})),
+                     "info:body_height"_.Bind(Spec<mjtNum>({-1})),
++                    // legged_gym's time_out_buf. EnvPool's own `trunc` counts
++                    // steps since reset, which the recipe's randomised first
++                    // episode length makes wrong, so the flag is explicit.
++                    "info:time_out"_.Bind(Spec<int>({-1})),
++                    "info:reward_terms"_.Bind(
++                        Spec<mjtNum>({PDConstants::kRewardTermDim})),
+                     "info:reward_impact"_.Bind(Spec<mjtNum>({-1})),
+                     "info:x_position"_.Bind(Spec<mjtNum>({-1})),
+                     "info:y_position"_.Bind(Spec<mjtNum>({-1})),
+@@ -283,16 +369,20 @@ class HumanoidEnvFns {
+     // [23] body-height residual (mapped to +-height_residual_limit, added to
+     //      the commanded stance height in MdlRLLocomotionState)
+     // [24] gait phase delta_theta (normalized, mapped to 0..kMaxPhaseDelta)
++    const int action_n = conf["joint_pd"_] ? PDConstants::kActionDim
++                                           : RLConstants::kActionDim;
++    const mjtNum action_limit = conf["joint_pd"_] ? 100.0 : 1.0;
+     return MakeDict("action"_.Bind(
+-        Spec<mjtNum>({-1, RLConstants::kActionDim}, {-1, 1})));
++        Spec<mjtNum>({-1, action_n}, {-action_limit, action_limit})));
+   }
+ };
+ 
+-using HumanoidEnvSpec = EnvSpec<HumanoidEnvFns>;
++using QuadrupedWBCEnvSpec = EnvSpec<QuadrupedWBCEnvFns>;
+ 
+-class HumanoidEnv : public Env<HumanoidEnvSpec> {
++class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
+  protected:
+   bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_;
++  bool joint_pd_{false};
+   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
+   mjtNum healthy_z_min_, healthy_z_max_;
+   mjtNum contact_cost_weight_, contact_cost_max_;
+@@ -324,6 +414,22 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+   std::array<mjtNum, LocomotionReward::kNumTerms> last_term_rewards_{};
+   std::vector<mjtNum> last_action_vector_;
+   std::vector<mjtNum> prev_action_vector_;
++  // Joint-PD task state, named after the legged_gym buffers it mirrors.
++  std::array<mjtNum, PDConstants::kActionDim> pd_actions_{};
++  std::array<mjtNum, PDConstants::kActionDim> pd_last_actions_{};
++  std::array<mjtNum, PDConstants::kActionDim> pd_last_dof_vel_{};
++  std::array<mjtNum, PDConstants::kActionDim> pd_default_q_{};
++  std::array<mjtNum, 4> pd_feet_air_time_{};
++  std::array<bool, 4> pd_last_contacts_{};
++  std::array<mjtNum, 4> pd_commands_{};  // vx, vy, yaw rate, heading
++  std::array<mjtNum, PDConstants::kObservationDim> pd_obs_{};
++  std::array<mjtNum, PDConstants::kRewardTermDim> pd_terms_{};
++  bool pd_time_out_{false};
++  int pd_reset_count_{0};
++  bool pd_obs_noise_{true}, pd_push_robots_{true}, pd_random_friction_{true};
++  bool pd_random_ep_len_{true}, pd_fixed_command_{false};
++  mjtNum pd_fixed_vx_{0.0}, pd_fixed_vy_{0.0}, pd_fixed_heading_{0.0};
++  mjtNum pd_friction_{PDConstants::kGroundFriction};
+   mjtNum last_ctrl_cost_{0.0};
+   mjtNum last_contact_cost_{0.0};
+   mjtNum last_healthy_reward_{0.0};
+@@ -338,8 +444,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+   std::string sim_config_overlay_;
+ 
+  public:
+-  HumanoidEnv(const Spec& spec, int env_id)
+-      : Env<HumanoidEnvSpec>(spec, env_id),
++  QuadrupedWBCEnv(const Spec& spec, int env_id)
++      : Env<QuadrupedWBCEnvSpec>(spec, env_id),
+         terminate_when_unhealthy_(spec.config["terminate_when_unhealthy"_]),
+         no_pos_(spec.config["exclude_current_positions_from_observation"_]),
+         use_contact_force_(spec.config["use_contact_force"_]),
+@@ -361,6 +467,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+         action_penalty_weight_(spec.config["action_penalty_weight"_]),
+         locomotion_reward_config_(),
+         locomotion_reward_(locomotion_reward_config_) {
++    joint_pd_ = spec.config["joint_pd"_];
+     const std::string cfg_sim_path = spec.config["sim_config_path"_];
+     if (!cfg_sim_path.empty()) {
+       sim_config_path_ = cfg_sim_path;
+@@ -374,6 +481,9 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       rt_opts.env_id = env_id_;
+       rt_opts.sim_config_path = sim_config_path_;
+       rt_opts.sim_config_overlay = sim_config_overlay_;
++      rt_opts.pipeline = joint_pd_
++                             ? quadruped::RLPipelineRuntime::Pipeline::kJointPD
++                             : quadruped::RLPipelineRuntime::Pipeline::kWbic;
+       runtime_ = std::make_unique<quadruped::RLPipelineRuntime>(rt_opts);
+       runtime_->initialize();
+       disabled_ = runtime_->disabled();
+@@ -389,9 +499,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       last_gait_schedule_ = runtime_->gaitSchedule();
+     }
+     prev_action_vector_.clear();
++    if (joint_pd_) InitJointPD(spec);
+   }
+ 
+-  ~HumanoidEnv() override = default;
++  ~QuadrupedWBCEnv() override = default;
+ 
+   bool IsDone() override { return done_; }
+ 
+@@ -400,6 +511,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       done_ = true;
+       return;
+     }
++    if (joint_pd_) {
++      ResetJointPD();
++      return;
++    }
+     last_action_vector_.clear();
+     prev_action_vector_.clear();
+     last_penalties_.fill(static_cast<mjtNum>(0.0));
+@@ -423,7 +538,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+           break;
+         }
+         if (env_id_ == 0) {
+-          std::cerr << "[HumanoidEnv] Reset health retry " << (reset_attempt + 1)
++          std::cerr << "[QuadrupedWBCEnv] Reset health retry " << (reset_attempt + 1)
+                     << "/" << kMaxResetAttempts
+                     << " (z=" << z << ", bounds=[" << healthy_z_min_ << ", "
+                     << healthy_z_max_ << "])\n";
+@@ -431,7 +546,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       }
+       if (env_id_ == 0) {
+         const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
+-        std::cout << "[HumanoidEnv] Reset state env_id=" << env_id_
++        std::cout << "[QuadrupedWBCEnv] Reset state env_id=" << env_id_
+                   << " z=" << z
+                   << " rpy=[" << static_cast<mjtNum>(last_state_est_.rpy[0]) << ", "
+                   << static_cast<mjtNum>(last_state_est_.rpy[1]) << ", "
+@@ -447,6 +562,10 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       done_ = true;
+       return;
+     }
++    if (joint_pd_) {
++      StepJointPD(action);
++      return;
++    }
+     auto action_array = action["action"_];
+     auto* act = static_cast<mjtNum*>(action_array.Data());
+     std::size_t action_count = action_array.size;
+@@ -460,7 +579,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       }
+     }
+     if (invalid_action && env_id_ == 0) {
+-      std::cerr << "[HumanoidEnv] Non-finite action detected; replaced with zeros." << std::endl;
++      std::cerr << "[QuadrupedWBCEnv] Non-finite action detected; replaced with zeros." << std::endl;
+     }
+     last_action_vector_.assign(act, act + action_count);
+     if (runtime_) {
+@@ -520,7 +639,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+ 
+     if (!std::isfinite(static_cast<double>(reward))) {
+       if (env_id_ == 0) {
+-        std::cerr << "[HumanoidEnv] Non-finite reward detected; forcing termination." << std::endl;
++        std::cerr << "[QuadrupedWBCEnv] Non-finite reward detected; forcing termination." << std::endl;
+       }
+       done_ = true;
+       last_done_reason_ = "nonfinite_reward";
+@@ -554,7 +673,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       } else if (hit_unhealthy) {
+         last_done_reason_ = "unhealthy";
+         if (env_id_ == 0) {
+-          std::cerr << "[HumanoidEnv] unhealthy terminate at step=" << elapsed_step_
++          std::cerr << "[QuadrupedWBCEnv] unhealthy terminate at step=" << elapsed_step_
+                     << " z=" << static_cast<mjtNum>(last_state_est_.position[2])
+                     << " rpy=[" << static_cast<mjtNum>(last_state_est_.rpy[0]) << ", "
+                     << static_cast<mjtNum>(last_state_est_.rpy[1]) << ", "
+@@ -689,6 +808,356 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+     for (float contact : contacts) write_value(static_cast<mjtNum>(contact));
+   }
+ 
++  // ======================================================================
++  // Joint-PD task: unitree_rl_gym's LeggedRobot, one environment at a time.
++  //
++  // StepJointPD() is LeggedRobot.step() + post_physics_step() in the same
++  // order; ResetJointPD() is reset_idx() plus the push legged_gym applies to a
++  // freshly reset env. All state comes from the simulator directly, as Isaac
++  // Gym's root/DOF tensors do; the estimator is not involved.
++  // ======================================================================
++
++  static mjtNum WrapToPi(mjtNum angle) {
++    constexpr mjtNum kTwoPi = static_cast<mjtNum>(6.28318530717958647692);
++    angle = std::fmod(angle, kTwoPi);
++    if (angle < 0) angle += kTwoPi;             // torch % is non-negative
++    if (angle > kTwoPi / 2) angle -= kTwoPi;    // legged_gym wrap_to_pi
++    return angle;
++  }
++
++  mjtNum Uniform(mjtNum lo, mjtNum hi) {
++    return std::uniform_real_distribution<mjtNum>(lo, hi)(gen_);
++  }
++
++  template <typename Spec_>
++  void InitJointPD(const Spec_& spec) {
++    pd_obs_noise_ = spec.config["pd_obs_noise"_];
++    pd_push_robots_ = spec.config["pd_push_robots"_];
++    pd_random_friction_ = spec.config["pd_randomize_friction"_];
++    pd_random_ep_len_ = spec.config["pd_init_at_random_ep_len"_];
++    pd_fixed_command_ = spec.config["pd_fixed_command"_];
++    pd_fixed_vx_ = spec.config["pd_command_vx"_];
++    pd_fixed_vy_ = spec.config["pd_command_vy"_];
++    pd_fixed_heading_ = spec.config["pd_command_heading"_];
++    if (!runtime_ || disabled_) return;
++
++    const double dt = frame_skip_ * runtime_->stepPeriodSeconds();
++    if (std::abs(dt - PDConstants::kPolicyDt) > 1e-9) {
++      throw std::runtime_error(
++          "QuadrupedPD: frame_skip * control period = " + std::to_string(dt) +
++          " s, but the recipe's policy dt is 0.02 s");
++    }
++    const auto q_default = runtime_->jointDefaultPosition();
++    for (int i = 0; i < PDConstants::kActionDim; ++i) {
++      pd_default_q_[i] = static_cast<mjtNum>(q_default[i]);
++    }
++    runtime_->setActuatorForceLimits({PDConstants::kTorqueLimits[0],
++                                      PDConstants::kTorqueLimits[1],
++                                      PDConstants::kTorqueLimits[2]});
++    // _process_rigid_shape_props: 64 friction buckets shared by all envs, one
++    // bucket per env, fixed for the env's lifetime. The buckets come from the
++    // pool seed so every env sees the same 64 values.
++    pd_friction_ = PDConstants::kGroundFriction;
++    if (pd_random_friction_) {
++      std::mt19937 bucket_gen(static_cast<unsigned>(spec.config["seed"_]));
++      std::uniform_real_distribution<double> bucket_dist(
++          PDConstants::kFrictionRange[0], PDConstants::kFrictionRange[1]);
++      std::array<double, PDConstants::kFrictionBuckets> buckets{};
++      for (auto& b : buckets) b = bucket_dist(bucket_gen);
++      const int bucket = std::uniform_int_distribution<int>(
++          0, PDConstants::kFrictionBuckets - 1)(gen_);
++      pd_friction_ = (buckets[bucket] + PDConstants::kGroundFriction) / 2.0;
++    }
++    runtime_->setFriction(pd_friction_);
++  }
++
++  void ResampleCommands() {
++    if (pd_fixed_command_) {
++      pd_commands_[0] = pd_fixed_vx_;
++      pd_commands_[1] = pd_fixed_vy_;
++      pd_commands_[3] = pd_fixed_heading_;
++      return;
++    }
++    pd_commands_[0] = Uniform(-1.0, 1.0);    // ranges.lin_vel_x
++    pd_commands_[1] = Uniform(-1.0, 1.0);    // ranges.lin_vel_y
++    pd_commands_[3] = Uniform(-3.14, 3.14);  // ranges.heading
++    // "set small commands to zero": kept only if the norm exceeds 0.2.
++    if (!(std::hypot(pd_commands_[0], pd_commands_[1]) > 0.2)) {
++      pd_commands_[0] = 0.0;
++      pd_commands_[1] = 0.0;
++    }
++  }
++
++  // Body-frame quantities from the simulator's world-frame root state.
++  struct PDBase {
++    Eigen::Matrix<mjtNum, 3, 3> R;  // body -> world
++    Eigen::Matrix<mjtNum, 3, 1> lin_vel, ang_vel, gravity;
++    mjtNum roll{0}, pitch{0}, heading{0};
++  };
++
++  static PDBase ComputeBase(const SimRobotState& st) {
++    PDBase b;
++    const mjtNum w = st.base_quat_wxyz[0], x = st.base_quat_wxyz[1],
++                 y = st.base_quat_wxyz[2], z = st.base_quat_wxyz[3];
++    b.R = Eigen::Quaternion<mjtNum>(w, x, y, z).normalized().toRotationMatrix();
++    const Eigen::Matrix<mjtNum, 3, 1> v(st.lin_vel_world[0], st.lin_vel_world[1],
++                                        st.lin_vel_world[2]);
++    const Eigen::Matrix<mjtNum, 3, 1> om(st.ang_vel_world[0], st.ang_vel_world[1],
++                                         st.ang_vel_world[2]);
++    b.lin_vel = b.R.transpose() * v;       // quat_rotate_inverse
++    b.ang_vel = b.R.transpose() * om;
++    b.gravity = b.R.transpose() * Eigen::Matrix<mjtNum, 3, 1>(0.0, 0.0, -1.0);
++    // isaacgym_utils.get_euler_xyz
++    b.roll = std::atan2(2.0 * (w * x + y * z), w * w - x * x - y * y + z * z);
++    const mjtNum sinp = 2.0 * (w * y - z * x);
++    b.pitch = std::abs(sinp) >= 1.0 ? std::copysign(static_cast<mjtNum>(1.57079632679489661923), sinp)
++                                    : std::asin(sinp);
++    // _post_physics_step_callback: heading of the body x axis.
++    const Eigen::Matrix<mjtNum, 3, 1> fwd =
++        b.R * Eigen::Matrix<mjtNum, 3, 1>(1.0, 0.0, 0.0);
++    b.heading = std::atan2(fwd[1], fwd[0]);
++    return b;
++  }
++
++  void UpdateHeadingCommand(const PDBase& b) {
++    pd_commands_[2] = std::clamp(0.5 * WrapToPi(pd_commands_[3] - b.heading),
++                                 static_cast<mjtNum>(-1.0),
++                                 static_cast<mjtNum>(1.0));
++  }
++
++  // compute_observations(), noise and clip included.
++  void ComputePDObservation(const SimRobotState& st, const PDBase& b) {
++    int k = 0;
++    auto put = [&](mjtNum value, mjtNum noise) {
++      if (pd_obs_noise_ && noise > 0.0) value += (2.0 * Uniform(0.0, 1.0) - 1.0) * noise;
++      pd_obs_[k++] = std::clamp(value, -PDConstants::kClipObservations,
++                                PDConstants::kClipObservations);
++    };
++    // noise_scales x noise_level 1.0 x obs_scales, per _get_noise_scale_vec.
++    for (int i = 0; i < 3; ++i) put(b.lin_vel[i] * 2.0, 0.1 * 2.0);
++    for (int i = 0; i < 3; ++i) put(b.ang_vel[i] * 0.25, 0.2 * 0.25);
++    for (int i = 0; i < 3; ++i) put(b.gravity[i], 0.05);
++    put(pd_commands_[0] * 2.0, 0.0);
++    put(pd_commands_[1] * 2.0, 0.0);
++    put(pd_commands_[2] * 0.25, 0.0);
++    for (int i = 0; i < 12; ++i) put(st.q[i] - pd_default_q_[i], 0.01);
++    for (int i = 0; i < 12; ++i) put(st.qd[i] * 0.05, 1.5 * 0.05);
++    for (int i = 0; i < 12; ++i) put(pd_actions_[i], 0.0);
++  }
++
++  void ResetJointPD() {
++    done_ = false;
++    pd_time_out_ = false;
++    last_done_reason_ = "reset";
++    runtime_->resetEpisode();
++    runtime_->setPolicyAction(nullptr, 0);
++
++    // _reset_root_states + _reset_dofs.
++    SimRobotState st{};
++    st.base_pos[2] = PDConstants::kInitHeight;
++    for (int i = 0; i < 3; ++i) {
++      st.lin_vel_world[i] = Uniform(-0.5, 0.5);
++      st.ang_vel_world[i] = Uniform(-0.5, 0.5);
++    }
++    for (int i = 0; i < 12; ++i) {
++      // default_dof_pos * U(0.5, 1.5). The convention map is a per-joint sign,
++      // so scaling commutes with it.
++      st.q[i] = pd_default_q_[i] * Uniform(0.5, 1.5);
++      st.qd[i] = 0.0;
++    }
++    runtime_->setRobotState(st);
++    ResampleCommands();
++
++    // reset_idx buffer resets. last_contacts is deliberately NOT cleared:
++    // legged_gym does not clear it either.
++    pd_actions_.fill(0.0);
++    pd_last_actions_.fill(0.0);
++    pd_last_dof_vel_.fill(0.0);
++    pd_feet_air_time_.fill(0.0);
++    last_action_vector_.assign(PDConstants::kActionDim, 0.0);
++
++    // init_at_random_ep_len: OnPolicyRunner.learn() randomises
++    // episode_length_buf once, over [0, max_episode_length).
++    elapsed_step_ = 0;
++    if (pd_reset_count_ == 0 && pd_random_ep_len_) {
++      elapsed_step_ = std::uniform_int_distribution<int>(
++          0, PDConstants::kMaxEpisodeLength - 1)(gen_);
++    }
++
++    const SimRobotState now = runtime_->robotState();
++    const PDBase b = ComputeBase(now);
++    UpdateHeadingCommand(b);
++    ComputePDObservation(now, b);
++    pd_terms_.fill(0.0);
++
++    // In legged_gym an env reset inside post_physics_step has
++    // episode_length_buf == 0 when _push_robots runs, and 0 % interval == 0,
++    // so every reset except the very first is followed by a push. The
++    // observation above predates it, as legged_gym's does.
++    if (pd_push_robots_ && pd_reset_count_ > 0) {
++      runtime_->setBaseLinearVelocityXY(
++          Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY),
++          Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY));
++    }
++    ++pd_reset_count_;
++    WriteJointPDState(0.0, now);
++  }
++
++  void StepJointPD(const Action& action) {
++    auto action_array = action["action"_];
++    const auto* act = static_cast<const mjtNum*>(action_array.Data());
++    const std::size_t n =
++        std::min<std::size_t>(action_array.size, PDConstants::kActionDim);
++    for (std::size_t i = 0; i < PDConstants::kActionDim; ++i) {
++      const mjtNum a = (i < n && std::isfinite(static_cast<double>(act[i])))
++                           ? act[i]
++                           : 0.0;
++      pd_actions_[i] = std::clamp(a, -PDConstants::kClipActions,
++                                  PDConstants::kClipActions);
++    }
++    last_action_vector_.assign(pd_actions_.begin(), pd_actions_.end());
++    runtime_->setPolicyAction(pd_actions_.data(), PDConstants::kActionDim);
++    for (int i = 0; i < frame_skip_; ++i) runtime_->stepFrame();
++
++    // post_physics_step
++    ++elapsed_step_;
++    const SimRobotState st = runtime_->robotState();
++    const PDBase b = ComputeBase(st);
++
++    // _post_physics_step_callback
++    if (elapsed_step_ % PDConstants::kResampleSteps == 0) ResampleCommands();
++    UpdateHeadingCommand(b);
++
++    // check_termination
++    const bool base_contact = runtime_->baseContactForceNorm() > 1.0;
++    const bool attitude = std::abs(b.pitch) > 1.0 || std::abs(b.roll) > 0.8;
++    pd_time_out_ = elapsed_step_ > PDConstants::kMaxEpisodeLength;
++    const bool terminated =
++        terminate_when_unhealthy_ && (base_contact || attitude);
++
++    const mjtNum reward = ComputeJointPDReward(st, b);
++
++    const bool done = terminated || pd_time_out_;
++    if (done) {
++      last_done_reason_ = pd_time_out_ ? "timeout"
++                          : base_contact ? "base_contact"
++                                         : "attitude";
++    }
++
++    // _push_robots for envs not being reset (reset envs are pushed in
++    // ResetJointPD). The observation uses the pre-push base velocity, as
++    // legged_gym's does.
++    ComputePDObservation(st, b);
++    if (pd_push_robots_ && !done &&
++        elapsed_step_ % PDConstants::kPushInterval == 0) {
++      runtime_->setBaseLinearVelocityXY(
++          Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY),
++          Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY));
++    }
++
++    for (int i = 0; i < 12; ++i) pd_last_dof_vel_[i] = st.qd[i];
++    pd_last_actions_ = pd_actions_;
++    done_ = done;
++    WriteJointPDState(reward, st);
++  }
++
++  // compute_reward(): each scale is pre-multiplied by dt, the total is clipped
++  // at zero (only_positive_rewards), termination's scale is 0 and dropped.
++  mjtNum ComputeJointPDReward(const SimRobotState& st, const PDBase& b) {
++    const mjtNum dt = PDConstants::kPolicyDt;
++    const mjtNum lin_err = std::pow(pd_commands_[0] - b.lin_vel[0], 2) +
++                           std::pow(pd_commands_[1] - b.lin_vel[1], 2);
++    const mjtNum yaw_err = std::pow(pd_commands_[2] - b.ang_vel[2], 2);
++
++    mjtNum torques = 0.0, dof_acc = 0.0, dof_limits = 0.0, action_rate = 0.0;
++    for (int axis = 0; axis < 12; ++axis) {
++      const int leg = axis / 3, joint = axis % 3;
++      torques += st.tau[axis] * st.tau[axis];
++      const mjtNum acc = (pd_last_dof_vel_[axis] - st.qd[axis]) / dt;
++      dof_acc += acc * acc;
++      action_rate += std::pow(pd_last_actions_[axis] - pd_actions_[axis], 2);
++      // _process_dof_props soft limits, evaluated in URDF convention.
++      const double* lim = joint == 0   ? PDConstants::kHipLimits
++                          : joint == 2 ? PDConstants::kCalfLimits
++                          : leg < 2    ? PDConstants::kFrontThighLimits
++                                       : PDConstants::kRearThighLimits;
++      const mjtNum m = 0.5 * (lim[0] + lim[1]);
++      const mjtNum r = lim[1] - lim[0];
++      const mjtNum lo = m - 0.5 * r * PDConstants::kSoftDofPosLimit;
++      const mjtNum hi = m + 0.5 * r * PDConstants::kSoftDofPosLimit;
++      const mjtNum q_urdf = PDConstants::kUrdfSign[joint] * st.q[axis];
++      dof_limits += std::max(lo - q_urdf, static_cast<mjtNum>(0.0));
++      dof_limits += std::max(q_urdf - hi, static_cast<mjtNum>(0.0));
++    }
++
++    // _reward_feet_air_time: contact is the foot's vertical force > 1 N.
++    const auto contacts = runtime_->footContactState(1.0f);
++    mjtNum air = 0.0;
++    for (int leg = 0; leg < 4; ++leg) {
++      const bool contact = contacts[leg] > 0.5f;
++      const bool contact_filt = contact || pd_last_contacts_[leg];
++      pd_last_contacts_[leg] = contact;
++      const bool first_contact = pd_feet_air_time_[leg] > 0.0 && contact_filt;
++      pd_feet_air_time_[leg] += dt;
++      if (first_contact) air += pd_feet_air_time_[leg] - 0.5;
++      if (contact_filt) pd_feet_air_time_[leg] = 0.0;
++    }
++    if (!(std::hypot(pd_commands_[0], pd_commands_[1]) > 0.1)) air = 0.0;
++
++    const mjtNum collision =
++        static_cast<mjtNum>(runtime_->penalizedCollisionCount());
++
++    // Order matches info:reward_terms, documented in the trainer.
++    const std::array<mjtNum, PDConstants::kRewardTermDim> raw{
++        std::exp(-lin_err / PDConstants::kTrackingSigma) * 1.0,   // tracking_lin_vel
++        std::exp(-yaw_err / PDConstants::kTrackingSigma) * 0.5,   // tracking_ang_vel
++        b.lin_vel[2] * b.lin_vel[2] * -2.0,                       // lin_vel_z
++        (b.ang_vel[0] * b.ang_vel[0] + b.ang_vel[1] * b.ang_vel[1]) * -0.05,
++        torques * -0.0002,                                        // torques (GO2)
++        dof_acc * -2.5e-7,                                        // dof_acc
++        air * 1.0,                                                // feet_air_time
++        collision * -1.0,                                         // collision
++        action_rate * -0.01,                                      // action_rate
++        dof_limits * -10.0};                                      // dof_pos_limits (GO2)
++    mjtNum total = 0.0;
++    for (int i = 0; i < PDConstants::kRewardTermDim; ++i) {
++      pd_terms_[i] = raw[i] * dt;
++      total += pd_terms_[i];
++    }
++    return std::max(total, static_cast<mjtNum>(0.0));
++  }
++
++  void WriteJointPDState(mjtNum reward, const SimRobotState& st) {
++    State state = Allocate();
++    state["reward"_] = static_cast<float>(reward);
++    auto obs_array = state["obs"_];
++    obs_array.Assign(pd_obs_.data(), PDConstants::kObservationDim);
++    state["info:time_out"_] = pd_time_out_ ? 1 : 0;
++    auto terms = state["info:reward_terms"_];
++    auto* term_data = static_cast<mjtNum*>(terms.Data());
++    for (int i = 0; i < PDConstants::kRewardTermDim; ++i) term_data[i] = pd_terms_[i];
++    const SimForceState force = runtime_->forceState();
++    state["info:sim_time"_] = force.time;
++    state["info:force_onset"_] = force.onset;
++    state["info:force_phase"_] = force.phase;
++    state["info:force_direction"_] = force.direction;
++    state["info:force_requested_impulse"_] = force.requested_impulse;
++    auto applied = state["info:force_applied"_];
++    auto* force_data = static_cast<mjtNum*>(applied.Data());
++    for (int i = 0; i < 3; ++i) force_data[i] = force.applied[i];
++    state["info:body_height"_] = st.base_pos[2];
++    state["info:reward_linvel"_] = pd_terms_[0];
++    state["info:reward_quadctrl"_] = pd_terms_[4];
++    state["info:reward_alive"_] = 0.0;
++    state["info:reward_impact"_] = pd_terms_[7];
++    state["info:x_position"_] = st.base_pos[0];
++    state["info:y_position"_] = st.base_pos[1];
++    state["info:distance_from_origin"_] = std::hypot(st.base_pos[0], st.base_pos[1]);
++    state["info:x_velocity"_] = st.lin_vel_world[0];
++    state["info:y_velocity"_] = st.lin_vel_world[1];
++    lastReward = static_cast<float>(reward);
++  }
++
+   bool IsHealthy() {
+     const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
+     bool healthy = (healthy_z_min_ < z) && (z < healthy_z_max_);
+@@ -824,6 +1293,13 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+     state["info:force_direction"_] = force.direction;
+     state["info:force_requested_impulse"_] = force.requested_impulse;
+     state["info:body_height"_] = last_state_est_.position[2];
++    state["info:time_out"_] =
++        (done_ && last_done_reason_ == "timeout") ? 1 : 0;
++    auto reward_terms = state["info:reward_terms"_];
++    auto* reward_term_data = static_cast<mjtNum*>(reward_terms.Data());
++    for (std::size_t i = 0; i < last_term_rewards_.size(); ++i) {
++      reward_term_data[i] = last_term_rewards_[i];
++    }
+     auto applied = state["info:force_applied"_];
+     auto* force_data = static_cast<mjtNum*>(applied.Data());
+     for (int i = 0; i < 3; ++i) force_data[i] = force.applied[i];
+@@ -842,7 +1318,7 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+       }
+     }
+     if (invalid_obs && env_id_ == 0) {
+-      std::cerr << "[HumanoidEnv] Non-finite observation detected; replaced with zeros." << std::endl;
++      std::cerr << "[QuadrupedWBCEnv] Non-finite observation detected; replaced with zeros." << std::endl;
+     }
+     obs_array.Assign(obs, obs_array.size);
+ 
+@@ -879,8 +1355,8 @@ class HumanoidEnv : public Env<HumanoidEnvSpec> {
+   }
+ };
+ 
+-using HumanoidEnvPool = AsyncEnvPool<HumanoidEnv>;
++using QuadrupedWBCEnvPool = AsyncEnvPool<QuadrupedWBCEnv>;
+ 
+ }  // namespace mujoco_gym
+ 
+-#endif  // ENVPOOL_MUJOCO_GYM_HUMANOID_H_
++#endif  // ENVPOOL_MUJOCO_GYM_QUADRUPED_WBC_H_
+diff --git a/envpool/mujoco/gym/registration.py b/envpool/mujoco/gym/registration.py
+index 4ffba43..6860c0d 100644
+--- a/envpool/mujoco/gym/registration.py
++++ b/envpool/mujoco/gym/registration.py
+@@ -22,8 +22,6 @@ gym_mujoco_envs = [
+   ("HalfCheetah", "v4", True, 1000),
+   ("Hopper", "v3", False, 1000),
+   ("Hopper", "v4", True, 1000),
+-  ("Humanoid", "v3", False, 1000),
+-  ("Humanoid", "v4", True, 1000),
+   ("HumanoidStandup", "v2", False, 1000),
+   ("HumanoidStandup", "v4", True, 100000),
+   ("InvertedDoublePendulum", "v2", False, 1000),
+@@ -42,7 +40,7 @@ gym_mujoco_envs = [
+ 
+ for task, version, post_constraint, max_episode_steps in gym_mujoco_envs:
+   extra_args = {}
+-  if task in ["Ant", "Humanoid"] and version == "v3":
++  if task == "Ant" and version == "v3":
+     extra_args["use_contact_force"] = True
+   register(
+     task_id=f"{task}-{version}",
+@@ -55,3 +53,49 @@ for task, version, post_constraint, max_episode_steps in gym_mujoco_envs:
+     max_episode_steps=max_episode_steps,
+     **extra_args,
+   )
++
++# The quadruped WBIC environment. Both task ids are the same C++ env; they
++# differ only in observation width, exactly as Ant-v3/v4 differ only by
++# use_contact_force.
++#
++#   v0  54 obs, symmetric            -- the Gamma line, incl. gamma5_stage3
++#   v1  61 obs, privileged tail      -- the Delta line's asymmetric critic
++#
++# v0 is v1 with the trailing 7 simulator-truth values withheld; see
++# quadruped_wbc.h.
++for version, privileged in [("v0", False), ("v1", True)]:
++  register(
++    task_id=f"QuadrupedWBC-{version}",
++    import_path="envpool.mujoco.gym",
++    spec_cls="GymQuadrupedWBCEnvSpec",
++    dm_cls="GymQuadrupedWBCDMEnvPool",
++    gym_cls="GymQuadrupedWBCGymEnvPool",
++    gymnasium_cls="GymQuadrupedWBCGymnasiumEnvPool",
++    post_constraint=True,
++    max_episode_steps=1000,
++    privileged_observations=privileged,
++    joint_pd=False,
++  )
++
++# End-to-end joint-position PD task: an exact recreation of unitree_rl_gym's
++# Go2 recipe (see quadruped_wbc.h, joint-PD branch). v1, not v0: v0 was an
++# earlier partial port at 100 Hz whose dev checkpoints (data/rudin_*) must not
++# load into these semantics.
++#
++#   frame_skip 10 control ticks x 2 ms = 0.02 s, the recipe's policy dt
++#   (sim.dt 0.005 x decimation 4). The env refuses any other product.
++#   max_episode_steps 1001: legged_gym times out when episode_length_buf >
++#   max_episode_length (1000). The env reports timeouts in info["time_out"].
++register(
++  task_id="QuadrupedPD-v1",
++  import_path="envpool.mujoco.gym",
++  spec_cls="GymQuadrupedWBCEnvSpec",
++  dm_cls="GymQuadrupedWBCDMEnvPool",
++  gym_cls="GymQuadrupedWBCGymEnvPool",
++  gymnasium_cls="GymQuadrupedWBCGymnasiumEnvPool",
++  post_constraint=True,
++  frame_skip=10,
++  max_episode_steps=1001,
++  privileged_observations=False,
++  joint_pd=True,
++)
+diff --git a/examples/common/__init__.py b/examples/common/__init__.py
+index 4c3bc73..fa14dc2 100644
+--- a/examples/common/__init__.py
++++ b/examples/common/__init__.py
+@@ -2,7 +2,7 @@
+ Common utilities for quadruped training and evaluation with EnvPool and PPO.
+ """
+ 
+-from .asymmetric_policy import ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
++from .asymmetric_policy import DEFAULT_ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
+ from .vec_adapter import VecAdapter
+ from .utils import (
+     setup_environment,
+@@ -24,7 +24,7 @@ from .evaluation import (
+ )
+ 
+ __all__ = [
+-    'ACTOR_OBSERVATION_DIM',
++    'DEFAULT_ACTOR_OBSERVATION_DIM',
+     'AsymmetricActorCriticPolicy',
+     'VecAdapter',
+     'setup_environment',
+diff --git a/examples/common/asymmetric_policy.py b/examples/common/asymmetric_policy.py
+index 0ac30e7..836fc3d 100644
+--- a/examples/common/asymmetric_policy.py
++++ b/examples/common/asymmetric_policy.py
+@@ -5,7 +5,7 @@ from torch import nn
+ from stable_baselines3.common.policies import ActorCriticPolicy
+ 
+ 
+-ACTOR_OBSERVATION_DIM = 54
++DEFAULT_ACTOR_OBSERVATION_DIM = 54
+ 
+ 
+ class AsymmetricMlpExtractor(nn.Module):
+@@ -14,10 +14,10 @@ class AsymmetricMlpExtractor(nn.Module):
+     def __init__(self, feature_dim, actor_feature_dim, net_arch,
+                  activation_fn, device):
+         super().__init__()
+-        if not 0 < actor_feature_dim < feature_dim:
++        if not 0 < actor_feature_dim <= feature_dim:
+             raise ValueError(
+-                "actor_feature_dim must be positive and smaller than the "
+-                "full privileged observation dimension")
++                "actor_feature_dim must be positive and no larger than the "
++                "full observation dimension")
+         if (isinstance(net_arch, list) and len(net_arch) == 1
+                 and isinstance(net_arch[0], dict)):
+             net_arch = net_arch[0]
+@@ -55,7 +55,8 @@ class AsymmetricMlpExtractor(nn.Module):
+ class AsymmetricActorCriticPolicy(ActorCriticPolicy):
+     """Keep privileged trailing observations out of every actor code path."""
+ 
+-    def __init__(self, *args, actor_obs_dim=ACTOR_OBSERVATION_DIM, **kwargs):
++    def __init__(self, *args,
++                 actor_obs_dim=DEFAULT_ACTOR_OBSERVATION_DIM, **kwargs):
+         self.actor_obs_dim = actor_obs_dim
+         super().__init__(*args, **kwargs)
+ 
+diff --git a/examples/common/utils.py b/examples/common/utils.py
+index e44092f..16dbf19 100644
+--- a/examples/common/utils.py
++++ b/examples/common/utils.py
+@@ -14,7 +14,7 @@ from stable_baselines3.common.utils import get_schedule_fn
+ from stable_baselines3.common.logger import configure
+ from datetime import datetime
+ 
+-from .asymmetric_policy import ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
++from .asymmetric_policy import AsymmetricActorCriticPolicy
+ from .vec_adapter import VecAdapter
+ 
+ FIXED_LEARNING_RATE = 1e-5
+@@ -44,35 +44,42 @@ def setup_environment(env_name, num_envs, seed, render_mode=None, env_config=Non
+     return env
+ 
+ 
+-def create_policy_kwargs():
++def create_policy_kwargs(actor_obs_dim, recipe="gamma"):
+     """Create policy kwargs for PPO model."""
++    unitree = recipe == "unitree"
+     return dict(
+-        actor_obs_dim=ACTOR_OBSERVATION_DIM,
+-        activation_fn=th.nn.Tanh,
+-        net_arch=[dict(pi=[256, 128], vf=[256, 128])],
+-        log_std_init=-3.0,
++        actor_obs_dim=actor_obs_dim,
++        activation_fn=th.nn.ELU if unitree else th.nn.Tanh,
++        net_arch=[dict(pi=[512, 256, 128], vf=[512, 256, 128])]
++                 if unitree else [dict(pi=[256, 128], vf=[256, 128])],
++        log_std_init=0.0 if unitree else -3.0,
+         full_std=False,          # important
+         use_expln=False,
+-   
+-        # ortho_init=False,
++        # rsl_rl v1.0.2 leaves PyTorch's Linear initialization in place.
++        # SB3 otherwise applies orthogonal initialization by default.
++        ortho_init=not unitree,
+     )
+ 
+ 
+-def create_ppo_model(env, policy_kwargs, seed=None):
++def create_ppo_model(env, policy_kwargs, seed=None, recipe="gamma"):
+     """Create a new PPO model with specified hyperparameters."""
++    unitree = recipe == "unitree"
++    # RSL-RL uses four minibatches per rollout. Preserve that geometry for
++    # smaller smoke runs as well as the 256-env main run.
++    unitree_batch = max(1, (384 * env.num_envs) // 4)
+     return PPO(
+         policy=AsymmetricActorCriticPolicy,
+         env=env,
+         # PPO hyper-parameters
+-        learning_rate=FIXED_LEARNING_RATE,
+-        clip_range=0.1,
++        learning_rate=1e-3 if unitree else FIXED_LEARNING_RATE,
++        clip_range=0.2 if unitree else 0.1,
+         target_kl=0.01,
+-        n_steps=512,
+-        batch_size=1024,
+-        n_epochs=10,
+-        gamma=0.995,
+-        gae_lambda=0.97,
+-        max_grad_norm=0.1,
++        n_steps=384 if unitree else 512,
++        batch_size=unitree_batch if unitree else 1024,
++        n_epochs=5 if unitree else 10,
++        gamma=0.99 if unitree else 0.995,
++        gae_lambda=0.95 if unitree else 0.97,
++        max_grad_norm=1.0 if unitree else 0.1,
+         # 0.01, the RSL-RL / legged_gym value. It was 0.05, which this repo has
+         # a measured divergence for: the action std climbed 0.050 -> 0.275 over
+         # one 17 M-step run while reward fell. Note log_std_init = -3.0 starts
+@@ -119,7 +126,8 @@ def ask_continue_or_restart(model_path):
+ 
+ 
+ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=True, 
+-                        force_new=False, continue_training=False, seed=None):
++                        force_new=False, continue_training=False, seed=None,
++                        recipe="gamma"):
+     """Create a new model or load existing one based on user choice."""
+     model_exists = os.path.exists(f"{model_save_path}.zip")
+     vecnorm_exists = os.path.exists(f"{model_save_path}_vecnormalize.pkl")
+@@ -182,7 +190,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
+         # model.n_epochs = 5
+ 
+         # Update learning rate; also refresh PPO's lr schedule so it is not overwritten
+-        new_learning_rate = FIXED_LEARNING_RATE
++        new_learning_rate = 1e-3 if recipe == "unitree" else FIXED_LEARNING_RATE
+         model.learning_rate = new_learning_rate
+         model.lr_schedule = get_schedule_fn(new_learning_rate)
+         for param_group in model.policy.optimizer.param_groups:
+@@ -194,7 +202,7 @@ def create_or_load_model(model_save_path, env, policy_kwargs, use_vecnormalize=T
+         # a checkpoint must not silently change its distribution.
+     else:
+         print("Creating new model...")
+-        model = create_ppo_model(env, policy_kwargs, seed=seed)
++        model = create_ppo_model(env, policy_kwargs, seed=seed, recipe=recipe)
+         print("New model created.")
+     
+     return model, env
+diff --git a/examples/env_step.py b/examples/env_step.py
+index 8786954..116777f 100644
+--- a/examples/env_step.py
++++ b/examples/env_step.py
+@@ -22,19 +22,19 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
+ def gym_sync_step() -> None:
+   num_envs = 1
+   env = envpool.make_gym(
+-      "Humanoid-v4",
++      "QuadrupedWBC-v1",
+       num_envs=num_envs,
+       sim_config_path="/app/quadcontrol/config/robots/sim/envpool.toml",
+   )
+   
+-  print("\n\n\nCreated envpool env Humanoid-v4 with : ", num_envs, " environments\n\n\n")
++  print("\n\n\nCreated envpool env QuadrupedWBC-v1 with : ", num_envs, " environments\n\n\n")
+   print(f"Observation space: {env.observation_space}")
+   print(f"Observation shape: {env.observation_space.shape}")
+ 
+   action= np.zeros((num_envs, env.action_space.shape[0]), dtype=np.float32)
+   for env_id in range(num_envs):
+     action[env_id][0]= 0.0
+-    # Contiguous force block layout in Humanoid-v4:
++    # Contiguous force block layout in QuadrupedWBC-v1:
+     # [3..14] -> per-leg [fx, fy, fz], so z-force indices are 5, 8, 11, 14.
+     action[env_id][5]= 0.5
+     action[env_id][8]= 0.5
+diff --git a/examples/eval.py b/examples/eval.py
+index 4e89d1a..7086092 100644
+--- a/examples/eval.py
++++ b/examples/eval.py
+@@ -41,8 +41,8 @@ def parse_args():
+     print("Parsing command-line arguments for evaluation...")
+     parser = argparse.ArgumentParser(description="Evaluate trained PPO models with EnvPool.")
+     parser.add_argument("--model-path", type=str, default="data/current/quadruped_ppo_model.zip", help="Path to the saved model (without .zip extension)")
+-    parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
+-    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
++    parser.add_argument("--env-name", type=str, default="QuadrupedWBC-v1", help="EnvPool environment ID")
++    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool.toml", help="Path to quadcontrol simulation TOML used by the quadruped envs")
+     parser.add_argument("--num-envs", type=int, default=1, help="Number of parallel evaluation environments")
+     parser.add_argument("--n-eval-episodes", type=int, default=5, help="Number of episodes for evaluation")
+     parser.add_argument("--seed", type=int, default=0, help="Random seed for evaluation")
+@@ -70,7 +70,7 @@ def parse_args():
+ def setup_evaluation_environment(args):
+     """Set up the evaluation environment with proper wrappers."""
+     env_config = {}
+-    if args.env_name.startswith("Humanoid"):
++    if args.env_name.startswith("Quadruped"):
+         env_config["sim_config_path"] = args.sim_config_path
+ 
+     return setup_environment(
+diff --git a/examples/probe_grf.py b/examples/probe_grf.py
+index b9986a9..09aa391 100644
+--- a/examples/probe_grf.py
++++ b/examples/probe_grf.py
+@@ -27,7 +27,7 @@ def fz_action(newtons):
+     return (newtons / FORCE_Z_MAX) * 2.0 - 1.0
+ 
+ def main():
+-    env = envpool.make_gym("Humanoid-v4", num_envs=1, sim_config_path=SIM_CONFIG)
++    env = envpool.make_gym("QuadrupedWBC-v1", num_envs=1, sim_config_path=SIM_CONFIG)
+     adim = env.action_space.shape[0]
+     print(f"action dim = {adim}, obs dim = {env.observation_space.shape}")
+ 
+diff --git a/examples/probe_vel.py b/examples/probe_vel.py
+index 83ea425..c1901f1 100644
+--- a/examples/probe_vel.py
++++ b/examples/probe_vel.py
+@@ -21,7 +21,7 @@ def fz_action(newtons):
+ def main():
+     cfg = sys.argv[1]
+     tag = sys.argv[2] if len(sys.argv) > 2 else cfg
+-    env = envpool.make_gym("Humanoid-v4", num_envs=1, sim_config_path=cfg)
++    env = envpool.make_gym("QuadrupedWBC-v1", num_envs=1, sim_config_path=cfg)
+     adim = env.action_space.shape[0]
+ 
+     a = np.zeros((1, adim), dtype=np.float32)
+diff --git a/examples/tests/_check_threads.py b/examples/tests/_check_threads.py
+index c3857be..8e2bf94 100644
+--- a/examples/tests/_check_threads.py
++++ b/examples/tests/_check_threads.py
+@@ -10,7 +10,7 @@ for threads in (int(x) for x in sys.argv[1].split(",")):
+     cfg = {"sim_config_path": "/app/quadcontrol/config/robots/sim/envpool_train_Gamma6.toml",
+            "max_episode_steps": 1550}
+     if threads: cfg["num_threads"] = threads
+-    env = setup_environment("Humanoid-v4", n, 7, env_config=cfg)
++    env = setup_environment("QuadrupedWBC-v1", n, 7, env_config=cfg)
+     path = "/app/envpool/data/gamma5_stage2/quadruped_ppo_model"
+     model, env = load_model_and_normalization(path + ".zip", env, path + "_vecnormalize.pkl")
+     obs = env.reset()
+diff --git a/examples/tests/check_force_sampler.py b/examples/tests/check_force_sampler.py
+index 3ec6b0a..785d3cb 100644
+--- a/examples/tests/check_force_sampler.py
++++ b/examples/tests/check_force_sampler.py
+@@ -7,12 +7,8 @@ import numpy as np
+ from common import setup_environment, load_model_and_normalization
+ 
+ n = 128
+-# One thread per env, as training does: with fewer threads than envs, every env
+-# past the thread count keeps a frozen gait phase, never reaches the onset cycle
+-# and is never pushed. Without this the audit below fails on ~n-num_threads envs.
+-env = setup_environment("Humanoid-v4", n, 7, env_config={
+-    "sim_config_path": "/app/quadcontrol/config/robots/sim/envpool_train_Gamma6.toml",
+-    "num_threads": n})
++env = setup_environment("QuadrupedWBC-v1", n, 7, env_config={
++    "sim_config_path": "/app/quadcontrol/config/robots/sim/envpool_train_Gamma6.toml"})
+ path = "/app/envpool/data/gamma3/quadruped_ppo_model_ckpt_30001920"
+ model, env = load_model_and_normalization(path + ".zip", env, path + "_vecnormalize.pkl")
+ obs = env.reset()
+diff --git a/examples/tests/test_training_contracts.py b/examples/tests/test_training_contracts.py
+index 29cf5e4..8e96581 100644
+--- a/examples/tests/test_training_contracts.py
++++ b/examples/tests/test_training_contracts.py
+@@ -13,8 +13,14 @@ from stable_baselines3 import PPO
+ from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecNormalize
+ from common import vec_adapter
+ from common.asymmetric_policy import AsymmetricActorCriticPolicy
+-from common.utils import create_or_load_model, save_model_and_stats, find_vecnormalize_wrapper
+-from train import LogStdClampCallback
++from common.utils import (
++    create_or_load_model,
++    create_policy_kwargs,
++    create_ppo_model,
++    save_model_and_stats,
++    find_vecnormalize_wrapper,
++)
++from train import AdaptiveLRCallback, LogStdClampCallback
+ 
+ 
+ class ToyEnv(gym.Env):
+@@ -32,6 +38,33 @@ class ToyEnv(gym.Env):
+ 
+ 
+ class TrainingContracts(unittest.TestCase):
++    def test_unitree_recipe_matches_network_and_ppo_geometry(self):
++        env = DummyVecEnv([ToyEnv for _ in range(4)])
++        kwargs = create_policy_kwargs(actor_obs_dim=2, recipe="unitree")
++        model = create_ppo_model(env, kwargs, seed=7, recipe="unitree")
++
++        self.assertIs(kwargs["activation_fn"], torch.nn.ELU)
++        self.assertEqual(kwargs["net_arch"], [dict(
++            pi=[512, 256, 128], vf=[512, 256, 128])])
++        self.assertEqual(kwargs["log_std_init"], 0.0)
++        self.assertFalse(kwargs["ortho_init"])
++        self.assertEqual(model.n_steps, 384)
++        self.assertEqual(model.batch_size, 384)
++        self.assertEqual(model.n_epochs, 5)
++        self.assertEqual(model.gamma, 0.99)
++        self.assertEqual(model.gae_lambda, 0.95)
++        self.assertEqual(model.clip_range(1.0), 0.2)
++        self.assertEqual(model.clip_range_vf(1.0), 0.2)
++        self.assertEqual(model.ent_coef, 0.01)
++        self.assertEqual(model.vf_coef, 1.0)
++        self.assertEqual(model.max_grad_norm, 1.0)
++        env.close()
++
++    def test_adaptive_lr_accepts_unitree_bounds(self):
++        callback = AdaptiveLRCallback(0.01, min_lr=1e-5, max_lr=1e-2)
++        self.assertEqual(callback.min_lr, 1e-5)
++        self.assertEqual(callback.max_lr, 1e-2)
++
+     def test_timeout_and_terminal_observation_survive_reset(self):
+         class Pool:
+             def step(self, actions):
+diff --git a/examples/train.py b/examples/train.py
+index 236fd27..686bbc3 100644
+--- a/examples/train.py
++++ b/examples/train.py
+@@ -54,7 +54,9 @@ class EpisodeInfoLoggingCallback(BaseCallback):
+     def _on_step(self) -> bool:
+         actions = self.locals.get("actions")
+         if actions is not None:
+-            self._saturation.append(float(np.mean(np.abs(actions) >= 1.0)))
++            action_limit = np.asarray(self.training_env.action_space.high)
++            self._saturation.append(
++                float(np.mean(np.abs(actions) >= 0.999 * action_limit)))
+         infos = self.locals.get("infos", [])
+         for info in infos:
+             episode = info.get("episode")
+@@ -75,11 +77,10 @@ class EpisodeInfoLoggingCallback(BaseCallback):
+         return True
+ 
+     # A timeout with no latched onset means that episode was never pushed. The
+-    # policy can cause this on its own -- phase_delta_min is 0, so a low action
+-    # on the last channel nearly freezes the gait and the onset cycle never
+-    # arrives -- so a few are expected. A large fraction instead means the
+-    # disturbance pipeline is broken for most envs, which is how the EnvPool
+-    # thread-count defect showed up (169 of 256 envs never pushed).
++    # WBC policies can cause this on their own -- phase_delta_min is 0, so a
++    # low action on the last channel nearly freezes the gait and the onset
++    # cycle never arrives -- so a few are expected. A large fraction means the
++    # disturbance or phase pipeline needs inspection.
+     UNPUSHED_TIMEOUT_LIMIT = 0.10
+     UNPUSHED_MIN_SAMPLE = 20
+ 
+@@ -93,7 +94,7 @@ class EpisodeInfoLoggingCallback(BaseCallback):
+                 raise RuntimeError(
+                     f"{self._timeouts_without_onset}/{self._timeouts} timeouts never "
+                     "latched a force onset; those episodes trained with no disturbance. "
+-                    "Check EnvPool num_threads (must equal num_envs) and gait phase advancement.")
++                    "Check force delivery and gait/fallback phase advancement.")
+             self._timeouts = self._timeouts_without_onset = 0
+         if self._saturation:
+             self.logger.record("rollout/action_saturation_fraction", float(np.mean(self._saturation)))
+@@ -163,6 +164,28 @@ class LogStdClampCallback(BaseCallback):
+         return True
+ 
+ 
++class StdDivergenceAbortCallback(BaseCallback):
++    """Abort the unclamped Unitree recipe if policy std exceeds its safety cap."""
++
++    def __init__(self, maximum: float = 3.0):
++        super().__init__()
++        self.maximum = maximum
++
++    def _on_rollout_end(self) -> None:
++        log_std = getattr(self.model.policy, "log_std", None)
++        if log_std is None or not th.isfinite(log_std).all():
++            raise FloatingPointError("non-finite or missing policy log_std")
++        observed = float(th.exp(log_std).max())
++        self.logger.record("train/std_max", observed)
++        if observed > self.maximum:
++            raise FloatingPointError(
++                f"policy action std {observed:.6g} exceeded the "
++                f"Unitree-recipe abort threshold {self.maximum:.6g}")
++
++    def _on_step(self) -> bool:
++        return True
++
++
+ class PeriodicCheckpointCallback(BaseCallback):
+     """Save model + VecNormalize every `save_freq` timesteps, keeping history.
+ 
+@@ -264,11 +287,14 @@ class AdaptiveLRCallback(BaseCallback):
+     # the equilibrium instead of settling on it.
+     TOL = 2.0
+ 
+-    def __init__(self, desired_kl, tol=None, step=None):
++    def __init__(self, desired_kl, tol=None, step=None,
++                 min_lr=None, max_lr=None):
+         super().__init__()
+         self.desired_kl = float(desired_kl)
+         self.tol = float(tol) if tol else self.TOL
+         self.step = float(step) if step else self.STEP
++        self.min_lr = float(min_lr) if min_lr is not None else self.LR_MIN
++        self.max_lr = float(max_lr) if max_lr is not None else self.LR_MAX
+ 
+     def _on_rollout_start(self) -> None:
+         # train() runs at the end of each iteration and records approx_kl; the
+@@ -278,9 +304,9 @@ class AdaptiveLRCallback(BaseCallback):
+             return
+         lr = self.model.policy.optimizer.param_groups[0]["lr"]
+         if kl > self.tol * self.desired_kl:
+-            new_lr = max(self.LR_MIN, lr / self.step)
++            new_lr = max(self.min_lr, lr / self.step)
+         elif kl < self.desired_kl / self.tol:
+-            new_lr = min(self.LR_MAX, lr * self.step)
++            new_lr = min(self.max_lr, lr * self.step)
+         else:
+             new_lr = lr
+         # PPO.train() re-reads lr_schedule every update, so setting the
+@@ -296,33 +322,63 @@ class AdaptiveLRCallback(BaseCallback):
+ 
+ 
+ def parse_args():
++    recipe_parser = argparse.ArgumentParser(add_help=False)
++    recipe_parser.add_argument("--recipe", choices=("gamma", "unitree"),
++                               default="gamma")
++    recipe, _ = recipe_parser.parse_known_args()
++    unitree = recipe.recipe == "unitree"
++    if unitree:
++        # SB3 cannot reproduce rsl_rl v1.0.2 exactly: it parameterises the
++        # action std through log_std, normalises advantages per minibatch, and
++        # has no per-minibatch KL-adaptive learning rate. The Rudin arm is
++        # trained with the vendored rsl_rl instead.
++        raise SystemExit("--recipe unitree is retired; use "
++                         "examples/train_unitree.py (vendored rsl_rl v1.0.2).")
+     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
+-    parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
+-    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool_train_Delta2.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
++    parser.add_argument("--recipe", choices=("gamma", "unitree"),
++                        default=recipe.recipe,
++                        help="PPO/network preset; unitree selects the Rudin baseline recipe")
++    parser.add_argument("--env-name", type=str,
++                        default="QuadrupedPD-v1" if unitree else "QuadrupedWBC-v1",
++                        help="EnvPool environment ID")
++    parser.add_argument("--sim-config-path", type=str,
++                        default=("/app/quadcontrol/config/robots/sim/envpool_train_rudin.toml"
++                                 if unitree else
++                                 "/app/quadcontrol/config/robots/sim/envpool_train_Delta2.toml"),
++                        help="Path to quadcontrol simulation TOML used by the quadruped envs")
+     parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
+     parser.add_argument("--num-threads", type=int, default=0, metavar="N",
+-                        help="EnvPool worker threads; 0 (default) means one per env. "
+-                             "Fewer threads than envs silently stalls the gait "
+-                             "scheduler in every env past the thread count, so those "
+-                             "envs never latch a force onset and never get pushed.")
++                        help="EnvPool worker threads; 0 (default) lets EnvPool "
++                             "choose min(num_envs, available CPUs)")
+     parser.add_argument("--seed", type=int, default=0, help="Random seed")
+-    parser.add_argument("--total-timesteps", type=int, default=10_000_000, help="Total training timesteps")
++    parser.add_argument("--total-timesteps", type=int,
++                        default=147_456_000 if unitree else 10_000_000,
++                        help="Total training timesteps")
+     parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
+-    parser.add_argument("--tb-log-dir", type=str, default="./data/delta2_stage1/tb", help="TensorBoard log directory")
+-    parser.add_argument("--model-save-path", type=str, default="./data/delta2_stage1/quadruped_ppo_model", help="Model save path")
++    parser.add_argument("--tb-log-dir", type=str,
++                        default="./data/rudin_seed0/tb" if unitree else "./data/delta2_stage1/tb",
++                        help="TensorBoard log directory")
++    parser.add_argument("--model-save-path", type=str,
++                        default=("./data/rudin_seed0/quadruped_ppo_model" if unitree else
++                                 "./data/delta2_stage1/quadruped_ppo_model"),
++                        help="Model save path")
+     parser.add_argument("--continue-training", action="store_true", default=False, help="Continue training from existing model if available")
+     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
+     parser.add_argument("--use-vecnormalize", dest="use_vecnormalize", action="store_true", help="Enable VecNormalize wrapper (normalize observations and rewards)")
+     parser.add_argument("--no-vecnormalize", dest="use_vecnormalize", action="store_false", help="Disable VecNormalize wrapper")
+     parser.add_argument("--checkpoint-freq", type=int, default=2_000_000, help="Save a checkpoint every N timesteps as <model-save-path>_ckpt_<steps> (0 disables). Kept for the whole run: checkpoint history cannot be recovered afterwards.")
+-    parser.add_argument("--learning-rate", type=float, default=None, help="Override common.utils.FIXED_LEARNING_RATE for this run")
+-    parser.add_argument("--adaptive-lr", type=float, default=0.0, metavar="DESIRED_KL",
++    parser.add_argument("--learning-rate", type=float,
++                        default=1e-3 if unitree else None,
++                        help="Override the recipe's starting learning rate")
++    parser.add_argument("--adaptive-lr", type=float,
++                        default=0.01 if unitree else 0.0, metavar="DESIRED_KL",
+                         help="KL-adaptive learning rate (RSL-RL style) at the given desired KL, "
+                              "bounded to [AdaptiveLRCallback.LR_MIN, LR_MAX]. Moves PPO's target_kl "
+                              "out to 4x desired so it backstops instead of competing; "
+                              "--learning-rate then sets the starting point rather than a fixed "
+                              "value. 0 disables it.")
+-    parser.add_argument("--std-max", type=float, default=0.30, metavar="STD",
++    parser.add_argument("--std-max", type=float,
++                        default=0.0 if unitree else 0.30, metavar="STD",
+                         help="Hard ceiling on the policy action std, re-applied every "
+                              "iteration (default 0.30). This is the guard that makes a "
+                              "larger --ent-coef safe: without it nothing bounds log_std "
+@@ -368,8 +424,18 @@ def parse_args():
+                              "disturbance-rejection training. A value past the episode "
+                              "length gives exactly one push per episode, matching the "
+                              "single-impulse evaluation protocol.")
+-    parser.add_argument("--max-episode-steps", type=int, default=1000, help="Training horizon at 100 Hz.")
+-    parser.add_argument("--ent-coef", type=float, default=None, help="Override PPO entropy coefficient for this run")
++    parser.add_argument("--command-vx-range", default=None, metavar="MIN,MAX",
++                        help="Override the training vx command range in m/s.")
++    parser.add_argument("--command-vy-range", default=None, metavar="MIN,MAX",
++                        help="Override the training vy command range in m/s.")
++    parser.add_argument("--command-yaw-range", default=None, metavar="MIN,MAX",
++                        help="Override the training yaw-rate range in rad/s.")
++    parser.add_argument("--max-episode-steps", type=int,
++                        default=2000 if unitree else 1000,
++                        help="Training horizon at 100 Hz.")
++    parser.add_argument("--ent-coef", type=float,
++                        default=0.01 if unitree else None,
++                        help="Override PPO entropy coefficient for this run")
+     parser.add_argument("--recovery-reward", action="store_true",
+                         help="Track the fixed user vx command and remove the slow-gait reward incentive.")
+     parser.add_argument("--recovery-target-vx", type=float, default=0.8,
+@@ -378,7 +444,10 @@ def parse_args():
+                         help="Keep the loaded observation and reward statistics fixed during continuation.")
+     parser.add_argument("--gae-lambda", type=float, default=None,
+                         help="Override GAE lambda in PPO and its rollout buffer.")
+-    parser.set_defaults(use_vecnormalize=True)
++    # unitree_rl_gym pins rsl_rl v1.0.2, which consumes the environment's
++    # explicitly scaled/clipped observations and raw rewards directly. Keep
++    # VecNormalize as the established Gamma default only.
++    parser.set_defaults(use_vecnormalize=not unitree)
+     return parser.parse_args()
+ 
+ 
+@@ -403,49 +472,72 @@ def main():
+ 
+     try:
+         env_config = {}
+-        if args.env_name.startswith("Humanoid"):
++        if args.env_name.startswith("Quadruped"):
+             config_path = Path(args.sim_config_path)
+-            if (args.force_impulses is not None or args.force_seed is not None
+-                    or args.force_off_duration is not None or args.force_max is not None):
+-                lines = [f"%include {config_path.name}", "", "[simulation]"]
++            command_ranges = {
++                "policy_random_vx": args.command_vx_range,
++                "policy_random_vy": args.command_vy_range,
++                "policy_random_yaw": args.command_yaw_range,
++            }
++            needs_stub = (
++                args.force_impulses is not None or args.force_seed is not None
++                or args.force_off_duration is not None or args.force_max is not None
++                or any(value is not None for value in command_ranges.values())
++            )
++            if needs_stub:
++                simulation_lines = []
++                command_lines = []
+                 if args.force_max is not None:
+                     ceiling = [float(x) for x in args.force_max.split(",")]
+                     if len(ceiling) != 3 or not all(np.isfinite(x) and x >= 0 for x in ceiling):
+                         raise ValueError("--force-max requires three finite nonnegative values")
+-                    lines += [f"external_force_max = {ceiling}"]
++                    simulation_lines.append(f"external_force_max = {ceiling}")
+                 if args.force_off_duration is not None:
+                     if not np.isfinite(args.force_off_duration) or args.force_off_duration <= 0:
+                         raise ValueError("--force-off-duration must be finite and positive")
+-                    lines += [f"external_force_off_duration = {args.force_off_duration}"]
++                    simulation_lines.append(
++                        f"external_force_off_duration = {args.force_off_duration}")
+                 if args.force_impulses is not None:
+                     ceilings = [float(x) for x in args.force_impulses.split(",")]
+                     if len(ceilings) != 6 or not all(np.isfinite(x) and x >= 0 for x in ceilings):
+                         raise ValueError("--force-impulses requires six finite nonnegative values")
+-                    lines += ["external_force_cardinal = true", f"external_force_impulses = {ceilings}"]
++                    simulation_lines += [
++                        "external_force_cardinal = true",
++                        f"external_force_impulses = {ceilings}",
++                    ]
+                 if args.force_seed is not None:
+                     if not 0 <= args.force_seed <= 0xFFFFFFFF - args.num_envs:
+                         raise ValueError("--force-seed must fit uint32 including per-env offsets")
+-                    lines += [f"external_force_seed = {args.force_seed}", "", "[rl_command_source]", f"policy_random_seed = {args.force_seed}"]
++                    simulation_lines.append(f"external_force_seed = {args.force_seed}")
++                    command_lines.append(f"policy_random_seed = {args.force_seed}")
++                for key, value in command_ranges.items():
++                    if value is None:
++                        continue
++                    bounds = [float(x) for x in value.split(",")]
++                    if (len(bounds) != 2 or not all(np.isfinite(x) for x in bounds)
++                            or bounds[0] > bounds[1]):
++                        raise ValueError(
++                            f"--command-{key.removeprefix('policy_random_').replace('_', '-')}-range "
++                            "requires finite MIN,MAX with MIN <= MAX")
++                    command_lines += [f"{key}_min = {bounds[0]}",
++                                      f"{key}_max = {bounds[1]}"]
++                lines = [f"%include {config_path.name}"]
++                if simulation_lines:
++                    lines += ["", "[simulation]", *simulation_lines]
++                if command_lines:
++                    lines += ["", "[rl_command_source]", *command_lines]
+                 with tempfile.NamedTemporaryFile(mode="w", dir=config_path.parent, prefix="_train_force_", suffix=".toml", delete=False) as f:
+                     f.write("\n".join(lines) + "\n")
+                     config_stub = Path(f.name)
+                 config_path = config_stub
+             env_config["sim_config_path"] = str(config_path)
+             env_config["max_episode_steps"] = args.max_episode_steps
+-            # One worker thread per env. With the EnvPool default
+-            # (min(num_envs, cpu_count)) only the first num_threads envs get a
+-            # gait phase that advances; the rest walk in place, never reach the
+-            # onset cycle, and so train with no disturbance at all. Measured at
+-            # 256 envs on 56 cores: 169/256 envs never saw a push, and pinning
+-            # threads to envs cost ~4% throughput.
+-            threads = args.num_threads if args.num_threads > 0 else args.num_envs
+-            if threads < args.num_envs:
+-                logging.warning(
+-                    "--num-threads %d < --num-envs %d: %d envs will never be "
+-                    "pushed. Use 0 to pin one thread per env.",
+-                    threads, args.num_envs, args.num_envs - threads)
+-            env_config["num_threads"] = threads
+-            logging.info("EnvPool worker threads: %d for %d envs", threads, args.num_envs)
++            if args.num_threads > 0:
++                env_config["num_threads"] = args.num_threads
++                logging.info("EnvPool worker threads overridden to %d",
++                             args.num_threads)
++            else:
++                logging.info("Using EnvPool's default worker-thread count")
+             sources = {}
+             def collect_config(path):
+                 path = path.resolve()
+@@ -482,7 +574,9 @@ def main():
+         env, vecnormalize_wrapper = setup_vecnormalize(env, args.use_vecnormalize)
+ 
+         # Create policy kwargs using our utility function
+-        policy_kwargs = create_policy_kwargs()
++        observation_dim = int(env.observation_space.shape[0])
++        actor_obs_dim = 54 if args.env_name == "QuadrupedWBC-v1" else observation_dim
++        policy_kwargs = create_policy_kwargs(actor_obs_dim, recipe=args.recipe)
+ 
+         model, env = create_or_load_model(
+             model_save_path=args.model_save_path,
+@@ -492,6 +586,7 @@ def main():
+             force_new=args.force_new,
+             continue_training=args.continue_training,
+             seed=args.seed,
++            recipe=args.recipe,
+         )
+ 
+         # Applied after create_or_load_model, which pins the rate to
+@@ -541,6 +636,8 @@ def main():
+         logging.info("Starting training...")
+         interrupted = False
+         callbacks = [EpisodeInfoLoggingCallback(MONITOR_INFO_KEYWORDS)]
++        if args.recipe == "unitree":
++            callbacks.append(StdDivergenceAbortCallback(3.0))
+         if args.std_max and args.std_max > 0:
+             callbacks.append(LogStdClampCallback(args.std_min, args.std_max))
+             logging.info("Action std clamped to [%g, %g] after every optimizer step",
+@@ -558,16 +655,21 @@ def main():
+             model.target_kl = 4.0 * args.adaptive_lr
+             _tol = args.kl_tol or AdaptiveLRCallback.TOL
+             _step = args.kl_step or AdaptiveLRCallback.STEP
++            unitree_lr_bounds = args.recipe == "unitree"
++            adaptive_min_lr = 1e-5 if unitree_lr_bounds else AdaptiveLRCallback.LR_MIN
++            adaptive_max_lr = 1e-2 if unitree_lr_bounds else AdaptiveLRCallback.LR_MAX
+             logging.info(
+                 "KL-adaptive learning rate: desired_kl=%g, deadband [%g, %g] "
+                 "(tol=%g), step=%g, bounds [%g, %g], target_kl backstop %g",
+                 args.adaptive_lr, args.adaptive_lr / _tol,
+                 args.adaptive_lr * _tol, _tol, _step,
+-                AdaptiveLRCallback.LR_MIN, AdaptiveLRCallback.LR_MAX,
++                adaptive_min_lr, adaptive_max_lr,
+                 model.target_kl)
+             callbacks.append(AdaptiveLRCallback(args.adaptive_lr,
+                                                tol=args.kl_tol,
+-                                               step=args.kl_step))
++                                               step=args.kl_step,
++                                               min_lr=adaptive_min_lr,
++                                               max_lr=adaptive_max_lr))
+             if args.target_kl is not None:
+                 logging.warning(
+                     "--target-kl %g ignored: --adaptive-lr owns target_kl.",
+diff --git a/examples/xla_step.py b/examples/xla_step.py
+index 2acedbf..f3c6527 100644
+--- a/examples/xla_step.py
++++ b/examples/xla_step.py
+@@ -31,7 +31,7 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
+ 
+ def gym_sync_step() -> None:
+   num_envs = 64
+-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
++  env = envpool.make_gym("QuadrupedWBC-v1", num_envs=num_envs)
+   
+   # Get action space info
+   action_space_size = env.action_space.shape[0]

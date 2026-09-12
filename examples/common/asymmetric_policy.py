@@ -5,7 +5,7 @@ from torch import nn
 from stable_baselines3.common.policies import ActorCriticPolicy
 
 
-ACTOR_OBSERVATION_DIM = 54
+DEFAULT_ACTOR_OBSERVATION_DIM = 54
 
 
 class AsymmetricMlpExtractor(nn.Module):
@@ -14,10 +14,10 @@ class AsymmetricMlpExtractor(nn.Module):
     def __init__(self, feature_dim, actor_feature_dim, net_arch,
                  activation_fn, device):
         super().__init__()
-        if not 0 < actor_feature_dim < feature_dim:
+        if not 0 < actor_feature_dim <= feature_dim:
             raise ValueError(
-                "actor_feature_dim must be positive and smaller than the "
-                "full privileged observation dimension")
+                "actor_feature_dim must be positive and no larger than the "
+                "full observation dimension")
         if (isinstance(net_arch, list) and len(net_arch) == 1
                 and isinstance(net_arch[0], dict)):
             net_arch = net_arch[0]
@@ -55,7 +55,8 @@ class AsymmetricMlpExtractor(nn.Module):
 class AsymmetricActorCriticPolicy(ActorCriticPolicy):
     """Keep privileged trailing observations out of every actor code path."""
 
-    def __init__(self, *args, actor_obs_dim=ACTOR_OBSERVATION_DIM, **kwargs):
+    def __init__(self, *args,
+                 actor_obs_dim=DEFAULT_ACTOR_OBSERVATION_DIM, **kwargs):
         self.actor_obs_dim = actor_obs_dim
         super().__init__(*args, **kwargs)
 

@@ -43,6 +43,7 @@ cc_library(
         "src/modules/MdlLegController.cc",
         "src/modules/MdlRLCommandSource.cc",
         "src/modules/MdlRLLocomotionState.cc",
+        "src/modules/MdlRLJointPD.cc",
         "src/modules/MdlStateEstimator.cc",
         "src/modules/MdlWBIC.cc",
         "src/supervisor/SupervisorStates.cc",

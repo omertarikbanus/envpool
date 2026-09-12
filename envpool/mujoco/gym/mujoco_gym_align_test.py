@@ -129,24 +129,6 @@ class _MujocoGymAlignTest(absltest.TestCase):
     self.run_space_check(env0, env1)
     self.run_align_check(env0, env1, no_time_limit=True)
 
-  def test_humanoid(self) -> None:
-    env0 = gym.make("Humanoid-v4")
-    env1 = make_gym("Humanoid-v4")
-    self.run_space_check(env0, env1)
-    self.run_align_check(env0, env1)
-    env0 = gym.make(
-      "Humanoid-v4",
-      terminate_when_unhealthy=False,
-      exclude_current_positions_from_observation=False,
-    )
-    env1 = make_gym(
-      "Humanoid-v4",
-      terminate_when_unhealthy=False,
-      exclude_current_positions_from_observation=False,
-    )
-    self.run_space_check(env0, env1)
-    self.run_align_check(env0, env1, no_time_limit=True)
-
   def test_humanoid_standup(self) -> None:
     env0 = gym.make("HumanoidStandup-v4")
     env1 = make_gym("HumanoidStandup-v4")

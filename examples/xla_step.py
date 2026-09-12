@@ -31,7 +31,7 @@ is_legacy_gym = version.parse(gym.__version__) < version.parse("0.26.0")
 
 def gym_sync_step() -> None:
   num_envs = 64
-  env = envpool.make_gym("Humanoid-v4", num_envs=num_envs)
+  env = envpool.make_gym("QuadrupedWBC-v1", num_envs=num_envs)
   
   # Get action space info
   action_space_size = env.action_space.shape[0]

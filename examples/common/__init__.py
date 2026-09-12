@@ -2,7 +2,7 @@
 Common utilities for quadruped training and evaluation with EnvPool and PPO.
 """
 
-from .asymmetric_policy import ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
+from .asymmetric_policy import DEFAULT_ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
 from .vec_adapter import VecAdapter
 from .utils import (
     setup_environment,
@@ -24,7 +24,7 @@ from .evaluation import (
 )
 
 __all__ = [
-    'ACTOR_OBSERVATION_DIM',
+    'DEFAULT_ACTOR_OBSERVATION_DIM',
     'AsymmetricActorCriticPolicy',
     'VecAdapter',
     'setup_environment',

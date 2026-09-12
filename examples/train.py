@@ -54,7 +54,9 @@ class EpisodeInfoLoggingCallback(BaseCallback):
     def _on_step(self) -> bool:
         actions = self.locals.get("actions")
         if actions is not None:
-            self._saturation.append(float(np.mean(np.abs(actions) >= 1.0)))
+            action_limit = np.asarray(self.training_env.action_space.high)
+            self._saturation.append(
+                float(np.mean(np.abs(actions) >= 0.999 * action_limit)))
         infos = self.locals.get("infos", [])
         for info in infos:
             episode = info.get("episode")
@@ -75,11 +77,10 @@ class EpisodeInfoLoggingCallback(BaseCallback):
         return True
 
     # A timeout with no latched onset means that episode was never pushed. The
-    # policy can cause this on its own -- phase_delta_min is 0, so a low action
-    # on the last channel nearly freezes the gait and the onset cycle never
-    # arrives -- so a few are expected. A large fraction instead means the
-    # disturbance pipeline is broken for most envs, which is how the EnvPool
-    # thread-count defect showed up (169 of 256 envs never pushed).
+    # WBC policies can cause this on their own -- phase_delta_min is 0, so a
+    # low action on the last channel nearly freezes the gait and the onset
+    # cycle never arrives -- so a few are expected. A large fraction means the
+    # disturbance or phase pipeline needs inspection.
     UNPUSHED_TIMEOUT_LIMIT = 0.10
     UNPUSHED_MIN_SAMPLE = 20
 
@@ -93,7 +94,7 @@ class EpisodeInfoLoggingCallback(BaseCallback):
                 raise RuntimeError(
                     f"{self._timeouts_without_onset}/{self._timeouts} timeouts never "
                     "latched a force onset; those episodes trained with no disturbance. "
-                    "Check EnvPool num_threads (must equal num_envs) and gait phase advancement.")
+                    "Check force delivery and gait/fallback phase advancement.")
             self._timeouts = self._timeouts_without_onset = 0
         if self._saturation:
             self.logger.record("rollout/action_saturation_fraction", float(np.mean(self._saturation)))
@@ -158,6 +159,28 @@ class LogStdClampCallback(BaseCallback):
         if self._hook is not None:
             self._hook.remove()
             self._hook = None
+
+    def _on_step(self) -> bool:
+        return True
+
+
+class StdDivergenceAbortCallback(BaseCallback):
+    """Abort the unclamped Unitree recipe if policy std exceeds its safety cap."""
+
+    def __init__(self, maximum: float = 3.0):
+        super().__init__()
+        self.maximum = maximum
+
+    def _on_rollout_end(self) -> None:
+        log_std = getattr(self.model.policy, "log_std", None)
+        if log_std is None or not th.isfinite(log_std).all():
+            raise FloatingPointError("non-finite or missing policy log_std")
+        observed = float(th.exp(log_std).max())
+        self.logger.record("train/std_max", observed)
+        if observed > self.maximum:
+            raise FloatingPointError(
+                f"policy action std {observed:.6g} exceeded the "
+                f"Unitree-recipe abort threshold {self.maximum:.6g}")
 
     def _on_step(self) -> bool:
         return True
@@ -264,11 +287,14 @@ class AdaptiveLRCallback(BaseCallback):
     # the equilibrium instead of settling on it.
     TOL = 2.0
 
-    def __init__(self, desired_kl, tol=None, step=None):
+    def __init__(self, desired_kl, tol=None, step=None,
+                 min_lr=None, max_lr=None):
         super().__init__()
         self.desired_kl = float(desired_kl)
         self.tol = float(tol) if tol else self.TOL
         self.step = float(step) if step else self.STEP
+        self.min_lr = float(min_lr) if min_lr is not None else self.LR_MIN
+        self.max_lr = float(max_lr) if max_lr is not None else self.LR_MAX
 
     def _on_rollout_start(self) -> None:
         # train() runs at the end of each iteration and records approx_kl; the
@@ -278,9 +304,9 @@ class AdaptiveLRCallback(BaseCallback):
             return
         lr = self.model.policy.optimizer.param_groups[0]["lr"]
         if kl > self.tol * self.desired_kl:
-            new_lr = max(self.LR_MIN, lr / self.step)
+            new_lr = max(self.min_lr, lr / self.step)
         elif kl < self.desired_kl / self.tol:
-            new_lr = min(self.LR_MAX, lr * self.step)
+            new_lr = min(self.max_lr, lr * self.step)
         else:
             new_lr = lr
         # PPO.train() re-reads lr_schedule every update, so setting the
@@ -296,33 +322,63 @@ class AdaptiveLRCallback(BaseCallback):
 
 
 def parse_args():
+    recipe_parser = argparse.ArgumentParser(add_help=False)
+    recipe_parser.add_argument("--recipe", choices=("gamma", "unitree"),
+                               default="gamma")
+    recipe, _ = recipe_parser.parse_known_args()
+    unitree = recipe.recipe == "unitree"
+    if unitree:
+        # SB3 cannot reproduce rsl_rl v1.0.2 exactly: it parameterises the
+        # action std through log_std, normalises advantages per minibatch, and
+        # has no per-minibatch KL-adaptive learning rate. The Rudin arm is
+        # trained with the vendored rsl_rl instead.
+        raise SystemExit("--recipe unitree is retired; use "
+                         "examples/train_unitree.py (vendored rsl_rl v1.0.2).")
     parser = argparse.ArgumentParser(description="Train a quadrupedal controller using EnvPool and PPO.")
-    parser.add_argument("--env-name", type=str, default="Humanoid-v4", help="EnvPool environment ID")
-    parser.add_argument("--sim-config-path", type=str, default="/app/quadcontrol/config/robots/sim/envpool_train_Delta2.toml", help="Path to quadcontrol simulation TOML used by Humanoid-v4")
+    parser.add_argument("--recipe", choices=("gamma", "unitree"),
+                        default=recipe.recipe,
+                        help="PPO/network preset; unitree selects the Rudin baseline recipe")
+    parser.add_argument("--env-name", type=str,
+                        default="QuadrupedPD-v1" if unitree else "QuadrupedWBC-v1",
+                        help="EnvPool environment ID")
+    parser.add_argument("--sim-config-path", type=str,
+                        default=("/app/quadcontrol/config/robots/sim/envpool_train_rudin.toml"
+                                 if unitree else
+                                 "/app/quadcontrol/config/robots/sim/envpool_train_Delta2.toml"),
+                        help="Path to quadcontrol simulation TOML used by the quadruped envs")
     parser.add_argument("--num-envs", type=int, default=256, help="Number of parallel environments")
     parser.add_argument("--num-threads", type=int, default=0, metavar="N",
-                        help="EnvPool worker threads; 0 (default) means one per env. "
-                             "Fewer threads than envs silently stalls the gait "
-                             "scheduler in every env past the thread count, so those "
-                             "envs never latch a force onset and never get pushed.")
+                        help="EnvPool worker threads; 0 (default) lets EnvPool "
+                             "choose min(num_envs, available CPUs)")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--total-timesteps", type=int, default=10_000_000, help="Total training timesteps")
+    parser.add_argument("--total-timesteps", type=int,
+                        default=147_456_000 if unitree else 10_000_000,
+                        help="Total training timesteps")
     parser.add_argument("--warm-start-steps", type=int, default=0, help="Warm start steps to run before optimisation")
-    parser.add_argument("--tb-log-dir", type=str, default="./data/delta2_stage1/tb", help="TensorBoard log directory")
-    parser.add_argument("--model-save-path", type=str, default="./data/delta2_stage1/quadruped_ppo_model", help="Model save path")
+    parser.add_argument("--tb-log-dir", type=str,
+                        default="./data/rudin_seed0/tb" if unitree else "./data/delta2_stage1/tb",
+                        help="TensorBoard log directory")
+    parser.add_argument("--model-save-path", type=str,
+                        default=("./data/rudin_seed0/quadruped_ppo_model" if unitree else
+                                 "./data/delta2_stage1/quadruped_ppo_model"),
+                        help="Model save path")
     parser.add_argument("--continue-training", action="store_true", default=False, help="Continue training from existing model if available")
     parser.add_argument("--force-new", action="store_true", help="Force start new training even if model exists")
     parser.add_argument("--use-vecnormalize", dest="use_vecnormalize", action="store_true", help="Enable VecNormalize wrapper (normalize observations and rewards)")
     parser.add_argument("--no-vecnormalize", dest="use_vecnormalize", action="store_false", help="Disable VecNormalize wrapper")
     parser.add_argument("--checkpoint-freq", type=int, default=2_000_000, help="Save a checkpoint every N timesteps as <model-save-path>_ckpt_<steps> (0 disables). Kept for the whole run: checkpoint history cannot be recovered afterwards.")
-    parser.add_argument("--learning-rate", type=float, default=None, help="Override common.utils.FIXED_LEARNING_RATE for this run")
-    parser.add_argument("--adaptive-lr", type=float, default=0.0, metavar="DESIRED_KL",
+    parser.add_argument("--learning-rate", type=float,
+                        default=1e-3 if unitree else None,
+                        help="Override the recipe's starting learning rate")
+    parser.add_argument("--adaptive-lr", type=float,
+                        default=0.01 if unitree else 0.0, metavar="DESIRED_KL",
                         help="KL-adaptive learning rate (RSL-RL style) at the given desired KL, "
                              "bounded to [AdaptiveLRCallback.LR_MIN, LR_MAX]. Moves PPO's target_kl "
                              "out to 4x desired so it backstops instead of competing; "
                              "--learning-rate then sets the starting point rather than a fixed "
                              "value. 0 disables it.")
-    parser.add_argument("--std-max", type=float, default=0.30, metavar="STD",
+    parser.add_argument("--std-max", type=float,
+                        default=0.0 if unitree else 0.30, metavar="STD",
                         help="Hard ceiling on the policy action std, re-applied every "
                              "iteration (default 0.30). This is the guard that makes a "
                              "larger --ent-coef safe: without it nothing bounds log_std "
@@ -368,8 +424,18 @@ def parse_args():
                              "disturbance-rejection training. A value past the episode "
                              "length gives exactly one push per episode, matching the "
                              "single-impulse evaluation protocol.")
-    parser.add_argument("--max-episode-steps", type=int, default=1000, help="Training horizon at 100 Hz.")
-    parser.add_argument("--ent-coef", type=float, default=None, help="Override PPO entropy coefficient for this run")
+    parser.add_argument("--command-vx-range", default=None, metavar="MIN,MAX",
+                        help="Override the training vx command range in m/s.")
+    parser.add_argument("--command-vy-range", default=None, metavar="MIN,MAX",
+                        help="Override the training vy command range in m/s.")
+    parser.add_argument("--command-yaw-range", default=None, metavar="MIN,MAX",
+                        help="Override the training yaw-rate range in rad/s.")
+    parser.add_argument("--max-episode-steps", type=int,
+                        default=2000 if unitree else 1000,
+                        help="Training horizon at 100 Hz.")
+    parser.add_argument("--ent-coef", type=float,
+                        default=0.01 if unitree else None,
+                        help="Override PPO entropy coefficient for this run")
     parser.add_argument("--recovery-reward", action="store_true",
                         help="Track the fixed user vx command and remove the slow-gait reward incentive.")
     parser.add_argument("--recovery-target-vx", type=float, default=0.8,
@@ -378,7 +444,10 @@ def parse_args():
                         help="Keep the loaded observation and reward statistics fixed during continuation.")
     parser.add_argument("--gae-lambda", type=float, default=None,
                         help="Override GAE lambda in PPO and its rollout buffer.")
-    parser.set_defaults(use_vecnormalize=True)
+    # unitree_rl_gym pins rsl_rl v1.0.2, which consumes the environment's
+    # explicitly scaled/clipped observations and raw rewards directly. Keep
+    # VecNormalize as the established Gamma default only.
+    parser.set_defaults(use_vecnormalize=not unitree)
     return parser.parse_args()
 
 
@@ -403,49 +472,72 @@ def main():
 
     try:
         env_config = {}
-        if args.env_name.startswith("Humanoid"):
+        if args.env_name.startswith("Quadruped"):
             config_path = Path(args.sim_config_path)
-            if (args.force_impulses is not None or args.force_seed is not None
-                    or args.force_off_duration is not None or args.force_max is not None):
-                lines = [f"%include {config_path.name}", "", "[simulation]"]
+            command_ranges = {
+                "policy_random_vx": args.command_vx_range,
+                "policy_random_vy": args.command_vy_range,
+                "policy_random_yaw": args.command_yaw_range,
+            }
+            needs_stub = (
+                args.force_impulses is not None or args.force_seed is not None
+                or args.force_off_duration is not None or args.force_max is not None
+                or any(value is not None for value in command_ranges.values())
+            )
+            if needs_stub:
+                simulation_lines = []
+                command_lines = []
                 if args.force_max is not None:
                     ceiling = [float(x) for x in args.force_max.split(",")]
                     if len(ceiling) != 3 or not all(np.isfinite(x) and x >= 0 for x in ceiling):
                         raise ValueError("--force-max requires three finite nonnegative values")
-                    lines += [f"external_force_max = {ceiling}"]
+                    simulation_lines.append(f"external_force_max = {ceiling}")
                 if args.force_off_duration is not None:
                     if not np.isfinite(args.force_off_duration) or args.force_off_duration <= 0:
                         raise ValueError("--force-off-duration must be finite and positive")
-                    lines += [f"external_force_off_duration = {args.force_off_duration}"]
+                    simulation_lines.append(
+                        f"external_force_off_duration = {args.force_off_duration}")
                 if args.force_impulses is not None:
                     ceilings = [float(x) for x in args.force_impulses.split(",")]
                     if len(ceilings) != 6 or not all(np.isfinite(x) and x >= 0 for x in ceilings):
                         raise ValueError("--force-impulses requires six finite nonnegative values")
-                    lines += ["external_force_cardinal = true", f"external_force_impulses = {ceilings}"]
+                    simulation_lines += [
+                        "external_force_cardinal = true",
+                        f"external_force_impulses = {ceilings}",
+                    ]
                 if args.force_seed is not None:
                     if not 0 <= args.force_seed <= 0xFFFFFFFF - args.num_envs:
                         raise ValueError("--force-seed must fit uint32 including per-env offsets")
-                    lines += [f"external_force_seed = {args.force_seed}", "", "[rl_command_source]", f"policy_random_seed = {args.force_seed}"]
+                    simulation_lines.append(f"external_force_seed = {args.force_seed}")
+                    command_lines.append(f"policy_random_seed = {args.force_seed}")
+                for key, value in command_ranges.items():
+                    if value is None:
+                        continue
+                    bounds = [float(x) for x in value.split(",")]
+                    if (len(bounds) != 2 or not all(np.isfinite(x) for x in bounds)
+                            or bounds[0] > bounds[1]):
+                        raise ValueError(
+                            f"--command-{key.removeprefix('policy_random_').replace('_', '-')}-range "
+                            "requires finite MIN,MAX with MIN <= MAX")
+                    command_lines += [f"{key}_min = {bounds[0]}",
+                                      f"{key}_max = {bounds[1]}"]
+                lines = [f"%include {config_path.name}"]
+                if simulation_lines:
+                    lines += ["", "[simulation]", *simulation_lines]
+                if command_lines:
+                    lines += ["", "[rl_command_source]", *command_lines]
                 with tempfile.NamedTemporaryFile(mode="w", dir=config_path.parent, prefix="_train_force_", suffix=".toml", delete=False) as f:
                     f.write("\n".join(lines) + "\n")
                     config_stub = Path(f.name)
                 config_path = config_stub
             env_config["sim_config_path"] = str(config_path)
             env_config["max_episode_steps"] = args.max_episode_steps
-            # One worker thread per env. With the EnvPool default
-            # (min(num_envs, cpu_count)) only the first num_threads envs get a
-            # gait phase that advances; the rest walk in place, never reach the
-            # onset cycle, and so train with no disturbance at all. Measured at
-            # 256 envs on 56 cores: 169/256 envs never saw a push, and pinning
-            # threads to envs cost ~4% throughput.
-            threads = args.num_threads if args.num_threads > 0 else args.num_envs
-            if threads < args.num_envs:
-                logging.warning(
-                    "--num-threads %d < --num-envs %d: %d envs will never be "
-                    "pushed. Use 0 to pin one thread per env.",
-                    threads, args.num_envs, args.num_envs - threads)
-            env_config["num_threads"] = threads
-            logging.info("EnvPool worker threads: %d for %d envs", threads, args.num_envs)
+            if args.num_threads > 0:
+                env_config["num_threads"] = args.num_threads
+                logging.info("EnvPool worker threads overridden to %d",
+                             args.num_threads)
+            else:
+                logging.info("Using EnvPool's default worker-thread count")
             sources = {}
             def collect_config(path):
                 path = path.resolve()
@@ -482,7 +574,9 @@ def main():
         env, vecnormalize_wrapper = setup_vecnormalize(env, args.use_vecnormalize)
 
         # Create policy kwargs using our utility function
-        policy_kwargs = create_policy_kwargs()
+        observation_dim = int(env.observation_space.shape[0])
+        actor_obs_dim = 54 if args.env_name == "QuadrupedWBC-v1" else observation_dim
+        policy_kwargs = create_policy_kwargs(actor_obs_dim, recipe=args.recipe)
 
         model, env = create_or_load_model(
             model_save_path=args.model_save_path,
@@ -492,6 +586,7 @@ def main():
             force_new=args.force_new,
             continue_training=args.continue_training,
             seed=args.seed,
+            recipe=args.recipe,
         )
 
         # Applied after create_or_load_model, which pins the rate to
@@ -541,6 +636,8 @@ def main():
         logging.info("Starting training...")
         interrupted = False
         callbacks = [EpisodeInfoLoggingCallback(MONITOR_INFO_KEYWORDS)]
+        if args.recipe == "unitree":
+            callbacks.append(StdDivergenceAbortCallback(3.0))
         if args.std_max and args.std_max > 0:
             callbacks.append(LogStdClampCallback(args.std_min, args.std_max))
             logging.info("Action std clamped to [%g, %g] after every optimizer step",
@@ -558,16 +655,21 @@ def main():
             model.target_kl = 4.0 * args.adaptive_lr
             _tol = args.kl_tol or AdaptiveLRCallback.TOL
             _step = args.kl_step or AdaptiveLRCallback.STEP
+            unitree_lr_bounds = args.recipe == "unitree"
+            adaptive_min_lr = 1e-5 if unitree_lr_bounds else AdaptiveLRCallback.LR_MIN
+            adaptive_max_lr = 1e-2 if unitree_lr_bounds else AdaptiveLRCallback.LR_MAX
             logging.info(
                 "KL-adaptive learning rate: desired_kl=%g, deadband [%g, %g] "
                 "(tol=%g), step=%g, bounds [%g, %g], target_kl backstop %g",
                 args.adaptive_lr, args.adaptive_lr / _tol,
                 args.adaptive_lr * _tol, _tol, _step,
-                AdaptiveLRCallback.LR_MIN, AdaptiveLRCallback.LR_MAX,
+                adaptive_min_lr, adaptive_max_lr,
                 model.target_kl)
             callbacks.append(AdaptiveLRCallback(args.adaptive_lr,
                                                tol=args.kl_tol,
-                                               step=args.kl_step))
+                                               step=args.kl_step,
+                                               min_lr=adaptive_min_lr,
+                                               max_lr=adaptive_max_lr))
             if args.target_kl is not None:
                 logging.warning(
                     "--target-kl %g ignored: --adaptive-lr owns target_kl.",

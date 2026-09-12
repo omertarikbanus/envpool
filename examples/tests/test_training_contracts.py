@@ -13,8 +13,14 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv, VecMonitor, VecNormalize
 from common import vec_adapter
 from common.asymmetric_policy import AsymmetricActorCriticPolicy
-from common.utils import create_or_load_model, save_model_and_stats, find_vecnormalize_wrapper
-from train import LogStdClampCallback
+from common.utils import (
+    create_or_load_model,
+    create_policy_kwargs,
+    create_ppo_model,
+    save_model_and_stats,
+    find_vecnormalize_wrapper,
+)
+from train import AdaptiveLRCallback, LogStdClampCallback
 
 
 class ToyEnv(gym.Env):
@@ -32,6 +38,33 @@ class ToyEnv(gym.Env):
 
 
 class TrainingContracts(unittest.TestCase):
+    def test_unitree_recipe_matches_network_and_ppo_geometry(self):
+        env = DummyVecEnv([ToyEnv for _ in range(4)])
+        kwargs = create_policy_kwargs(actor_obs_dim=2, recipe="unitree")
+        model = create_ppo_model(env, kwargs, seed=7, recipe="unitree")
+
+        self.assertIs(kwargs["activation_fn"], torch.nn.ELU)
+        self.assertEqual(kwargs["net_arch"], [dict(
+            pi=[512, 256, 128], vf=[512, 256, 128])])
+        self.assertEqual(kwargs["log_std_init"], 0.0)
+        self.assertFalse(kwargs["ortho_init"])
+        self.assertEqual(model.n_steps, 384)
+        self.assertEqual(model.batch_size, 384)
+        self.assertEqual(model.n_epochs, 5)
+        self.assertEqual(model.gamma, 0.99)
+        self.assertEqual(model.gae_lambda, 0.95)
+        self.assertEqual(model.clip_range(1.0), 0.2)
+        self.assertEqual(model.clip_range_vf(1.0), 0.2)
+        self.assertEqual(model.ent_coef, 0.01)
+        self.assertEqual(model.vf_coef, 1.0)
+        self.assertEqual(model.max_grad_norm, 1.0)
+        env.close()
+
+    def test_adaptive_lr_accepts_unitree_bounds(self):
+        callback = AdaptiveLRCallback(0.01, min_lr=1e-5, max_lr=1e-2)
+        self.assertEqual(callback.min_lr, 1e-5)
+        self.assertEqual(callback.max_lr, 1e-2)
+
     def test_timeout_and_terminal_observation_survive_reset(self):
         class Pool:
             def step(self, actions):

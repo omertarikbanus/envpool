@@ -20,8 +20,6 @@ from envpool.mujoco.mujoco_gym_envpool import (
   _GymHalfCheetahEnvSpec,
   _GymHopperEnvPool,
   _GymHopperEnvSpec,
-  _GymHumanoidEnvPool,
-  _GymHumanoidEnvSpec,
   _GymHumanoidStandupEnvPool,
   _GymHumanoidStandupEnvSpec,
   _GymInvertedDoublePendulumEnvPool,
@@ -30,6 +28,10 @@ from envpool.mujoco.mujoco_gym_envpool import (
   _GymInvertedPendulumEnvSpec,
   _GymPusherEnvPool,
   _GymPusherEnvSpec,
+  _GymQuadrupedPDEnvPool,
+  _GymQuadrupedPDEnvSpec,
+  _GymQuadrupedWBCEnvPool,
+  _GymQuadrupedWBCEnvSpec,
   _GymReacherEnvPool,
   _GymReacherEnvSpec,
   _GymSwimmerEnvPool,
@@ -51,10 +53,6 @@ from envpool.python.api import py_env
   GymHopperEnvSpec, GymHopperDMEnvPool, GymHopperGymEnvPool,
   GymHopperGymnasiumEnvPool
 ) = py_env(_GymHopperEnvSpec, _GymHopperEnvPool)
-(
-  GymHumanoidEnvSpec, GymHumanoidDMEnvPool, GymHumanoidGymEnvPool,
-  GymHumanoidGymnasiumEnvPool
-) = py_env(_GymHumanoidEnvSpec, _GymHumanoidEnvPool)
 (
   GymHumanoidStandupEnvSpec,
   GymHumanoidStandupDMEnvPool,
@@ -79,6 +77,19 @@ from envpool.python.api import py_env
   GymPusherEnvSpec, GymPusherDMEnvPool, GymPusherGymEnvPool,
   GymPusherGymnasiumEnvPool
 ) = py_env(_GymPusherEnvSpec, _GymPusherEnvPool)
+(
+  GymQuadrupedWBCEnvSpec,
+  GymQuadrupedWBCDMEnvPool,
+  GymQuadrupedWBCGymEnvPool,
+  GymQuadrupedWBCGymnasiumEnvPool,
+) = py_env(_GymQuadrupedWBCEnvSpec, _GymQuadrupedWBCEnvPool)
+
+(
+  GymQuadrupedPDEnvSpec,
+  GymQuadrupedPDDMEnvPool,
+  GymQuadrupedPDGymEnvPool,
+  GymQuadrupedPDGymnasiumEnvPool,
+) = py_env(_GymQuadrupedPDEnvSpec, _GymQuadrupedPDEnvPool)
 (
   GymReacherEnvSpec, GymReacherDMEnvPool, GymReacherGymEnvPool,
   GymReacherGymnasiumEnvPool
@@ -105,14 +116,18 @@ __all__ = [
   "GymHopperDMEnvPool",
   "GymHopperGymEnvPool",
   "GymHopperGymnasiumEnvPool",
-  "GymHumanoidEnvSpec",
-  "GymHumanoidDMEnvPool",
-  "GymHumanoidGymEnvPool",
-  "GymHumanoidGymnasiumEnvPool",
   "GymHumanoidStandupEnvSpec",
   "GymHumanoidStandupDMEnvPool",
   "GymHumanoidStandupGymEnvPool",
   "GymHumanoidStandupGymnasiumEnvPool",
+  "GymQuadrupedWBCEnvSpec",
+  "GymQuadrupedWBCDMEnvPool",
+  "GymQuadrupedWBCGymEnvPool",
+  "GymQuadrupedWBCGymnasiumEnvPool",
+  "GymQuadrupedPDEnvSpec",
+  "GymQuadrupedPDDMEnvPool",
+  "GymQuadrupedPDGymEnvPool",
+  "GymQuadrupedPDGymnasiumEnvPool",
   "GymInvertedDoublePendulumEnvSpec",
   "GymInvertedDoublePendulumDMEnvPool",
   "GymInvertedDoublePendulumGymEnvPool",
