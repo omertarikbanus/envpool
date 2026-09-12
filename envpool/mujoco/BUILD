@@ -119,6 +119,7 @@ cc_library(
         "gym/ant.h",
         "gym/half_cheetah.h",
         "gym/hopper.h",
+        "gym/quadruped_domain_rand.h",
         "gym/quadruped_pd.h",
         "gym/quadruped_wbc.h",
         "gym/humanoid_standup.h",

@@ -339,7 +339,7 @@ def parse_args():
                         default=recipe.recipe,
                         help="PPO/network preset; unitree selects the Rudin baseline recipe")
     parser.add_argument("--env-name", type=str,
-                        default="QuadrupedPD-v1" if unitree else "QuadrupedWBC-v1",
+                        default="QuadrupedPD-v1" if unitree else "QuadrupedWBC-v0",
                         help="EnvPool environment ID")
     parser.add_argument("--sim-config-path", type=str,
                         default=("/app/quadcontrol/config/robots/sim/envpool_train_rudin.toml"

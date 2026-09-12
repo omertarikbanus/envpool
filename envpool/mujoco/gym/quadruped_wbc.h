@@ -36,6 +36,7 @@
 
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
+#include "envpool/mujoco/gym/quadruped_domain_rand.h"
 
 #include <Eigen/Dense>
 
@@ -250,6 +251,12 @@ class QuadrupedWBCEnvFns {
         "frame_skip"_.Bind(5), "post_constraint"_.Bind(true),
         "use_contact_force"_.Bind(false), "forward_reward_weight"_.Bind(1),
         "terminate_when_unhealthy"_.Bind(true),
+        // Ground-friction randomisation, matching the Rudin arm. Default
+        // false: evaluation must run on the MJCF plant, and only training
+        // configs opt in. See quadruped_domain_rand.h.
+        "wbc_randomize_friction"_.Bind(false),
+        // Legacy base-height termination, superseded by common_fall_v1.
+        "terminate_on_height_band"_.Bind(false),
         "sim_config_path"_.Bind(
             std::string("/app/quadcontrol/config/robots/sim/envpool.toml")),
         // TOML text layered over sim_config_path. Lets a caller override force
@@ -297,9 +304,9 @@ class QuadrupedWBCEnvFns {
                     // steps since reset, which the recipe's randomised first
                     // episode length makes wrong, so the flag is explicit.
                     "info:time_out"_.Bind(Spec<int>({-1})),
-                    // Always 0 here. The joint-PD task uses it for
-                    // legged_gym's fall rule; kept so both environments emit
-                    // the same info keys.
+                    // Controller-independent evaluator rule from simulator
+                    // truth: base contact, excessive roll/pitch, or non-finite
+                    // rigid-body state. The joint-PD task emits the same key.
                     "info:fall"_.Bind(Spec<int>({-1})),
                     "info:reward_terms"_.Bind(
                         Spec<mjtNum>({LocomotionReward::kNumTerms})),
@@ -328,7 +335,14 @@ using QuadrupedWBCEnvSpec = EnvSpec<QuadrupedWBCEnvFns>;
 
 class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
  protected:
+  // common_fall_v1 thresholds; identical to metrics.py and quadruped_pd.h.
+  static constexpr double kFallContactForceN = 1.0;
+  static constexpr double kFallRollRad = 0.8;
+  static constexpr double kFallPitchRad = 1.0;
   bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_;
+  bool terminate_on_height_band_{false};
+  bool randomize_friction_{false};
+  mjtNum friction_{0.0};  // effective contact coefficient in use
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
   mjtNum healthy_z_min_, healthy_z_max_;
   mjtNum contact_cost_weight_, contact_cost_max_;
@@ -414,6 +428,21 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
       runtime_ = std::make_unique<quadruped::RLPipelineRuntime>(rt_opts);
       runtime_->initialize();
       disabled_ = runtime_->disabled();
+    }
+
+    // One fixed coefficient per env for its whole lifetime, drawn from the
+    // pool-wide buckets, exactly as the Rudin arm does. With randomisation off
+    // the MJCF's nominal friction stands untouched -- including the
+    // `evaluation_friction` robustness cell, which the config applies earlier.
+    terminate_on_height_band_ = spec.config["terminate_on_height_band"_];
+    randomize_friction_ = spec.config["wbc_randomize_friction"_];
+    if (!disabled_ && runtime_) {
+      friction_ = runtime_->groundFriction();
+      if (randomize_friction_) {
+        friction_ = FrictionRandomisation::Sample(
+            friction_, static_cast<unsigned>(spec.config["seed"_]), &gen_);
+        runtime_->setFriction(friction_);
+      }
     }
 
     done_ = false;
@@ -726,14 +755,42 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
     for (float contact : contacts) write_value(static_cast<mjtNum>(contact));
   }
 
+  // Termination is `common_fall_v1`, the SAME rule evaluation scores on and the
+  // same one the Rudin arm already trains against (quadruped_pd.h
+  // check_termination): trunk contact above 1 N, roll past 0.8 rad or pitch
+  // past 1.0 rad, or a non-finite state. This used to be a base-height band,
+  // which meant the policy was optimised to stay between 0.20 m and 0.75 m
+  // while being judged on attitude and contact -- a robot could pitch to
+  // 1.1 rad and count as a training success but an evaluation failure.
+  //
+  // The height band is retained only as a backstop, gated on
+  // `terminate_on_height_band`, off by default.
   bool IsHealthy() {
-    const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
-    bool healthy = (healthy_z_min_ < z) && (z < healthy_z_max_);
+    const auto& p = last_state_est_.position;
+    const mjtNum roll = static_cast<mjtNum>(last_state_est_.rpy[0]);
+    const mjtNum pitch = static_cast<mjtNum>(last_state_est_.rpy[1]);
+
+    const bool finite_state =
+        std::isfinite(static_cast<double>(p[0])) &&
+        std::isfinite(static_cast<double>(p[1])) &&
+        std::isfinite(static_cast<double>(p[2])) &&
+        std::isfinite(static_cast<double>(roll)) &&
+        std::isfinite(static_cast<double>(pitch));
+    const bool base_contact =
+        runtime_ && runtime_->baseContactForceNorm() > kFallContactForceN;
+    const bool attitude =
+        std::abs(roll) > kFallRollRad || std::abs(pitch) > kFallPitchRad;
+
+    bool healthy = finite_state && !base_contact && !attitude;
+    if (healthy && terminate_on_height_band_) {
+      const mjtNum z = static_cast<mjtNum>(p[2]);
+      healthy = (healthy_z_min_ < z) && (z < healthy_z_max_);
+    }
     if (!healthy && render_mode_) {
-      std::cout << "[IsHealthy] Unhealthy state detected: "
-                << "z position = " << z
-                << ", healthy_z_min = " << healthy_z_min_
-                << ", healthy_z_max = " << healthy_z_max_ << std::endl;
+      std::cout << "[IsHealthy] fall: contact=" << base_contact
+                << " attitude=" << attitude << " finite=" << finite_state
+                << " (roll=" << roll << ", pitch=" << pitch
+                << ", z=" << p[2] << ")" << std::endl;
     }
     return healthy;
   }
@@ -860,10 +917,28 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
     state["info:force_phase"_] = force.phase;
     state["info:force_direction"_] = force.direction;
     state["info:force_requested_impulse"_] = force.requested_impulse;
-    state["info:body_height"_] = last_state_est_.position[2];
+    const SimRobotState truth = runtime_ ? runtime_->robotState() : SimRobotState{};
+    state["info:body_height"_] = truth.base_pos[2];
     state["info:time_out"_] =
         (done_ && last_done_reason_ == "timeout") ? 1 : 0;
-    state["info:fall"_] = 0;
+    const mjtNum qw = truth.base_quat_wxyz[0];
+    const mjtNum qx = truth.base_quat_wxyz[1];
+    const mjtNum qy = truth.base_quat_wxyz[2];
+    const mjtNum qz = truth.base_quat_wxyz[3];
+    const mjtNum roll = std::atan2(2 * (qw * qx + qy * qz),
+                                  1 - 2 * (qx * qx + qy * qy));
+    const mjtNum pitch = std::asin(std::clamp(
+        2 * (qw * qy - qz * qx), static_cast<mjtNum>(-1),
+        static_cast<mjtNum>(1)));
+    bool finite_truth = true;
+    for (int i = 0; i < 3; ++i) {
+      finite_truth = finite_truth && std::isfinite(truth.base_pos[i]) &&
+                     std::isfinite(truth.lin_vel_world[i]);
+    }
+    const bool common_fall = !finite_truth ||
+        (runtime_ && runtime_->baseContactForceNorm() > 1.0) ||
+        std::abs(roll) > 0.8 || std::abs(pitch) > 1.0;
+    state["info:fall"_] = common_fall ? 1 : 0;
     auto reward_terms = state["info:reward_terms"_];
     auto* reward_term_data = static_cast<mjtNum*>(reward_terms.Data());
     for (std::size_t i = 0; i < last_term_rewards_.size(); ++i) {
@@ -911,12 +986,12 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
     state["info:reward_quadctrl"_] = -ctrl_cost;
     state["info:reward_alive"_] = healthy_reward;
     state["info:reward_impact"_] = -contact_cost;
-    state["info:x_position"_] = x_after;
-    state["info:y_position"_] = y_after;
+    state["info:x_position"_] = truth.base_pos[0];
+    state["info:y_position"_] = truth.base_pos[1];
     state["info:distance_from_origin"_] =
-        std::sqrt(x_after * x_after + y_after * y_after);
-    state["info:x_velocity"_] = xv;
-    state["info:y_velocity"_] = yv;
+        std::hypot(truth.base_pos[0], truth.base_pos[1]);
+    state["info:x_velocity"_] = truth.lin_vel_world[0];
+    state["info:y_velocity"_] = truth.lin_vel_world[1];
 
     PublishDebugFrame(obs, obs_array.size, reward, ctrl_cost, contact_cost,
                       healthy_reward);

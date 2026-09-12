@@ -27,6 +27,7 @@
 
 #include "envpool/core/async_envpool.h"
 #include "envpool/core/env.h"
+#include "envpool/mujoco/gym/quadruped_domain_rand.h"
 
 #include <Eigen/Dense>
 
@@ -52,11 +53,9 @@ struct PDConstants {
   static constexpr double kTrackingSigma = 0.25;
   static constexpr double kSoftDofPosLimit = 0.9;    // GO2 override
   static constexpr double kInitHeight = 0.42;        // GO2 init_state.pos z
-  // Efforts from the Go2 URDF that unitree_rl_gym ships; legged_gym clips
-  // torques to these. NOTE: that URDF's calf value is the Go1's (23.7 x 1.5),
-  // against 45.43 in Unitree's own Go2 description, which is what the other
-  // arms in this study run. Faithful to the recipe, not to the robot.
-  static constexpr double kTorqueLimits[3] = {23.7, 23.7, 35.55};
+  // Evaluation fairness takes precedence over the source recipe's stale Go1
+  // calf effort (35.55 N.m). Every arm uses the same Go2 plant limits, which
+  // come from the MJCF's actuator forcerange, never from this task.
   // Go2 URDF joint limits in URDF convention, [lower, upper] per joint type.
   // Front and rear thighs differ.
   static constexpr double kHipLimits[2] = {-1.0472, 1.0472};
@@ -66,12 +65,8 @@ struct PDConstants {
   // This MJCF's thigh and knee axes are (0,-1,0) against the URDF's (0,1,0):
   // q_urdf = kUrdfSign * q_here, per [abad, hip, knee].
   static constexpr double kUrdfSign[3] = {1.0, -1.0, -1.0};
-  // Friction: PhysX averages the two shapes' coefficients; the ground plane is
-  // static_friction 1.0. MuJoCo takes the max, so the effective pair value
-  // (f + 1) / 2 is written to every geom.
-  static constexpr double kGroundFriction = 1.0;
-  static constexpr double kFrictionRange[2] = {0.5, 1.25};
-  static constexpr int kFrictionBuckets = 64;
+  // Friction randomisation is shared with the WBC arm: see
+  // quadruped_domain_rand.h for the range, buckets and PhysX equivalence.
 };
 
 class QuadrupedPDEnvFns {
@@ -170,7 +165,7 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
   bool obs_noise_{true}, push_robots_{true}, random_friction_{true};
   bool random_ep_len_{true}, fixed_command_{false}, random_reset_{true};
   mjtNum fixed_vx_{0.0}, fixed_vy_{0.0}, fixed_heading_{0.0};
-  mjtNum friction_{PDConstants::kGroundFriction};
+  mjtNum friction_{0.0};  // set at Init from the MJCF ground
 
   std::string sim_config_path_{
       "/app/quadcontrol/config/robots/sim/envpool.toml"};
@@ -260,9 +255,12 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     }
 
     const SimRobotState now = runtime_->robotState();
-    const PDBase b = ComputeBase(now);
-    UpdateHeadingCommand(b);
-    ComputeObservation(now, b);
+    // Policy inputs, including heading feedback, must follow the same sensor
+    // path as the other arms.  `now` below is retained solely for simulator
+    // bookkeeping and truth-labelled evaluation signals.
+    const PDBase observed = ComputeObservedBase();
+    UpdateHeadingCommand(observed);
+    ComputeObservation(observed);
     terms_.fill(0.0);
 
     // In legged_gym an env reset inside post_physics_step has
@@ -304,15 +302,20 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
 
     // _post_physics_step_callback
     if (elapsed_step_ % PDConstants::kResampleSteps == 0) ResampleCommands();
-    UpdateHeadingCommand(b);
+    const PDBase observed = ComputeObservedBase();
+    UpdateHeadingCommand(observed);
 
     // check_termination
     const bool base_contact = runtime_->baseContactForceNorm() > 1.0;
     const bool attitude = std::abs(b.pitch) > 1.0 || std::abs(b.roll) > 0.8;
-    fall_ = base_contact || attitude;
+    const bool finite_state = std::isfinite(st.base_pos[0]) &&
+        std::isfinite(st.base_pos[1]) && std::isfinite(st.base_pos[2]) &&
+        std::isfinite(b.roll) && std::isfinite(b.pitch) &&
+        std::isfinite(b.lin_vel[0]) && std::isfinite(b.lin_vel[1]);
+    fall_ = base_contact || attitude || !finite_state;
     time_out_ = elapsed_step_ > PDConstants::kMaxEpisodeLength;
     const bool terminated =
-        terminate_when_unhealthy_ && (base_contact || attitude);
+        terminate_when_unhealthy_ && (base_contact || attitude || !finite_state);
 
     const mjtNum reward = ComputeReward(st, b);
 
@@ -320,7 +323,7 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
 
     // _push_robots for envs not being reset (reset envs are pushed in Reset).
     // The observation uses the pre-push base velocity, as legged_gym's does.
-    ComputeObservation(st, b);
+    ComputeObservation(observed);
     if (push_robots_ && !done &&
         elapsed_step_ % PDConstants::kPushInterval == 0) {
       runtime_->setBaseLinearVelocityXY(
@@ -377,25 +380,19 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     for (int i = 0; i < PDConstants::kActionDim; ++i) {
       default_q_[i] = static_cast<mjtNum>(q_default[i]);
     }
-    runtime_->setActuatorForceLimits({PDConstants::kTorqueLimits[0],
-                                      PDConstants::kTorqueLimits[1],
-                                      PDConstants::kTorqueLimits[2]});
+    // Actuator force limits are not set from code: the Go2 MJCF is the single
+    // source of truth for the plant, and already declares the Go2's
+    // [23.7, 23.7, 45.43] N.m forcerange for every arm.
     // _process_rigid_shape_props: 64 friction buckets shared by all envs, one
     // bucket per env, fixed for the env's lifetime. The buckets come from the
     // pool seed so every env sees the same 64 values.
     // Randomisation off (evaluation) leaves the simulator's nominal friction,
     // the value every arm is evaluated at, rather than the recipe's 1.0 ground.
+    const double ground = runtime_->groundFriction();
+    friction_ = ground;
     if (!random_friction_) return;
-    {
-      std::mt19937 bucket_gen(static_cast<unsigned>(spec.config["seed"_]));
-      std::uniform_real_distribution<double> bucket_dist(
-          PDConstants::kFrictionRange[0], PDConstants::kFrictionRange[1]);
-      std::array<double, PDConstants::kFrictionBuckets> buckets{};
-      for (auto& b : buckets) b = bucket_dist(bucket_gen);
-      const int bucket = std::uniform_int_distribution<int>(
-          0, PDConstants::kFrictionBuckets - 1)(gen_);
-      friction_ = (buckets[bucket] + PDConstants::kGroundFriction) / 2.0;
-    }
+    friction_ = FrictionRandomisation::Sample(
+        ground, static_cast<unsigned>(spec.config["seed"_]), &gen_);
     runtime_->setFriction(friction_);
   }
 
@@ -440,6 +437,28 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     return b;
   }
 
+  // Controller-facing base state.  The estimator is fed by MdlSimDriver's
+  // noisy IMU and encoder path when cheater_mode=false; do not substitute
+  // simulator root state here.  Ground truth remains deliberately confined to
+  // reward/termination and the `info:` diagnostics used by the evaluator.
+  PDBase ComputeObservedBase() const {
+    PDBase b;
+    const auto& est = runtime_->stateEstimate();
+    const mjtNum w = est.orientation[0], x = est.orientation[1],
+                 y = est.orientation[2], z = est.orientation[3];
+    const Eigen::Quaternion<mjtNum> q(w, x, y, z);
+    b.R = q.normalized().toRotationMatrix();  // body -> world
+    b.lin_vel = est.vBody.cast<mjtNum>();
+    b.ang_vel = est.omegaBody.cast<mjtNum>();
+    b.gravity = b.R.transpose() * Eigen::Matrix<mjtNum, 3, 1>(0.0, 0.0, -1.0);
+    b.roll = est.rpy[0];
+    b.pitch = est.rpy[1];
+    const Eigen::Matrix<mjtNum, 3, 1> fwd =
+        b.R * Eigen::Matrix<mjtNum, 3, 1>(1.0, 0.0, 0.0);
+    b.heading = std::atan2(fwd[1], fwd[0]);
+    return b;
+  }
+
   void UpdateHeadingCommand(const PDBase& b) {
     commands_[2] = std::clamp(0.5 * WrapToPi(commands_[3] - b.heading),
                               static_cast<mjtNum>(-1.0),
@@ -447,7 +466,7 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
   }
 
   // compute_observations(), noise and clip included.
-  void ComputeObservation(const SimRobotState& st, const PDBase& b) {
+  void ComputeObservation(const PDBase& b) {
     int k = 0;
     auto put = [&](mjtNum value, mjtNum noise) {
       if (obs_noise_ && noise > 0.0) value += (2.0 * Uniform(0.0, 1.0) - 1.0) * noise;
@@ -461,8 +480,20 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     put(commands_[0] * 2.0, 0.0);
     put(commands_[1] * 2.0, 0.0);
     put(commands_[2] * 0.25, 0.0);
-    for (int i = 0; i < 12; ++i) put(st.q[i] - default_q_[i], 0.01);
-    for (int i = 0; i < 12; ++i) put(st.qd[i] * 0.05, 1.5 * 0.05);
+    // MotorHW measurements have already received the configured encoder noise
+    // in MdlSimDriver.  Keeping the recipe's explicit observation noise on
+    // top preserves the Rudin training distribution without leaking truth.
+    const auto* legs = runtime_->legController();
+    for (int i = 0; i < 12; ++i) {
+      const int leg = i / 3, joint = i % 3;
+      const mjtNum q = legs ? legs->datas[leg].q[joint] : 0.0;
+      put(q - default_q_[i], 0.01);
+    }
+    for (int i = 0; i < 12; ++i) {
+      const int leg = i / 3, joint = i % 3;
+      const mjtNum qd = legs ? legs->datas[leg].qd[joint] : 0.0;
+      put(qd * 0.05, 1.5 * 0.05);
+    }
     for (int i = 0; i < 12; ++i) put(actions_[i], 0.0);
   }
 
