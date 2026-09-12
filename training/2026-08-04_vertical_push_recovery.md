@@ -109,9 +109,10 @@ are not clean negatives, but none showed promise:
   `sys.path[0]`, which shadows the installed wheel with the source tree — you
   silently get the old 46-dim observation. Already noted in `Notes.MD`.
 - **Models are observation-dimension locked.** X and Y are 46-dim and cannot load
-  against the 56-dim build. `data/wheel_obs46_backup/` holds the old `.so` with
-  restore instructions; swap it in to evaluate them, and restore afterwards or
-  every later measurement is silently wrong.
+  against current 54/61-dim builds. *(Historical note: as of 2026-09-10, models X,
+  Y, and the Z line are retired to `data/_archive/retired_models/`; their published
+  numbers stand as historical record and are not evaluated live against active builds.
+  `data/wheel_obs46_backup/` retains the legacy 46-dim .so for archival reference).*
 - **`--continue-training` resets the learning rate** to `FIXED_LEARNING_RATE`
   (`common/utils.py`) regardless of the loaded model. Use `--learning-rate`.
 - **Reward and episode length are not comparable across runs** with different
@@ -146,7 +147,8 @@ that costs lateral is not a win.
 
 ## 7. Artifacts
 
-Runs under `data/`, each with per-1 M-step checkpoints:
+Runs originally under `data/` (archived to `data/_archive/retired_models/` on
+2026-09-10; see `data/_archive/README.md`), each with per-1 M-step checkpoints:
 
     260803_Z_forcez150_fbw1000_ABANDONED   150 N force, W=1000  (16 M)
     260803_Z_fbw10_fz150                   W=10, fz150          (17 M)
@@ -159,5 +161,6 @@ Runs under `data/`, each with per-1 M-step checkpoints:
 
 Tools in `quadcontrol/evaluations/`: `force_response.py` (ramp latency,
 feedforward delta, height loss), `ddes_curve.py` / `ddes_sweep.sh` (trace-averaged
-response across checkpoints), `probe_curriculum_scale.py`, `snapshot_checkpoints.py`.
+response across checkpoints), `probe_curriculum_scale.py` (`snapshot_checkpoints.py`
+was removed in commit b618e15, superseded by `PeriodicCheckpointCallback` in `train.py`).
 `QC_RL_BASE_CONFIG` swaps the RL base config without editing the shared file.

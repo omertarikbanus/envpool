@@ -5,26 +5,13 @@
 
 - Clean up codes.
 - remove unused log files.
-- `eval_rl.py` prepends `/app/envpool` to `sys.path` so `import envpool` resolves
-  to the source tree (`envpool/envpool/...`) instead of the pip-installed
-  package in site-packages (workaround for the top-level `__init__.py`
-  shadowing issue). This means `make run` (which builds+installs the wheel
-  into site-packages) does NOT update what `eval_rl.py` actually imports —
-  the source-tree `.so` files must also be rebuilt/copied separately, or the
-  two can silently drift out of sync. Worth deciding: keep both paths in
-  sync deliberately, or drop the sys.path shadowing and rely on `make run`'s
-  pip install as the single source of truth.
-- Enable windowed visualization (GLFW) from inside the `envpool-dev` Docker
-  container for one-off evaluation runs, instead of always running headless.
-  Confirmed feasible: host has a real Xorg session on `:0`
-  (`/run/user/1000/gdm/Xauthority`), GLFW windowed mode already works in
-  `MdlSimDriver.cc` (no code changes needed) — just needs the container
-  recreated with `-e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix:rw` plus
-  `xhost +si:localuser:root` on the host once. Expect software (llvmpipe)
-  rendering unless `/dev/dri` is also passed through. `envpool.toml` is
-  currently set to `headless = true` as the default (needed for the
-  container/sweep pipeline); a visual eval run would need a separate
-  headless=false config or a second container.
+- Evaluation harness imports: `quadcontrol/evaluations/run.py` replaces the old
+  `comparison/eval_rl.py`. As mandated by `AGENTS.md`, `make run` inside the
+  container is the single source of truth for building and installing the
+  `envpool` package wheel into site-packages.
+- Windowed visualization (GLFW): container X11 pass-through is fully integrated
+  into `make docker-run` via `-e DISPLAY=$(DISPLAY)` and `/tmp/.X11-unix` mounts.
+  To render visually, run with `headless = false` in the sim config.
 
 
 ## Development Notes
@@ -35,71 +22,19 @@
 - 
 ## Basic Usage
 
-Basic Install
+Basic Install (Inside Container)
 
-    export USE_BAZEL_VERSION=6.4.0
-    sudo apt-get install qtbase5-dev #run bazel clean --expunge, then try again
+Always follow `AGENTS.md` Hard Rules: launch container via `make docker-run`
+from `envpool/`, then build and install the package wheel using:
 
-If you get this error
+    make run
 
-    Traceback (most recent call last):
-      File "/home/tarik/.cache/bazel/_bazel_tarik/bdd02770c320fc1c335f1fbf6437f65f/execroot/envpool/bazel-out/k8-fastbuild/bin/setup.runfiles/envpool/setup.py", line 3, in <module>
-        from setuptools import setup
-      File "/home/tarik/.cache/bazel/_bazel_tarik/bdd02770c320fc1c335f1fbf6437f65f/execroot/envpool/bazel-out/k8-fastbuild/bin/setup.runfiles/pip_requirements/pypi__setuptools/site-packages/setuptools/__init__.py", line 21, in <module>
-        from .dist import Distribution
-      File "/home/tarik/.cache/bazel/_bazel_tarik/bdd02770c320fc1c335f1fbf6437f65f/execroot/envpool/bazel-out/k8-fastbuild/bin/setup.runfiles/pip_requirements/pypi__setuptools/site-packages/setuptools/dist.py", line 29, in <module>
-        from . import _entry_points
-      File "/home/tarik/.cache/bazel/_bazel_tarik/bdd02770c320fc1c335f1fbf6437f65f/execroot/envpool/bazel-out/k8-fastbuild/bin/setup.runfiles/pip_requirements/pypi__setuptools/site-packages/setuptools/_entry_points.py", line 6, in <module>
-        from jaraco.text import yield_lines
-      File "/home/tarik/.cache/bazel/_bazel_tarik/bdd02770c320fc1c335f1fbf6437f65f/execroot/envpool/bazel-out/k8-fastbuild/bin/setup.runfiles/pip_requirements/pypi__setuptools/site-packages/setuptools/_vendor/jaraco/text/__init__.py", line 231, in <module>
-        files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')
-      File "/usr/lib/python3.10/pathlib.py", line 1134, in read_text
-        with self.open(mode='r', encoding=encoding, errors=errors) as f:
-      File "/usr/lib/python3.10/pathlib.py", line 1119, in open
-        return self._accessor.open(self, mode, buffering, encoding, errors,
-    FileNotFoundError: [Errno 2] No such file or directory: '/home/tarik/.cache/bazel/_bazel_tarik/bdd02770c320fc1c335f1fbf6437f65f/execroot/envpool/bazel-out/k8-fastbuild/bin/setup.runfiles/pip_requirements/pypi__setuptools/site-packages/setuptools/_vendor/jaraco/text/Lorem ipsum.txt'
-    tarik@aselsan:/home/tarik/thesis_project/envpool$ ^C
-
-Comment out these lines 
-
-    # lorem_ipsum: str = (
-    #     files(__name__).joinpath('Lorem ipsum.txt').read_text(encoding='utf-8')
-    # )
-
-To run in debug mode
-
-    bazel run --config=debug //:setup -- bdist_wheel  > log.txt  
-
-    pip3 install bazel-bin/setup.runfiles/envpool/dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl --force-reinstall
-
-    cc_library(
-      name = "osqp",
-      hdrs = glob([
-        "legged-sim/third-party/osqp/**/*.h",  # Header file
-      ]),
-      srcs = glob([
-        "legged-sim/third-party/osqp/src/**/*.c",  # Adjust according to source files
-        "legged-sim/third-party/osqp/src/**/*.cpp",
-      ]),
-      includes = [
-        #         "legged-sim/third-party/osqp/include",
-        "legged-sim/third-party/osqp/tests",
-        "legged-sim/third-party/osqp/lin_sys",
-        "legged-sim/third-party/osqp/lin_sys/direct/qdldl",
-        "legged-sim/third-party/osqp/lin_sys/direct/pardiso",
-        "legged-sim/third-party/osqp/lin_sys/direct/qdldl/qdldl_sources/include",
-        "legged-sim/third-party/osqp/include",
-      ],
-    #   copts = [
-    #     "-Ilegged-sim/third-party/osqp/include",  # Add this to ensure osqp.h is found
-    #   ],
-    #   linkopts = ["legged-sim/build/third-party/osqp/out/libosqp.so"],
-    )
+This exports `USE_BAZEL_VERSION=6.5.0`, invokes `bazel run --config=release //:setup -- bdist_wheel`,
+and pip-installs the wheel. Do NOT manually edit setuptools/jaraco cache files or run piecemeal pip installs.
 
 
-MAC FIXES 
+Historical Mac Notes (Legacy Reference)
 
     symlink qt. install it if not installed.
     ln -s /usr/include/aarch64-linux-gnu/qt5 /usr/include/qt
     ln -s /usr/include/eigen3/Eigen /usr/include/Eigen
-    '''

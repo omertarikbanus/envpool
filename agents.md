@@ -13,13 +13,18 @@ dependent on the quadcontrol module. (It was called `humanoid.h` until the
 2026-09 rename; nothing in it relates to Gym's Humanoid.) It backs two task
 ids that differ only in observation width -- `QuadrupedWBC-v0` (54, the Gamma
 line) and `QuadrupedWBC-v1` (61, the Delta line's privileged critic tail).
-Its `kActionDim`,
-`kObservationDim`, and `LocomotionReward::kNumTerms` are pinned against
+Alongside it, `./envpool/mujoco/gym/quadruped_pd.h` backs `QuadrupedPD-v1`
+(48 observations, 12 actions, policy dt 0.02 s), reproducing the Unitree
+Go2 joint-PD recipe for the Rudin RL baseline arm.
+
+For `QuadrupedWBC-*`, `kActionDim`, `kObservationDim`, and
+`LocomotionReward::kNumTerms` are pinned against
 quadcontrol's `include/supervisor/RLPipelineRuntime.hh` and
 `include/modules/MdlRLCommandSource.hh` by
 `quadcontrol/evaluations/tests/test_parameter_parity.py` -- changing one
 without the others fails that test rather than silently truncating actions
-or observations.
+or observations. `test_parameter_parity.py` likewise pins `PDConstants`
+for `QuadrupedPD-v1`.
 
 ## Training a new line
 
@@ -34,6 +39,14 @@ the user ran it themselves; never use `/tmp` for the launch script):
 ```bash
 tmux new-session -d -s <line>_train \
   "docker exec -it envpool-dev bash -lc 'cd /app/envpool && QUADCONTROL_PARITY_DUMP=1 python3 examples/train.py 2>&1 | tee data/<line>/train.log'"
+```
+
+For the Rudin end-to-end PD arm (`QuadrupedPD-v1`), training uses
+`examples/train_unitree.py` backed by vendored `rsl_rl v1.0.2`:
+
+```bash
+RUN=data/rudin_unitree/<run_id>
+docker exec -it envpool-dev bash -lc "mkdir -p $RUN && python3 examples/train_unitree.py --run-dir $RUN > $RUN/console.log 2>&1"
 ```
 
 `QUADCONTROL_PARITY_DUMP=1` prints the effective shared parameters
@@ -90,6 +103,7 @@ used and why; note the arms are now `kim`/`rudin`/`ours`).
 ## Training artifacts are committed, not gitignored
 
 `data/<line>/` (checkpoints, `_vecnormalize.pkl`, tensorboard events,
-`train.log`) is tracked in git, matching the existing `data/beta*` lines --
-this is a deliberate project convention for reproducibility, not an
-oversight. Don't add a blanket `data/*` gitignore rule.
+`train.log`) is tracked in git for active lines (e.g. `data/gamma5/`,
+`data/alpha/`, and `data/rudin_unitree/model_1500.pt`) -- this is a deliberate
+project convention for reproducibility, not an oversight. Don't add a blanket
+`data/*` gitignore rule (retired models live in gitignored `data/_archive/`).
