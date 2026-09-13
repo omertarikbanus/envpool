@@ -255,6 +255,16 @@ class QuadrupedWBCEnvFns {
         // false: evaluation must run on the MJCF plant, and only training
         // configs opt in. See quadruped_domain_rand.h.
         "wbc_randomize_friction"_.Bind(false),
+        // Per-env commanded-speed jitter, drawn once per Reset(). The sim
+        // config is read when the pool is BUILT, so without this every env
+        // in a vectorised pool rides one limit cycle and N episodes are N
+        // samples of one trajectory. Mirrors evaluations/core/initstate.py,
+        // whose measurements show commanded speed is the only perturbation
+        // that survives to push time (initial-pose jitter decays to 4e-4
+        // m/s by t = 7 s). Default false: training and the matched
+        // kim/rudin protocol must be unaffected.
+        "wbc_randomize_init"_.Bind(false),
+        "wbc_init_speed_jitter"_.Bind(0.05),
         // Legacy base-height termination, superseded by common_fall_v1.
         "terminate_on_height_band"_.Bind(false),
         "sim_config_path"_.Bind(
@@ -342,6 +352,19 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
   bool terminate_when_unhealthy_, no_pos_, use_contact_force_, render_mode_;
   bool terminate_on_height_band_{false};
   bool randomize_friction_{false};
+  bool randomize_init_;
+  double init_speed_jitter_;
+  // The CONFIGURED forward base speed, captured once. Reset() must jitter
+  // around this, not around the previous episode's jittered value, or the
+  // commanded speed random-walks away across resets.
+  float nominal_base_vx_{0.0F};
+  bool nominal_base_vx_captured_{false};
+  // Dedicated stream: `gen_` is consumed by friction randomisation, so
+  // sharing it would make the speed draw depend on whether friction
+  // randomisation is on. Seeded from (seed, env_id) alone so left and
+  // right pools draw the SAME sequence -- the lateral mirror
+  // counterfactual requires episode i to match across directions.
+  std::mt19937 init_gen_;
   mjtNum friction_{0.0};  // effective contact coefficient in use
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
   mjtNum healthy_z_min_, healthy_z_max_;
@@ -436,6 +459,15 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
     // `evaluation_friction` robustness cell, which the config applies earlier.
     terminate_on_height_band_ = spec.config["terminate_on_height_band"_];
     randomize_friction_ = spec.config["wbc_randomize_friction"_];
+    randomize_init_ = spec.config["wbc_randomize_init"_];
+    init_speed_jitter_ = spec.config["wbc_init_speed_jitter"_];
+    // Keyed on (seed, env_id) only -- never on direction or pool identity --
+    // so the left and right cells of a mirror pair draw identical speeds.
+    {
+      std::seed_seq seq{static_cast<std::uint32_t>(spec.config["seed"_]),
+                        static_cast<std::uint32_t>(env_id_)};
+      init_gen_.seed(seq);
+    }
     if (!disabled_ && runtime_) {
       friction_ = runtime_->groundFriction();
       if (randomize_friction_) {
@@ -503,6 +535,26 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
                   << static_cast<mjtNum>(last_state_est_.rpy[1]) << ", "
                   << static_cast<mjtNum>(last_state_est_.rpy[2]) << "]\n";
       }
+    }
+    if (runtime_ && randomize_init_ && init_speed_jitter_ > 0.0) {
+      // Applied AFTER resetEpisode(): that call re-initialises the command
+      // source from the sim config, so a base velocity written before it is
+      // silently discarded.
+      // Jitter ONLY the forward component, around whatever the sim config set,
+      // so a configured lateral or yaw base is preserved. Uniform and centred
+      // on zero, matching initstate.py: a distribution that was not
+      // mirror-symmetric would inject the very left/right bias the harness
+      // exists to measure.
+      std::uniform_real_distribution<double> jitter(-init_speed_jitter_,
+                                                    init_speed_jitter_);
+      quadruped::RlDesiredVelocity base = runtime_->policyBaseVelocity();
+      if (!nominal_base_vx_captured_) {
+        nominal_base_vx_ = base.body_velocity[0];
+        nominal_base_vx_captured_ = true;
+      }
+      base.body_velocity[0] = static_cast<float>(
+          static_cast<double>(nominal_base_vx_) + jitter(init_gen_));
+      runtime_->setPolicyBaseVelocity(base);
     }
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     UpdateRewardReferences();
