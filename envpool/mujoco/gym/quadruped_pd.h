@@ -275,7 +275,7 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     // so every reset except the very first is followed by a push. The
     // observation above predates it, as legged_gym's does.
     if (push_robots_ && reset_count_ > 0) {
-      runtime_->setBaseLinearVelocityXY(
+      runtime_->addBaseLinearVelocityXY(
           Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY),
           Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY));
     }
@@ -333,7 +333,7 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     ComputeObservation(observed);
     if (push_robots_ && !done &&
         elapsed_step_ % PDConstants::kPushInterval == 0) {
-      runtime_->setBaseLinearVelocityXY(
+      runtime_->addBaseLinearVelocityXY(
           Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY),
           Uniform(-PDConstants::kMaxPushVelXY, PDConstants::kMaxPushVelXY));
     }
