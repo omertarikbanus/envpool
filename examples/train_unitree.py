@@ -182,6 +182,11 @@ def main() -> None:
     p.add_argument("--num-threads", type=int, default=0,
                    help="EnvPool worker threads (0 = EnvPool default)")
     p.add_argument("--sim-config-path", default=SIM_CONFIG)
+    p.add_argument("--resume-from", default=None,
+                   help="warm start from an rsl_rl .pt checkpoint. The "
+                        "iteration counter is reset to 0 so this run dir "
+                        "numbers its own checkpoints; the source is recorded "
+                        "in the manifest.")
     p.add_argument("--base-height-scale", type=float, default=0.0,
                    help="weight of the base-height term; 0.0 is the "
                         "source recipe, which never enforces its own "
@@ -216,6 +221,17 @@ def main() -> None:
     env = EnvPoolLeggedVecEnv(args.num_envs, args.seed, args.sim_config_path,
                               num_threads=args.num_threads, **env_kwargs)
     runner = OnPolicyRunner(env, train_cfg, log_dir=str(run_dir), device="cpu")
+    if args.resume_from:
+        # A from-scratch policy earns ~0.02 in its first iterations, so any
+        # added penalty flips the per-step total negative and
+        # only_positive_rewards clips the entire learning signal to zero. A
+        # converged policy earns ~1.16 per step before dt, far above that
+        # boundary, so the height term can act without erasing the gradient.
+        if not Path(args.resume_from).is_file():
+            raise SystemExit(f"--resume-from: no such checkpoint {args.resume_from}")
+        runner.load(args.resume_from)
+        runner.current_learning_iteration = 0
+        print(f"[train_unitree] warm started from {args.resume_from}", flush=True)
     # init_at_random_ep_len is realised inside the env (pd_init_at_random_ep_len),
     # so the runner's own randomisation of an unused buffer stays off.
     runner.learn(num_learning_iterations=args.max_iterations,
