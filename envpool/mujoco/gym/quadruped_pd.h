@@ -93,6 +93,18 @@ class QuadrupedPDEnvFns {
         // (vx, vy, heading) command. Heading mode stays on, as in the recipe.
         "pd_fixed_command"_.Bind(false), "pd_command_vx"_.Bind(0.0),
         "pd_command_vy"_.Bind(0.0), "pd_command_heading"_.Bind(0.0),
+        // Per-env half-width of a uniform jitter on the fixed forward command,
+        // drawn ONCE per episode. Meaningful only with pd_fixed_command.
+        //
+        // Without it every env of an evaluation pool rides the identical
+        // command, so with reset randomisation off as well the episodes of a
+        // cell differ only in when the push lands -- N samples of one
+        // trajectory, not N episodes. The other two arms already vary the
+        // commanded speed per run (evaluations/core/initstate.py, SPEED), and
+        // that is the perturbation their own measurements show still matters
+        // at push time; this is what lets this arm match them. Default 0.0, so
+        // training and any existing evaluation are unaffected.
+        "pd_command_vx_jitter"_.Bind(0.0),
         // _reward_base_height: square(base_z - target). legged_gym ships
         // this term and GO2RoughCfg sets base_height_target = 0.25, but
         // LeggedRobotCfg weights it at -0., so the recipe never enforces
@@ -171,6 +183,14 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
   bool obs_noise_{true}, push_robots_{true}, random_friction_{true};
   bool random_ep_len_{true}, fixed_command_{false}, random_reset_{true};
   mjtNum fixed_vx_{0.0}, fixed_vy_{0.0}, fixed_heading_{0.0};
+  mjtNum cmd_vx_jitter_{0.0};
+  // The forward command actually used this episode: fixed_vx_ plus one draw,
+  // held for the whole episode so a mid-episode resample cannot change it.
+  mjtNum episode_vx_{0.0};
+  // Dedicated stream, like the WBC env's: drawing from the shared gen_ would
+  // make the command depend on whether reset/friction randomisation is on.
+  // Keyed on (seed, env_id) only, so a mirror pair draws the same sequence.
+  std::mt19937 cmd_gen_;
   mjtNum base_height_scale_{0.0}, base_height_target_{0.25};
   mjtNum friction_{0.0};  // set at Init from the MJCF ground
 
@@ -244,6 +264,12 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
       st.qd[i] = 0.0;
     }
     runtime_->setRobotState(st);
+    // One draw per episode, before the first resample reads it.
+    episode_vx_ = fixed_vx_;
+    if (fixed_command_ && cmd_vx_jitter_ > 0.0) {
+      episode_vx_ += std::uniform_real_distribution<mjtNum>(
+          -cmd_vx_jitter_, cmd_vx_jitter_)(cmd_gen_);
+    }
     ResampleCommands();
 
     // reset_idx buffer resets. last_contacts is deliberately NOT cleared:
@@ -375,6 +401,13 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     fixed_vx_ = spec.config["pd_command_vx"_];
     fixed_vy_ = spec.config["pd_command_vy"_];
     fixed_heading_ = spec.config["pd_command_heading"_];
+    cmd_vx_jitter_ = spec.config["pd_command_vx_jitter"_];
+    episode_vx_ = fixed_vx_;
+    {
+      std::seed_seq seq{static_cast<std::uint32_t>(spec.config["seed"_]),
+                        static_cast<std::uint32_t>(env_id_)};
+      cmd_gen_.seed(seq);
+    }
     base_height_scale_ = spec.config["pd_base_height_scale"_];
     base_height_target_ = spec.config["pd_base_height_target"_];
     if (!runtime_ || disabled_) return;
@@ -407,7 +440,10 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
 
   void ResampleCommands() {
     if (fixed_command_) {
-      commands_[0] = fixed_vx_;
+      // episode_vx_, not fixed_vx_: this runs again every kResampleSteps, and
+      // the commanded speed must hold for the whole episode as it does for the
+      // other arms.
+      commands_[0] = episode_vx_;
       commands_[1] = fixed_vy_;
       commands_[3] = fixed_heading_;
       return;
