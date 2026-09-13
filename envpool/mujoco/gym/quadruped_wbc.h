@@ -255,16 +255,27 @@ class QuadrupedWBCEnvFns {
         // false: evaluation must run on the MJCF plant, and only training
         // configs opt in. See quadruped_domain_rand.h.
         "wbc_randomize_friction"_.Bind(false),
-        // Per-env commanded-speed jitter, drawn once per Reset(). The sim
-        // config is read when the pool is BUILT, so without this every env
-        // in a vectorised pool rides one limit cycle and N episodes are N
-        // samples of one trajectory. Mirrors evaluations/core/initstate.py,
-        // whose measurements show commanded speed is the only perturbation
-        // that survives to push time (initial-pose jitter decays to 4e-4
-        // m/s by t = 7 s). Default false: training and the matched
-        // kim/rudin protocol must be unaffected.
+        // Per-episode initial-CONDITION randomisation: base x/y, attitude and
+        // joint angles are perturbed around whatever the sim config reset to,
+        // as evaluations/core/initstate.py perturbs them per run. This is a
+        // STATE perturbation and touches no command. Default false: training
+        // and the matched kim/rudin protocol must be unaffected.
         "wbc_randomize_init"_.Bind(false),
-        "wbc_init_speed_jitter"_.Bind(0.05),
+        // Half-ranges, uniform and centred on zero, mirroring initstate.py's.
+        // Symmetric about the x-z plane by construction: a distribution that
+        // was not would inject the very left/right bias the harness measures.
+        "wbc_init_pos_jitter"_.Bind(0.010),       // m,   base x and y
+        "wbc_init_rp_jitter"_.Bind(0.010),        // rad, roll and pitch
+        "wbc_init_yaw_jitter"_.Bind(0.020),       // rad, heading
+        "wbc_init_joint_jitter"_.Bind(0.017453),  // rad, per joint (1 deg)
+        // Commanded-speed jitter. A COMMAND perturbation, and deliberately
+        // INDEPENDENT of wbc_randomize_init -- the two are orthogonal knobs
+        // and neither implies the other. The vectorised evaluation path needs
+        // it because one config serves the whole pool, so without it every env
+        // rides the same limit cycle; initstate.py measured that commanded
+        // speed is what survives to push time, while initial-pose jitter has
+        // decayed to 4e-4 m/s by t = 7 s. Default 0.0 (off).
+        "wbc_init_speed_jitter"_.Bind(0.0),
         // Legacy base-height termination, superseded by common_fall_v1.
         "terminate_on_height_band"_.Bind(false),
         "sim_config_path"_.Bind(
@@ -354,17 +365,23 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
   bool randomize_friction_{false};
   bool randomize_init_;
   double init_speed_jitter_;
-  // The CONFIGURED forward base speed, captured once. Reset() must jitter
-  // around this, not around the previous episode's jittered value, or the
-  // commanded speed random-walks away across resets.
-  float nominal_base_vx_{0.0F};
-  bool nominal_base_vx_captured_{false};
+  double init_pos_jitter_{0.0};
+  double init_rp_jitter_{0.0};
+  double init_yaw_jitter_{0.0};
+  double init_joint_jitter_{0.0};
   // Dedicated stream: `gen_` is consumed by friction randomisation, so
   // sharing it would make the speed draw depend on whether friction
   // randomisation is on. Seeded from (seed, env_id) alone so left and
   // right pools draw the SAME sequence -- the lateral mirror
   // counterfactual requires episode i to match across directions.
   std::mt19937 init_gen_;
+  // The initial-state perturbation gets its OWN stream, for the same reason
+  // init_gen_ is separate from gen_: sharing one would make the commanded
+  // speed a function of whether pose randomisation is on, re-coupling two
+  // knobs that are meant to be independent. init_gen_ keeps the speed
+  // sequence it already had, so measurements taken with speed jitter alone
+  // remain reproducible.
+  std::mt19937 pose_gen_;
   mjtNum friction_{0.0};  // effective contact coefficient in use
   mjtNum ctrl_cost_weight_, forward_reward_weight_, healthy_reward_;
   mjtNum healthy_z_min_, healthy_z_max_;
@@ -461,12 +478,24 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
     randomize_friction_ = spec.config["wbc_randomize_friction"_];
     randomize_init_ = spec.config["wbc_randomize_init"_];
     init_speed_jitter_ = spec.config["wbc_init_speed_jitter"_];
+    init_pos_jitter_ = spec.config["wbc_init_pos_jitter"_];
+    init_rp_jitter_ = spec.config["wbc_init_rp_jitter"_];
+    init_yaw_jitter_ = spec.config["wbc_init_yaw_jitter"_];
+    init_joint_jitter_ = spec.config["wbc_init_joint_jitter"_];
     // Keyed on (seed, env_id) only -- never on direction or pool identity --
     // so the left and right cells of a mirror pair draw identical speeds.
     {
       std::seed_seq seq{static_cast<std::uint32_t>(spec.config["seed"_]),
                         static_cast<std::uint32_t>(env_id_)};
       init_gen_.seed(seq);
+    }
+    // Also keyed on (seed, env_id) only -- never on direction or pool
+    // identity -- so a mirror pair perturbs identically. The extra word only
+    // decorrelates this stream from init_gen_.
+    {
+      std::seed_seq seq{static_cast<std::uint32_t>(spec.config["seed"_]),
+                        static_cast<std::uint32_t>(env_id_), 0x9E3779B9U};
+      pose_gen_.seed(seq);
     }
     if (!disabled_ && runtime_) {
       friction_ = runtime_->groundFriction();
@@ -493,6 +522,66 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
 
   bool IsDone() override { return done_; }
 
+  // Per-episode initial-condition randomisation: base x/y, attitude and joint
+  // angles, drawn uniformly and symmetrically about the state resetEpisode()
+  // just restored. Applied AFTER that call, which rebuilds the modules and
+  // would otherwise wipe anything written earlier.
+  //
+  // Deliberately touches NO command: the commanded speed is a separate knob
+  // (wbc_init_speed_jitter) on a separate RNG stream. Base z and the body
+  // velocities are left alone for initstate.py's reason -- perturbing them
+  // changes the stand-up sequence rather than perturbing it.
+  void PerturbInitialState_() {
+    auto draw = [this](double half) {
+      return half > 0.0 ? std::uniform_real_distribution<double>(
+                              -half, half)(pose_gen_)
+                        : 0.0;
+    };
+    SimRobotState st = runtime_->robotState();
+    st.base_pos[0] += draw(init_pos_jitter_);
+    st.base_pos[1] += draw(init_pos_jitter_);
+
+    // Small world-frame rotation composed onto the configured attitude.
+    const double roll = draw(init_rp_jitter_);
+    const double pitch = draw(init_rp_jitter_);
+    const double yaw = draw(init_yaw_jitter_);
+    const double cr = std::cos(roll * 0.5);
+    const double sr = std::sin(roll * 0.5);
+    const double cp = std::cos(pitch * 0.5);
+    const double sp = std::sin(pitch * 0.5);
+    const double cy = std::cos(yaw * 0.5);
+    const double sy = std::sin(yaw * 0.5);
+    const double dq[4] = {cr * cp * cy + sr * sp * sy,
+                          sr * cp * cy - cr * sp * sy,
+                          cr * sp * cy + sr * cp * sy,
+                          cr * cp * sy - sr * sp * cy};
+    const double* q0 = st.base_quat_wxyz;
+    const double qn[4] = {
+        dq[0] * q0[0] - dq[1] * q0[1] - dq[2] * q0[2] - dq[3] * q0[3],
+        dq[0] * q0[1] + dq[1] * q0[0] + dq[2] * q0[3] - dq[3] * q0[2],
+        dq[0] * q0[2] - dq[1] * q0[3] + dq[2] * q0[0] + dq[3] * q0[1],
+        dq[0] * q0[3] + dq[1] * q0[2] - dq[2] * q0[1] + dq[3] * q0[0]};
+    double norm = std::sqrt(qn[0] * qn[0] + qn[1] * qn[1] + qn[2] * qn[2] +
+                            qn[3] * qn[3]);
+    if (!(norm > 0.0)) {
+      norm = 1.0;
+    }
+    for (int i = 0; i < 4; ++i) {
+      st.base_quat_wxyz[i] = qn[i] / norm;
+    }
+
+    for (int i = 0; i < 12; ++i) {
+      st.q[i] += draw(init_joint_jitter_);
+    }
+    runtime_->setRobotState(st);
+    // setRobotState refreshes the driver's sensor caches, but the module-level
+    // state the observation reads was cached by the runtime at the end of
+    // resetEpisode(). One control tick republishes it through the estimator,
+    // so the health check below and the first observation see the perturbed
+    // pose rather than the nominal one.
+    runtime_->stepFrame();
+  }
+
   void Reset() override {
     if (disabled_) {
       done_ = true;
@@ -514,6 +603,11 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
       for (; reset_attempt < kMaxResetAttempts; ++reset_attempt) {
         runtime_->resetEpisode();
         runtime_->setPolicyAction(nullptr, 0);
+        // Inside the retry loop on purpose: the health check below then
+        // validates the PERTURBED pose, and a retry draws a fresh one.
+        if (randomize_init_) {
+          PerturbInitialState_();
+        }
         last_state_est_ = runtime_->stateEstimate();
         last_gait_schedule_ = runtime_->gaitSchedule();
         const mjtNum z = static_cast<mjtNum>(last_state_est_.position[2]);
@@ -536,10 +630,20 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
                   << static_cast<mjtNum>(last_state_est_.rpy[2]) << "]\n";
       }
     }
-    if (runtime_ && randomize_init_ && init_speed_jitter_ > 0.0) {
+    if (runtime_ && init_speed_jitter_ > 0.0) {
+      // Gated on its own knob alone -- NOT on randomize_init_. Perturbing the
+      // state and perturbing the command are different things, and tying them
+      // together is what made this jitter freeze each env at its first draw
+      // under a config that resamples the command every episode.
+      //
       // Applied AFTER resetEpisode(): that call re-initialises the command
       // source from the sim config, so a base velocity written before it is
-      // silently discarded.
+      // silently discarded -- and, for the same reason, the value read here is
+      // always the freshly-configured one, never last episode's jittered
+      // value. That ordering is what stops the command random-walking across
+      // resets; no captured nominal is needed, and under a config that draws a
+      // new command each episode this correctly jitters THAT draw.
+      //
       // Jitter ONLY the forward component, around whatever the sim config set,
       // so a configured lateral or yaw base is preserved. Uniform and centred
       // on zero, matching initstate.py: a distribution that was not
@@ -548,12 +652,8 @@ class QuadrupedWBCEnv : public Env<QuadrupedWBCEnvSpec> {
       std::uniform_real_distribution<double> jitter(-init_speed_jitter_,
                                                     init_speed_jitter_);
       quadruped::RlDesiredVelocity base = runtime_->policyBaseVelocity();
-      if (!nominal_base_vx_captured_) {
-        nominal_base_vx_ = base.body_velocity[0];
-        nominal_base_vx_captured_ = true;
-      }
       base.body_velocity[0] = static_cast<float>(
-          static_cast<double>(nominal_base_vx_) + jitter(init_gen_));
+          static_cast<double>(base.body_velocity[0]) + jitter(init_gen_));
       runtime_->setPolicyBaseVelocity(base);
     }
     WriteState(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);

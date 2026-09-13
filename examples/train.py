@@ -433,6 +433,19 @@ def parse_args():
     parser.add_argument("--max-episode-steps", type=int,
                         default=2000 if unitree else 1000,
                         help="Training horizon at 100 Hz.")
+    parser.add_argument("--randomize-init", action="store_true",
+                        help="Randomise each episode's initial CONDITION (WBC envs "
+                             "only): base x/y, attitude and joint angles are "
+                             "perturbed around the configured nominal. Touches no "
+                             "command.")
+    parser.add_argument("--init-speed-jitter", type=float, default=0.0,
+                        metavar="DV",
+                        help="INDEPENDENT of --randomize-init: half-width in m/s of "
+                             "a uniform jitter added to the commanded forward speed "
+                             "at each reset. Default 0.0 (off) -- the training "
+                             "config already resamples the command every episode "
+                             "over a far wider range, so this is for evaluation-"
+                             "style pinned-command runs.")
     parser.add_argument("--ent-coef", type=float,
                         default=0.01 if unitree else None,
                         help="Override PPO entropy coefficient for this run")
@@ -532,6 +545,21 @@ def main():
                 config_path = config_stub
             env_config["sim_config_path"] = str(config_path)
             env_config["max_episode_steps"] = args.max_episode_steps
+            wbc_env = args.env_name.startswith("QuadrupedWBC")
+            if (args.randomize_init or args.init_speed_jitter) and not wbc_env:
+                raise ValueError(
+                    "--randomize-init/--init-speed-jitter are WBC-env options; "
+                    f"{args.env_name} exposes no such config key")
+            if args.randomize_init:
+                env_config["wbc_randomize_init"] = True
+                logging.info("Initial-condition randomisation enabled "
+                             "(base pose and joint angles)")
+            if args.init_speed_jitter:
+                if args.init_speed_jitter < 0:
+                    raise ValueError("--init-speed-jitter must be nonnegative")
+                env_config["wbc_init_speed_jitter"] = float(args.init_speed_jitter)
+                logging.info("Commanded-speed jitter enabled: +-%.3f m/s",
+                             args.init_speed_jitter)
             if args.num_threads > 0:
                 env_config["num_threads"] = args.num_threads
                 logging.info("EnvPool worker threads overridden to %d",
