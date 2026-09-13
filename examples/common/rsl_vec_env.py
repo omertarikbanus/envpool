@@ -32,7 +32,7 @@ MAX_EPISODE_LENGTH = 1000
 REWARD_TERMS = (
     "tracking_lin_vel", "tracking_ang_vel", "lin_vel_z", "ang_vel_xy",
     "torques", "dof_acc", "feet_air_time", "collision", "action_rate",
-    "dof_pos_limits",
+    "dof_pos_limits", "base_height",
 )
 
 

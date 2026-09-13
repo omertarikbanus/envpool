@@ -42,7 +42,7 @@ namespace mujoco_gym {
 struct PDConstants {
   static constexpr int kActionDim = 12;
   static constexpr int kObservationDim = 48;
-  static constexpr int kRewardTermDim = 10;
+  static constexpr int kRewardTermDim = 11;
   static constexpr double kPolicyDt = 0.02;          // sim.dt 0.005 x decimation 4
   static constexpr int kMaxEpisodeLength = 1000;     // ceil(episode_length_s 20 / dt)
   static constexpr int kResampleSteps = 500;         // commands.resampling_time 10 s
@@ -92,7 +92,13 @@ class QuadrupedPDEnvFns {
         // Evaluation: replace legged_gym's command sampler with a fixed
         // (vx, vy, heading) command. Heading mode stays on, as in the recipe.
         "pd_fixed_command"_.Bind(false), "pd_command_vx"_.Bind(0.0),
-        "pd_command_vy"_.Bind(0.0), "pd_command_heading"_.Bind(0.0));
+        "pd_command_vy"_.Bind(0.0), "pd_command_heading"_.Bind(0.0),
+        // _reward_base_height: square(base_z - target). legged_gym ships
+        // this term and GO2RoughCfg sets base_height_target = 0.25, but
+        // LeggedRobotCfg weights it at -0., so the recipe never enforces
+        // the height it declares. Scale 0.0 keeps that behaviour exactly.
+        "pd_base_height_scale"_.Bind(0.0),
+        "pd_base_height_target"_.Bind(0.25));
   }
   template <typename Config>
   static decltype(auto) StateSpec(const Config& conf) {
@@ -165,6 +171,7 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
   bool obs_noise_{true}, push_robots_{true}, random_friction_{true};
   bool random_ep_len_{true}, fixed_command_{false}, random_reset_{true};
   mjtNum fixed_vx_{0.0}, fixed_vy_{0.0}, fixed_heading_{0.0};
+  mjtNum base_height_scale_{0.0}, base_height_target_{0.25};
   mjtNum friction_{0.0};  // set at Init from the MJCF ground
 
   std::string sim_config_path_{
@@ -368,6 +375,8 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
     fixed_vx_ = spec.config["pd_command_vx"_];
     fixed_vy_ = spec.config["pd_command_vy"_];
     fixed_heading_ = spec.config["pd_command_heading"_];
+    base_height_scale_ = spec.config["pd_base_height_scale"_];
+    base_height_target_ = spec.config["pd_base_height_target"_];
     if (!runtime_ || disabled_) return;
 
     const double dt = frame_skip_ * runtime_->stepPeriodSeconds();
@@ -554,7 +563,9 @@ class QuadrupedPDEnv : public Env<QuadrupedPDEnvSpec> {
         air * 1.0,                                                // feet_air_time
         collision * -1.0,                                         // collision
         action_rate * -0.01,                                      // action_rate
-        dof_limits * -10.0};                                      // dof_pos_limits (GO2)
+        dof_limits * -10.0,                                       // dof_pos_limits (GO2)
+        std::pow(st.base_pos[2] - base_height_target_, 2) *
+            base_height_scale_};                                  // base_height (off by default)
     mjtNum total = 0.0;
     for (int i = 0; i < PDConstants::kRewardTermDim; ++i) {
       terms_[i] = raw[i] * dt;

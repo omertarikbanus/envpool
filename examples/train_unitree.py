@@ -182,6 +182,12 @@ def main() -> None:
     p.add_argument("--num-threads", type=int, default=0,
                    help="EnvPool worker threads (0 = EnvPool default)")
     p.add_argument("--sim-config-path", default=SIM_CONFIG)
+    p.add_argument("--base-height-scale", type=float, default=0.0,
+                   help="weight of the base-height term; 0.0 is the "
+                        "source recipe, which never enforces its own "
+                        "declared base_height_target")
+    p.add_argument("--base-height-target", type=float, default=0.25,
+                   help="target base height in m for that term")
     p.add_argument("--no-push", action="store_true",
                    help="DEVIATION: disable legged_gym push_robots")
     args = p.parse_args()
@@ -196,7 +202,9 @@ def main() -> None:
     train_cfg = json.loads(json.dumps(TRAIN_CFG))
     train_cfg["seed"] = args.seed
     train_cfg["runner"]["max_iterations"] = args.max_iterations
-    env_kwargs = {"pd_push_robots": not args.no_push}
+    env_kwargs = {"pd_push_robots": not args.no_push,
+                  "pd_base_height_scale": args.base_height_scale,
+                  "pd_base_height_target": args.base_height_target}
 
     set_seed(args.seed)
     write_provenance(run_dir, args, train_cfg, env_kwargs)
