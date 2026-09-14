@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Run one evaluation case for a Rudin-arm (rsl_rl) checkpoint, optionally on video.
+"""Run one diagnostic case for a Rudin-arm checkpoint, optionally on video.
 
 Policy side mirrors legged_gym's `play.py`: the actor's mean
 (`ActorCritic.act_inference`), observation noise, pushes and friction
 randomisation off. Evaluation side uses this project's shared protocol: a
 fixed forward command (0.8 m/s by default, heading held at 0), one impulse
 from `evaluations/core/forces.py` landed after three phase cycles, the
-simulator's nominal friction, and survival scored exactly as
-`evaluations/core/metrics.py` does -- body height inside [0.20, 0.75] m for the
-whole 5.5 s post-onset window. The env's own early termination is disabled so
-the trace and video always cover that window.
+simulator's nominal friction, and the shared scoring implementation. The
+intended final paper criterion is body height inside [0.20, 0.75] m for the
+whole 5.5 s post-onset window, but the current truth-enabled scorer instead
+uses contact/attitude thresholds; resolve the discrepancy in
+quadcontrol/docs/OPEN_ITEMS.md before final collection. The env's own early
+termination is disabled so the trace and video cover the scoring window.
 
 Run inside the container, one case per new output directory:
 

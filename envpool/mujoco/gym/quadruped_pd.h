@@ -1,6 +1,8 @@
-// End-to-end joint-position PD policy on the Unitree Go2: an exact recreation
-// of unitree_rl_gym's Go2 task (GO2RoughCfg over LeggedRobotCfg, commit
-// 276801e), driven through the quadcontrol runtime in its joint-PD pipeline.
+// End-to-end joint-position PD policy on the Unitree Go2. The environment ports
+// unitree_rl_gym's Go2 task (GO2RoughCfg over LeggedRobotCfg, commit 276801e)
+// into the quadcontrol runtime. The official paper recipe adds a documented
+// 500-iteration height-adjustment warm start; see
+// quadcontrol/docs/ICRA_PAPER_REFERENCE.md.
 //
 //   QuadrupedPD-v1   48 obs / 12 actions
 //
@@ -9,8 +11,8 @@
 // termination rule and reset distribution. It was previously a branch inside
 // quadruped_wbc.h and is a separate environment now.
 //
-// Every constant here is read from the recipe; see
-// quadcontrol/docs/RL_ONLY_BASELINE_PLAN.md for the deviation table.
+// Source-recipe constants and deliberate comparison-level changes are called
+// out at their definitions below.
 
 #ifndef ENVPOOL_MUJOCO_GYM_QUADRUPED_PD_H_
 #define ENVPOOL_MUJOCO_GYM_QUADRUPED_PD_H_

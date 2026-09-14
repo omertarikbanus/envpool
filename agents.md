@@ -26,12 +26,35 @@ without the others fails that test rather than silently truncating actions
 or observations. `test_parameter_parity.py` likewise pins `PDConstants`
 for `QuadrupedPD-v1`.
 
+## Current ICRA campaigns
+
+The authoritative paper-facing description is
+`../quadcontrol/docs/ICRA_PAPER_REFERENCE.md`.
+
+- **Proposed controller:** the current recipe is internally named Epsilon.
+  `run_ramp123.sh` trains seeds 0, 1, and 2 serially for 85M interactions each
+  with `envpool_train_ramp123.toml`. The cardinal velocity-change ceiling is
+  1.0 m/s through 8.1M steps, 2.0 m/s through 24.3M, then 3.0 m/s through 85M.
+  Learning rate is fixed at `1e-5`, `ent_coef` at `0.05`, and outputs are
+  `data/epsilon_s{0,1,2}/`.
+- **Provisional proposed-controller results:** `data/v9_explore/`. Its
+  five-stage lineage is development history, not the paper recipe. v10 is a
+  diagnostic extension of v9.
+- **Official Rudin baseline:**
+  `data/rudin_add_height/v1_seed{1,2,3}/model_500.pt`. Each is a 500-iteration
+  height-adjustment warm start from its matching 1500-iteration
+  `data/rudin_add` seed. The warm start is part of the official recipe; the
+  exact-recipe seeds alone are not the measured paper arm.
+
+Paper evaluations use an identical fixed ladder of instantaneous additive
+base-velocity changes and report m/s. Do not combine these with legacy
+force-pulse results reported in N.s.
+
 ## Training a new line
 
-`examples/train.py`'s argparse defaults are baked in per line (sim config
-path, model/tb save paths, LR settings) so training starts with a bare
-`python3 examples/train.py` -- no flags. Each new line (Gamma2, Gamma3, ...)
-means editing those defaults, not passing overrides at the command line.
+Historical lines baked argparse defaults into `examples/train.py`. Current
+paper campaigns use committed launchers that pass and record their non-config
+parameters. Do not edit global defaults to launch Epsilon.
 
 Launch pattern (real tmux session, not a throwaway one, so it survives like
 the user ran it themselves; never use `/tmp` for the launch script):
@@ -94,16 +117,16 @@ produce at the tested rates:
   (`explained_variance` stuck ~0.07-0.4 all of Gamma3's run at a flat,
   non-adaptive 1e-5).
 
-Gamma1 run 2's setting (`desired_kl=0.01`, `LR_MAX=5e-05`) is the one
-combination measured stable across a full 40M-step run and is the default
-to restore unless there's a specific reason to change it (see
-`quadcontrol/docs/archive/gamma-line-record.md` for what each line actually
-used and why; note the arms are now `kim`/`rudin`/`ours`).
+This callback belongs to the historical Gamma experiments. Epsilon disables
+adaptive LR and holds `1e-5` for the entire run. See
+`quadcontrol/docs/archive/gamma-line-record.md` for the older lines.
 
 ## Training artifacts are committed, not gitignored
 
-`data/<line>/` (checkpoints, `_vecnormalize.pkl`, tensorboard events,
-`train.log`) is tracked in git for active lines (e.g. `data/gamma5/`,
-`data/alpha/`, and `data/rudin_unitree/model_1500.pt`) -- this is a deliberate
-project convention for reproducibility, not an oversight. Don't add a blanket
-`data/*` gitignore rule (retired models live in gitignored `data/_archive/`).
+`data/<line>/` artifacts are committed selectively for reproducibility. The
+official Rudin arm retains each final source model, final height-adjusted
+model, manifest, console log, TensorBoard event, and source provenance;
+intermediate 50-iteration checkpoints are deliberately omitted. Each selected
+proposed-controller checkpoint must retain its matching `_vecnormalize.pkl`,
+manifest, logs, config/revision provenance, and evaluation cells. Do not add a
+blanket `data/*` ignore rule (retired models live in `data/_archive/`).

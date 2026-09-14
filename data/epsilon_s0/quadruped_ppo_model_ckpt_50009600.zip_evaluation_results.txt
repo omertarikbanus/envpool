@@ -1,0 +1,6 @@
+Evaluation Results for data/epsilon_s0/quadruped_ppo_model_ckpt_50009600.zip
+Environment: QuadrupedWBC-v0
+Episodes: 5
+Mean reward: 895.74 ± 23.73
+Episode rewards: [np.float32(886.975), np.float32(887.0484), np.float32(870.1137), np.float32(857.40063), np.float32(922.39264)]
+Episode lengths: [1000, 1000, 1000, 1000, 1000]

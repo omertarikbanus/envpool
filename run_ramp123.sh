@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# The ramp recipe: a v9-equivalent ours arm trained from scratch in ONE stage,
-# across N seeds, with an optional matched-envelope control.
+# Current proposed-controller training recipe: train from scratch in one
+# uninterrupted run per seed, with an optional matched-envelope diagnostic.
 #
 # WHAT THIS REPLACES. v9 came from a five-stage chain (card_a -> card_b ->
 # card_c -> card_f@1e-6 -> card_f@1e-5+ent0.05) whose ceilings, learning rate
@@ -16,19 +16,19 @@
 #      ent_coef is 0.05 throughout, so nothing co-varies with the ramp.
 #   3. n = 1 seed. v9 is --seed 0 and nothing else, which cannot be compared
 #      against the Rudin arm's three seeds; its fwd row alone has a 20.8-point
-#      seed spread. This trains SEEDS seeds and the ladders are scored as a
-#      mean with a seed SEM.
+#      seed spread. This trains SEEDS independent seeds so final reporting can
+#      preserve seed-level variability.
 #
 # The 1e-6 stage is dropped outright: it ended at approx_kl 0.0013 against a
 # 0.01 budget, so it barely moved the weights and is unattributable either way.
 #
-# ent_coef 0.05 from step 0 also turns v9's most interesting finding into a
-# testable one. Pair this with --control to get the matched-envelope arm, and
-# with ENT_COEF=0.01 to get the entropy ablation.
+# ent_coef is fixed at 0.05 from step 0. `--control` and ENT_COEF=0.01 remain
+# optional diagnostics; neither is a required paper ablation.
 #
-# COST. 54M steps at ~4890 fps is about 3h05m per seed, plus ~20 min env
-# construction and a ~50 min n=100 ladder. Trainings cannot overlap (~140 GB of
-# 251 GB each); the ladders can, and are run in parallel at the end.
+# Trainings cannot overlap because of their memory footprint. The post-training
+# ladders can run in parallel, but they are developmental range finders only;
+# final paper collection must use the same frozen grid and evaluation-seed
+# schedule for every controller.
 #
 # NO GIT. Nothing here commits, pushes, or stages anything.
 set -euo pipefail
@@ -40,14 +40,14 @@ CFGDIR=$QC/config/robots/sim
 SO=/usr/local/lib/python3.10/dist-packages/envpool/mujoco/mujoco_gym_envpool.so
 
 SEEDS="${SEEDS:-0 1 2}"
-STEPS="${STEPS:-54000000}"
+STEPS="${STEPS:-85000000}"
 NUM_ENVS="${NUM_ENVS:-256}"
 ENT_COEF="${ENT_COEF:-0.05}"
 LR="${LR:-1e-5}"
 RUNS="${RUNS:-100}"
 CONFIG="envpool_train_ramp123"
-TAG="${TAG:-ramp123}"
-if [ "${1:-}" = "--control" ]; then CONFIG="envpool_train_ramp111"; TAG="ramp111"; fi
+TAG="${TAG:-epsilon}"
+if [ "${1:-}" = "--control" ]; then CONFIG="envpool_train_ramp111"; TAG="epsilon_matched"; fi
 
 LOG=$EP/data/run_${TAG}.log
 log() { echo "[$(date -Is)] $*" | tee -a "$LOG"; }
@@ -64,6 +64,20 @@ PER_ENV=$(( STEPS / NUM_ENVS ))
 log "ramp clock: $STEPS steps / $NUM_ENVS envs = $PER_ENV steps per env"
 sed -i "s/^external_force_ramp_total_steps = .*/external_force_ramp_total_steps = $PER_ENV/" \
   "$CFGDIR/$CONFIG.toml"
+
+# The low stages are fixed in ABSOLUTE steps (user, 2026-09-14): 8.1M at 1.0 m/s
+# and 16.2M at 2.0, with every additional step going to the final 3.0 m/s
+# ceiling. Fractions are therefore derived from STEPS rather than hard-coded --
+# a hard-coded 0.0953/0.2859 is correct only at 85M, and changing STEPS without
+# recomputing them would silently stretch or crush the ramp-in.
+if [ "$CONFIG" = "envpool_train_ramp123" ]; then
+  FRACS=$(python3 -c "
+s=$STEPS
+print('[%.8f, %.8f]' % (8_100_000/s, 24_300_000/s))")
+  sed -i "s/^external_force_ramp_fractions = .*/external_force_ramp_fractions = $FRACS/" \
+    "$CFGDIR/$CONFIG.toml"
+  log "ramp stages: 1.0 m/s to 8.1M, 2.0 m/s to 24.3M, 3.0 m/s to ${STEPS}"
+fi
 grep -n "external_force_ramp" "$CFGDIR/$CONFIG.toml" | tee -a "$LOG"
 
 # kPRelMax is compiled in, so the binary identifies the recipe as much as the
@@ -101,12 +115,16 @@ for S in $SEEDS; do
 done
 
 check_so
-log "=== ALL SEEDS TRAINED -- laddering in parallel at n=$RUNS ==="
+log "=== ALL SEEDS TRAINED -- developmental range finding at n=$RUNS ==="
 
-# --- 2. ladder every seed concurrently ------------------------------------
+# --- 2. developmental range finding for every seed -------------------------
 # Safe together: --survival-only with a non-WBIC controller skips the
 # SimulatorLock (run.py:159) and the per-cell force stub travels in memory as
 # --stub-b64, not through a shared temp file.
+#
+# run_ours_ladder.py extends directions independently and uses evaluation seed
+# 42. Its results can select a common final ladder, but are not the final
+# controlled comparison described in ICRA_PAPER_REFERENCE.md.
 declare -A PIDS
 for S in $SEEDS; do
   RD=20260914_${TAG}_s${S}_n${RUNS}

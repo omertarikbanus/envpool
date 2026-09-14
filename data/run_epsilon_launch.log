@@ -1,0 +1,12 @@
+[2026-09-14T19:10:43+03:00] ramp clock: 85000000 steps / 256 envs = 332031 steps per env
+[2026-09-14T19:10:43+03:00] ramp stages: 1.0 m/s to 8.1M, 2.0 m/s to 24.3M, 3.0 m/s to 85000000
+23:# THE CLOCK IS CONTROL STEPS, PER ENVIRONMENT. external_force_ramp_total_steps
+46:external_force_ramp_enable = true
+48:external_force_ramp_ceilings = [1.0, 2.0, 3.0]
+58:external_force_ramp_fractions = [0.09529412, 0.28588235]
+61:external_force_ramp_total_steps = 332031
+[2026-09-14T19:10:44+03:00] simulator pinned at 431313637a168865c3577692a8aeb365d744dfa7a8d3c734910df403a2e3a71f
+[2026-09-14T19:10:44+03:00]   docs' v4-v10 reference (kPRelMax 0.30): a1238a65562aef1f391ab8af34fbeebf8d4c56abae9475ca293d7c73e3f2f6be
+[2026-09-14T19:10:44+03:00] === TRAIN epsilon seed 0: 85000000 steps @ 1e-5, ent_coef 0.05, config envpool_train_ramp123 ===
+[2026-09-14T22:24:14+03:00] === TRAIN epsilon seed 0 complete ===
+./run_ramp123.sh: line 116: ne: command not found

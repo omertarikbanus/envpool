@@ -1,0 +1,217 @@
+set -euo pipefail; \
+START_TIME=$(date +%s); \
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"cp{sys.version_info.major}{sys.version_info.minor}")'); \
+OS=$(uname); \
+ARCH=$(uname -m); \
+if [ "$OS" = "Darwin" ]; then \
+  PLATFORM="macosx_$(sw_vers -productVersion | cut -d. -f1)_0_x86_64"; \
+  if [ "$ARCH" = "arm64" ]; then \
+    PLATFORM="macosx_$(sw_vers -productVersion | cut -d. -f1)_0_arm64"; \
+  fi; \
+else \
+  if [ "$ARCH" = "x86_64" ]; then \
+    PLATFORM="linux_x86_64"; \
+  else \
+    PLATFORM="linux_${ARCH}"; \
+  fi; \
+fi; \
+echo "Detected OS: $OS"; \
+echo "Detected Architecture: $ARCH"; \
+echo "Detected Python version: $PYTHON_VERSION"; \
+echo "Detected Platform: $PLATFORM"; \
+export USE_BAZEL_VERSION=6.5.0; \
+echo "Building EnvPool wheel..."; \
+if ! bazel run --config=release //:setup -- bdist_wheel > data/current/log.txt; then \
+  echo "Error: Bazel build failed. Check log.txt for details."; \
+  exit 1; \
+fi; \
+echo "Build completed. Check log.txt for details."; \
+WHEEL_PATH=$(find bazel-bin/setup.runfiles/envpool/dist -name "envpool-*-${PYTHON_VERSION}-${PYTHON_VERSION}-${PLATFORM}.whl" 2>/dev/null | head -n 1); \
+if [ -z "$WHEEL_PATH" ]; then \
+  echo "Error: Could not find built wheel file."; \
+  echo "Available wheels:"; \
+  find bazel-bin/setup.runfiles/envpool/dist -name "*.whl" 2>/dev/null || true; \
+  exit 1; \
+fi; \
+echo "Installing wheel: $WHEEL_PATH"; \
+pip3 uninstall envpool -y || true; \
+if ! pip3 install "$WHEEL_PATH" -v; then \
+  echo "Error: Failed to install wheel"; \
+  exit 1; \
+fi; \
+END_TIME=$(date +%s); \
+ELAPSED=$((END_TIME - $START_TIME)); \
+echo "Total build time: $((ELAPSED/3600))h $(((ELAPSED%3600)/60))m $((ELAPSED%60))s"; \
+echo "Running example..."; \
+python3 examples/env_step.py; \
+END_TIME=$(date +%s); \
+ELAPSED=$((END_TIME - $START_TIME)); \
+echo "Total execution time: $((ELAPSED/3600))h $(((ELAPSED%3600)/60))m $((ELAPSED%60))s"
+Detected OS: Linux
+Detected Architecture: x86_64
+Detected Python version: cp310
+Detected Platform: linux_x86_64
+Building EnvPool wheel...
+Starting local Bazel server and connecting to it...
+Loading: 
+Loading: 
+Loading: 0 packages loaded
+Analyzing: target //:setup (1 packages loaded, 0 targets configured)
+Analyzing: target //:setup (103 packages loaded, 22862 targets configured)
+INFO: Analyzed target //:setup (103 packages loaded, 22862 targets configured).
+INFO: Found 1 target...
+[1 / 338] [Prepa] BazelWorkspaceStatusAction stable-status.txt
+[1,599 / 1,602] Compiling src/hardware/mujocohw/MdlSimDriver.cc; 1s processwrapper-sandbox ... (2 actions running)
+[1,600 / 1,602] Compiling src/hardware/mujocohw/MdlSimDriver.cc; 2s processwrapper-sandbox
+INFO: From Compiling src/hardware/mujocohw/MdlSimDriver.cc:
+external/quadcontrol/src/hardware/mujocohw/MdlSimDriver.cc: In member function 'void MdlSimDriver::_createSimulation()':
+external/quadcontrol/src/hardware/mujocohw/MdlSimDriver.cc:855:28: warning: comparison of integer expressions of different signedness: 'size_t' {aka 'long unsigned int'} and 'int' [-Wsign-compare]
+  855 |       for (size_t i = 0; i < ramp_ceilings.size(); ++i) {
+      |                          ~~^~~~~~~~~~~~~~~~~~~~~~
+external/quadcontrol/src/hardware/mujocohw/MdlSimDriver.cc:870:37: warning: comparison of integer expressions of different signedness: 'int' and 'std::vector<double>::size_type' {aka 'long unsigned int'} [-Wsign-compare]
+  870 |       if (ramp_fractions.size() + 1 != _external_force_ramp_ceilings.size()) {
+      |           ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+external/quadcontrol/src/hardware/mujocohw/MdlSimDriver.cc:877:28: warning: comparison of integer expressions of different signedness: 'size_t' {aka 'long unsigned int'} and 'int' [-Wsign-compare]
+  877 |       for (size_t i = 0; i < ramp_fractions.size(); ++i) {
+      |                          ~~^~~~~~~~~~~~~~~~~~~~~~~
+[1,601 / 1,602] Linking envpool/mujoco/mujoco_gym_envpool.so; 0s processwrapper-sandbox
+Target //:setup up-to-date:
+  bazel-bin/setup
+INFO: Elapsed time: 7.687s, Critical Path: 3.61s
+INFO: 8 processes: 1 internal, 7 processwrapper-sandbox.
+INFO: Build completed successfully, 8 total actions
+INFO: Running command line: bazel-bin/setup bdist_wheel
+/root/.cache/bazel/_bazel_root/142d0893972e3373870996705499eece/execroot/envpool/bazel-out/k8-fastbuild/bin/setup.runfiles/pip_requirements/pypi__wheel/site-packages/wheel/bdist_wheel.py:4: FutureWarning: The 'wheel' package is no longer the canonical location of the 'bdist_wheel' command, and will be removed in a future release. Please update to setuptools v70.1 or later which contains an integrated version of this command.
+  warn(
+/usr/lib/python3/dist-packages/setuptools/command/install.py:34: SetuptoolsDeprecationWarning: setup.py install is deprecated. Use build and pip and other standards-based tools.
+  warnings.warn(
+Build completed. Check log.txt for details.
+Installing wheel: bazel-bin/setup.runfiles/envpool/dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl
+WARNING: The directory '/root/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+Found existing installation: envpool 0.8.4
+Uninstalling envpool-0.8.4:
+  Successfully uninstalled envpool-0.8.4
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Using pip 22.0.2 from /usr/lib/python3/dist-packages/pip (python 3.10)
+WARNING: The directory '/root/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.
+Processing ./bazel-bin/setup.runfiles/envpool/dist/envpool-0.8.4-cp310-cp310-linux_x86_64.whl
+Requirement already satisfied: gymnasium>=0.26 in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (1.2.3)
+Requirement already satisfied: optree>=0.6.0 in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (0.20.0)
+Requirement already satisfied: gym>=0.18 in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (0.26.2)
+Requirement already satisfied: packaging in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (26.0)
+Requirement already satisfied: types-protobuf>=3.17.3 in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (7.35.1.20260906)
+Requirement already satisfied: numpy>=1.19 in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (2.2.6)
+Requirement already satisfied: typing-extensions in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (4.15.0)
+Requirement already satisfied: dm-env>=1.4 in /usr/local/lib/python3.10/dist-packages (from envpool==0.8.4) (1.6)
+Requirement already satisfied: absl-py in /usr/local/lib/python3.10/dist-packages (from dm-env>=1.4->envpool==0.8.4) (2.4.0)
+Requirement already satisfied: dm-tree in /usr/local/lib/python3.10/dist-packages (from dm-env>=1.4->envpool==0.8.4) (0.1.10)
+Requirement already satisfied: gym-notices>=0.0.4 in /usr/local/lib/python3.10/dist-packages (from gym>=0.18->envpool==0.8.4) (0.1.0)
+Requirement already satisfied: cloudpickle>=1.2.0 in /usr/local/lib/python3.10/dist-packages (from gym>=0.18->envpool==0.8.4) (3.1.2)
+Requirement already satisfied: farama-notifications>=0.0.1 in /usr/local/lib/python3.10/dist-packages (from gymnasium>=0.26->envpool==0.8.4) (0.0.4)
+Requirement already satisfied: wrapt>=1.11.2 in /usr/local/lib/python3.10/dist-packages (from dm-tree->dm-env>=1.4->envpool==0.8.4) (2.4.0)
+Requirement already satisfied: attrs>=18.2.0 in /usr/local/lib/python3.10/dist-packages (from dm-tree->dm-env>=1.4->envpool==0.8.4) (26.1.0)
+Installing collected packages: envpool
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Successfully installed envpool-0.8.4
+Total build time: 0h 0m 12s
+Running example...
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+[QuadrupedWBCEnv] unhealthy terminate at step=81 z=0.27925 rpy=[-0.85692, -0.639407, -0.823106] v_body=[1.30778, -1.32744, 0.461515]
+initHardware(SIM): Initializing hardware components...
+LogServer: New client 127.0.0.1:54866.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+LogServer: 127.0.0.1:54866 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:43834.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299305 rpy=[-0.0136179, 0.0233121, -0.0184641]
+LogServer: 127.0.0.1:43834 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:49682.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299589 rpy=[-0.0134324, 0.0273538, -0.0183116]
+LogServer: 127.0.0.1:49682 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:47222.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299317 rpy=[-0.0142516, 0.0235127, -0.0184207]
+[QuadrupedWBCEnv] unhealthy terminate at step=82 z=0.240518 rpy=[0.301887, -1.05002, -1.60973] v_body=[0.635204, -1.32515, 0.767386]
+LogServer: 127.0.0.1:47222 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:44661.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299336 rpy=[-0.0136337, 0.0236758, -0.0183844]
+LogServer: 127.0.0.1:44661 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:53418.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299291 rpy=[-0.0127383, 0.0230351, -0.0185474]
+[QuadrupedWBCEnv] unhealthy terminate at step=62 z=0.288215 rpy=[-0.834134, 0.0772117, -1.51592] v_body=[-0.600756, -1.74096, -0.817492]
+LogServer: 127.0.0.1:53418 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:55900.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299308 rpy=[-0.0136822, 0.0233606, -0.0184433]
+[QuadrupedWBCEnv] unhealthy terminate at step=80 z=0.267904 rpy=[-0.819619, -0.597774, -1.08066] v_body=[0.6977, -1.60511, 0.864855]
+LogServer: 127.0.0.1:55900 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:58860.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299315 rpy=[-0.0128876, 0.0232928, -0.018503]
+LogServer: 127.0.0.1:58860 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:60037.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299285 rpy=[-0.0123144, 0.0229281, -0.0185756]
+[QuadrupedWBCEnv] unhealthy terminate at step=110 z=0.231069 rpy=[-0.824929, -0.523848, -0.861627] v_body=[0.655994, -0.365538, 0.438675]
+LogServer: 127.0.0.1:60037 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:55438.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.29932 rpy=[-0.0143254, 0.023504, -0.0184191]
+[QuadrupedWBCEnv] unhealthy terminate at step=114 z=0.17004 rpy=[-0.812838, 0.0760192, -0.168065] v_body=[0.760244, 0.413228, 0.00217357]
+LogServer: 127.0.0.1:55438 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:41418.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299312 rpy=[-0.0138524, 0.0233746, -0.0184485]
+[QuadrupedWBCEnv] unhealthy terminate at step=127 z=0.299117 rpy=[-0.828912, -0.554742, -0.948771] v_body=[0.819766, -0.551624, -0.414502]
+LogServer: 127.0.0.1:41418 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:34782.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299302 rpy=[-0.0133993, 0.023185, -0.0184879]
+[QuadrupedWBCEnv] unhealthy terminate at step=115 z=0.25562 rpy=[-0.836631, -0.183979, -0.356355] v_body=[1.97364, 0.0587565, -0.79318]
+LogServer: 127.0.0.1:34782 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:56514.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299326 rpy=[-0.014083, 0.0234836, -0.0184471]
+[QuadrupedWBCEnv] unhealthy terminate at step=164 z=0.277772 rpy=[0.845932, -0.0939587, -0.303273] v_body=[0.520257, -1.16609, -0.63491]
+LogServer: 127.0.0.1:56514 disconnected.
+LogJob(0x775d180020e0) Finished
+LogServer: New client 127.0.0.1:45933.
+WriteCSV: Creating CSV writer for file </app/envpool/data/current/logs.csv>
+LogServer: New job 0x775d180020e0 period = 1  length = 0
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.299289 rpy=[-0.0123574, 0.022914, -0.0185327]
+[QuadrupedWBCEnv] unhealthy terminate at step=46 z=0.372475 rpy=[-0.85941, 0.296816, -0.712878] v_body=[1.27607, -0.764807, -0.739895]
+double free or corruption (fasttop)
+/bin/bash: line 49: 2681089 Aborted                 (core dumped) python3 examples/env_step.py
+make: *** [Makefile:334: run] Error 134

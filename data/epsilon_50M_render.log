@@ -1,0 +1,83 @@
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+Running evaluation script...
+Starting PPO Model Evaluation...
+Parsing command-line arguments for evaluation...
+PPO Model Evaluation Script
+==============================
+initHardware(SIM): Initializing hardware components...
+[0;33m[WW] ModuleManager: CHANGING UPDATE PERIOD: ![0m
+/usr/local/lib/python3.10/dist-packages/stable_baselines3/common/vec_env/base_vec_env.py:78: UserWarning: The `render_mode` attribute is not defined in your environment. It will be set to None.
+  warnings.warn("The `render_mode` attribute is not defined in your environment. It will be set to None.")
+Loading model from: data/epsilon_s0/quadruped_ppo_model_ckpt_50009600.zip
+Loading VecNormalize statistics from: data/epsilon_s0/quadruped_ppo_model_ckpt_50009600_vecnormalize.pkl
+VecNormalize loaded and configured for evaluation.
+Model loaded successfully.
+
+Starting detailed evaluation
+Number of episodes: 5
+Deterministic actions: True
+==================================================
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.329151 rpy=[-0.014669, 0.0234666, -0.0184761]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.318887 rpy=[-0.013817, 0.0218729, -0.0184811]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.287263 rpy=[-0.0133991, 0.0257444, -0.0179473]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.301546 rpy=[-0.0149131, 0.0252366, -0.018593]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.308999 rpy=[-0.0119704, 0.0228623, -0.0188592]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.270827 rpy=[-0.0130188, 0.0253389, -0.017706]
+Running detailed evaluation...
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.310608 rpy=[-0.0114918, 0.0223953, -0.018926]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.271405 rpy=[-0.0121572, 0.024513, -0.017739]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.284381 rpy=[-0.0145609, 0.0241925, -0.0180133]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.325383 rpy=[-0.0141832, 0.0222471, -0.0187822]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.31609 rpy=[-0.014266, 0.0228258, -0.0183939]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.322731 rpy=[-0.0161371, 0.022325, -0.0184122]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.308202 rpy=[-0.0156073, 0.0220237, -0.0184894]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.290907 rpy=[-0.0128036, 0.0245425, -0.0180863]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.278371 rpy=[-0.0121126, 0.0254549, -0.0180488]
+Resetting the environment...
+[QuadrupedWBCEnv] Reset state env_id=0 z=0.324711 rpy=[-0.0121582, 0.022153, -0.0187227]
+
+============================================================
+EVALUATION RESULTS
+============================================================
+Environment: QuadrupedWBC-v0
+Model: data/epsilon_s0/quadruped_ppo_model_ckpt_50009600.zip
+Episodes evaluated: 5
+Evaluation time: 408.20 seconds
+
+REWARD STATISTICS:
+  Mean reward:   895.74 ±  23.73
+  Min reward:    857.40
+  Max reward:    922.39
+  Median:        886.97
+
+EPISODE LENGTH STATISTICS:
+  Mean length:   1000.0 ±    0.0
+  Min length:      1000
+  Max length:      1000
+  Median:        1000.0
+
+SUCCESS RATE (reward > 0): 100.0% (5/5)
+============================================================
+
+Results saved to: data/epsilon_s0/quadruped_ppo_model_ckpt_50009600.zip_evaluation_results.txt
+
+Results saved to: data/epsilon_s0/quadruped_ppo_model_ckpt_50009600.zip_evaluation_results.txt
+cleanupHardware(SIM): Cleaning up hardware components...

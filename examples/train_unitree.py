@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-"""Train the Rudin arm: unitree_rl_gym's Go2 recipe, exactly, on QuadrupedPD-v1.
+"""Train a Rudin-arm stage on QuadrupedPD-v1.
 
 Environment: `QuadrupedPD-v1` reproduces `LeggedRobot` + `GO2RoughCfg`
 (unitree_rl_gym commit 276801e). Algorithm: rsl_rl v1.0.2, vendored unmodified
 under `examples/third_party/rsl_rl`. The train config below is
 `GO2RoughCfgPPO` over `LeggedRobotCfgPPO`, copied value for value.
+
+The official paper recipe is staged: 1500 source-recipe iterations, followed
+by a 500-iteration warm start from the matching seed with
+`--base-height-scale -30 --base-height-target 0.30`. All arms use the shared
+Go2 MJCF actuator limits. See quadcontrol/docs/ICRA_PAPER_REFERENCE.md.
 
 Every run directory is self-describing: the manifest records both repositories'
 HEAD, their uncommitted diffs (saved beside it), the envpool shared-object hash
