@@ -1,0 +1,6 @@
+=== waiting for the v1 evaluation ladders to finish === 2026-09-13T23:01:54+03:00
+=== evaluation driver has exited === 2026-09-13T23:21:54+03:00
+=== so before: 81f6ffcd15e0e9793bf0793078520d42e2774765b269ef79a43a073975018b67 === 2026-09-13T23:21:54+03:00
+=== so after:  a1238a65562aef1f391ab8af34fbeebf8d4c56abae9475ca293d7c73e3f2f6be === 2026-09-13T23:22:10+03:00
+=== seeding ./data/v2_ours_wide from v1_ours_add_stage3 === 2026-09-13T23:22:10+03:00
+=== v2 ours-wide: 10000000 steps @ 1e-5 -> ./data/v2_ours_wide === 2026-09-13T23:22:10+03:00

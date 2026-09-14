@@ -1,0 +1,2 @@
+[2026-09-14T06:10:15+03:00] === v5 start; continuing v4_card_b (54.28) at kPRelMax 0.30; v1 baseline 54.93 ===
+[2026-09-14T06:10:15+03:00] --- cycle 1: cfg=b, 14000000 steps @ 1e-5, ./data/v4_card_b -> ./data/v5_c1 ---

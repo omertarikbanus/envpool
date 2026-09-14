@@ -1,0 +1,1 @@
+Logging to ./data/v6_d2/tb

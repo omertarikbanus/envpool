@@ -1,0 +1,14 @@
+[2026-09-14T06:23:47+03:00] === v5 start; continuing v4_card_b (54.28) at kPRelMax 0.30; v1 baseline 54.93 ===
+[2026-09-14T06:23:47+03:00] --- cycle 1: cfg=c, 14000000 steps @ 1e-5, ./data/v4_card_b -> ./data/v5_c1 ---
+[2026-09-14T07:13:45+03:00] cycle 1 training tail: fall=0.1380 rew=649.0
+[2026-09-14T07:33:26+03:00] cycle 1 SCORE=56.67  (best 54.28, v1 54.93)
+[2026-09-14T07:33:26+03:00] improved 54.28 -> 56.67; continuing on cfg=c
+[2026-09-14T07:33:26+03:00] --- cycle 2: cfg=c, 14000000 steps @ 1e-5, ./data/v5_c1 -> ./data/v5_c2 ---
+[2026-09-14T08:23:21+03:00] cycle 2 training tail: fall=0.0553 rew=696.8
+[2026-09-14T08:43:10+03:00] cycle 2 SCORE=56.11  (best 56.67, v1 54.93)
+[2026-09-14T08:43:10+03:00] no improvement on dense pulses; switching to sparse-pulse cfg=bs from the same parent
+[2026-09-14T08:43:10+03:00] --- cycle 3: cfg=cs, 14000000 steps @ 1e-5, ./data/v5_c1 -> ./data/v5_c3 ---
+[2026-09-14T09:32:43+03:00] cycle 3 training tail: fall=0.0467 rew=725.4
+[2026-09-14T09:52:35+03:00] cycle 3 SCORE=54.56  (best 56.67, v1 54.93)
+[2026-09-14T09:52:35+03:00] no improvement on cfg=cs either (stall 2)
+[2026-09-14T09:52:35+03:00] --- cycle 4: cfg=cs, 14000000 steps @ 1e-5, ./data/v5_c1 -> ./data/v5_c4 ---

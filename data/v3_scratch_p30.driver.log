@@ -1,0 +1,17 @@
+[2026-09-14T00:06:15+03:00] waiting for the v2 campaign's cycle-1 ladder to finish
+[2026-09-14T00:11:15+03:00] cycle 1 scored: [2026-09-14T00:11:08+03:00] cycle 1 SCORE=53.72 (best so far -1)
+[2026-09-14T00:11:22+03:00] v2 campaign stood down (its data is kept)
+[2026-09-14T00:11:22+03:00] === 20000000 steps @ 1e-5 -> ./data/v3_p30_s1 ===
+[2026-09-14T01:22:00+03:00] === stage complete: ./data/v3_p30_s1 ===
+[2026-09-14T01:22:00+03:00] evaluating data/v3_p30_s1 -> results/20260914_v3_p30_s1_n30
+run_dir 20260914_v3_p30_s1_n30
+  fwd      115/300    38.3%
+  back     201/300    67.0%
+  left     106/300    35.3%
+  right    115/300    38.3%
+  up       132/300    44.0%
+  down     263/300    87.7%
+  noforce 30/30
+SCORE 932/1800 51.78
+[2026-09-14T01:41:45+03:00] seeding ./data/v3_p30_s2 from ./data/v3_p30_s1
+[2026-09-14T01:41:45+03:00] === 10000000 steps @ 1e-6 -> ./data/v3_p30_s2 ===

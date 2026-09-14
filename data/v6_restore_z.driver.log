@@ -1,0 +1,6 @@
+[2026-09-14T10:33:00+03:00] === v6 start; continuing v5_c1 (56.67) with z ceilings restored: up 2.5, down 4.5 ===
+[2026-09-14T10:33:00+03:00] --- cycle 1: cfg=d, 14000000 steps @ 1e-5, ./data/v5_c1 -> ./data/v6_d1 ---
+[2026-09-14T11:23:29+03:00] cycle 1 training tail: fall=0.1139 rew=660.5
+[2026-09-14T11:43:23+03:00] cycle 1 SCORE=55.50  (best 56.67, v1 54.93)
+[2026-09-14T11:43:23+03:00] no improvement on dense pulses; switching to sparse-pulse cfg=bs from the same parent
+[2026-09-14T11:43:23+03:00] --- cycle 2: cfg=ds, 14000000 steps @ 1e-5, ./data/v5_c1 -> ./data/v6_d2 ---

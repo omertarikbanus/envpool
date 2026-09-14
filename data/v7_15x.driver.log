@@ -1,0 +1,5 @@
+[2026-09-14T11:30:25+03:00] waiting for the v6 cycle-1 ladder before starting (same parent, clean A/B)
+[2026-09-14T11:43:25+03:00] v6 cycle 1: [2026-09-14T11:43:23+03:00] cycle 1 SCORE=55.50  (best 56.67, v1 54.93)
+[2026-09-14T11:43:32+03:00] v6 stood down after its cycle-1 ladder (data kept)
+[2026-09-14T11:43:32+03:00] === v7 start; 1.5x-cliff ceilings [4.0 6.3 3.5 3.5 3.8 6.8] from v5_c1 (56.67) ===
+[2026-09-14T11:43:32+03:00] --- cycle 1: cfg=e, 14000000 steps @ 1e-5, ./data/v5_c1 -> ./data/v7_e1 ---

@@ -1,0 +1,29 @@
+[2026-09-14T00:32:53+03:00] waiting for the v3 stage-1 ladder to finish
+[2026-09-14T01:41:53+03:00] v3 stage-1 result: SCORE 932/1800 51.78
+[2026-09-14T01:42:00+03:00] v3 stood down after its stage-1 ladder (all data kept)
+[2026-09-14T01:42:00+03:00] === 8000000 steps @ 1e-5, cardinal phase a -> ./data/v4_card_a ===
+[2026-09-14T02:11:31+03:00] === stage complete: ./data/v4_card_a ===
+[2026-09-14T02:11:31+03:00] evaluating data/v4_card_a -> results/20260914_v4_card_a_n30
+run_dir 20260914_v4_card_a_n30
+  fwd      131/300    43.7%
+  back     208/300    69.3%
+  left      98/300    32.7%
+  right    107/300    35.7%
+  up       132/300    44.0%
+  down     266/300    88.7%
+  noforce 30/30
+SCORE 942/1800 52.33
+[2026-09-14T02:31:12+03:00] seeding ./data/v4_card_b from ./data/v4_card_a
+[2026-09-14T02:31:12+03:00] === 14000000 steps @ 1e-5, cardinal phase b -> ./data/v4_card_b ===
+[2026-09-14T03:21:51+03:00] === stage complete: ./data/v4_card_b ===
+[2026-09-14T03:21:51+03:00] evaluating data/v4_card_b -> results/20260914_v4_card_b_n30
+run_dir 20260914_v4_card_b_n30
+  fwd      141/300    47.0%
+  back     221/300    73.7%
+  left     109/300    36.3%
+  right    105/300    35.0%
+  up       131/300    43.7%
+  down     270/300    90.0%
+  noforce 30/30
+SCORE 977/1800 54.28
+[2026-09-14T03:41:31+03:00] === v4 cardinal COMPLETE ===

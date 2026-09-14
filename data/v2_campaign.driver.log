@@ -1,0 +1,7 @@
+[2026-09-13T23:31:48+03:00] === v2 campaign start; budget 6h; baseline v1 n=100 score 54.93 ===
+[2026-09-13T23:31:48+03:00] --- cycle 1: width w1, 5000000 steps @ 1e-5, data/v1_ours_add_stage3 -> data/v2_c01 ---
+[2026-09-13T23:51:19+03:00] cycle 1 training tail: fall=0.0741 rew=732.7
+[2026-09-13T23:51:19+03:00] cycle 1 evaluating -> results/20260914_v2_c01_n30
+[2026-09-14T00:11:08+03:00] cycle 1 SCORE=53.72 (best so far -1)
+[2026-09-14T00:11:09+03:00] training fall 0.0741 < 0.25 -- widening to w2
+[2026-09-14T00:11:09+03:00] --- cycle 2: width w2, 5000000 steps @ 1e-5, data/v2_c01 -> data/v2_c02 ---
