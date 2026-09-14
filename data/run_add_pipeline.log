@@ -1,0 +1,6 @@
+[2026-09-13T14:50:01+03:00] so before: aa8f7f267756fec4d7911f8d975e968d49adc31d55a9bcf79b05cf9966797f0b
+[2026-09-13T14:50:01+03:00] rebuilding (make run; its env_step.py smoke aborts on a known WBC crash)
+[2026-09-13T14:51:01+03:00] so after: 61a45473bf970589b13faa2a93564e79e4579c22987d8ad45b86403fb1f66f14
+[2026-09-13T14:51:01+03:00] recipe check
+[2026-09-13T14:52:25+03:00] recipe check passed
+[2026-09-13T14:52:25+03:00] === exact arm seed 1 (add pushes), 1500 iterations ===

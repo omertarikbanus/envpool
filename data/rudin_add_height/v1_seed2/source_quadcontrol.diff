@@ -1,0 +1,67 @@
+diff --git a/evaluations/run_one_ladder.py b/evaluations/run_one_ladder.py
+index 5219575..938f99c 100644
+--- a/evaluations/run_one_ladder.py
++++ b/evaluations/run_one_ladder.py
+@@ -38,7 +38,7 @@ CEILING = 10.0           # simulator safety ceiling
+ DIRS = ("fwd", "back", "left", "right", "up", "down")
+ COMMON = ["--controllers", "rudin", "--disturbance", "velocity",
+           "--push-semantics", "add", "--force-frame", "body_latched_at_onset",
+-          "--seed", "42", "--runs", "100", "--survival-only"]
++          "--seed", "42", "--survival-only"]
+ 
+ 
+ def log(msg: str) -> None:
+@@ -47,19 +47,31 @@ def log(msg: str) -> None:
+ 
+ def sweep(seed: int, dirs: str, rungs: str, *extra: str) -> None:
+     """One run.py sweep. Retries while the simulator lock is held elsewhere."""
+-    cmd = [sys.executable, "run.py", "sweep", *COMMON,
++    cmd = [sys.executable, "run.py", "sweep", *COMMON, "--runs", str(RUNS),
+            "--rl-model-rudin", MODEL,
+            "--dirs", dirs, "--impulses", rungs,
+            "--run-dir", RUN_DIR, *extra]
+     while True:
+         r = subprocess.run(cmd, cwd=HERE, capture_output=True, text=True)
+         if r.returncode == 0:
++            sweep._retried = False
+             return
+         blob = (r.stdout or "") + (r.stderr or "")
+         if "LockBusy" in blob or "simulator lock" in blob.lower():
+             log("simulator lock busy; waiting 120 s")
+             time.sleep(120)
+             continue
++        # One flaky cell must not kill a whole campaign. The evaluator can
++        # die in native teardown after writing its data -- seen once at 18:11
++        # today, minutes after a 140 GB training process exited and while the
++        # kernel was still reclaiming that memory; the same cell passed first
++        # try once memory was free. Pause, retry once, then give up.
++        if not getattr(sweep, "_retried", False):
++            sweep._retried = True
++            log(f"cell failed (rc={r.returncode}); pausing 60 s and retrying once")
++            time.sleep(60)
++            continue
++        sweep._retried = False
+         log(f"FAILED rc={r.returncode}: {' '.join(cmd)}")
+         log(blob[-2000:])
+         raise SystemExit(1)
+@@ -80,11 +92,17 @@ def main() -> None:
+     ap = argparse.ArgumentParser()
+     ap.add_argument("--model", required=True, help="container path to the checkpoint")
+     ap.add_argument("--run-dir", required=True, help="results folder name")
++    ap.add_argument("--runs", type=int, default=100,
++                    help="episodes per cell. The harness cannot append to a "
++                         "cell (survival-only pins episode-offset to 0 and "
++                         "rewrites summary.csv), so a larger value re-runs the "
++                         "cell; per-episode seeds are seed+index, so the larger "
++                         "sample contains the smaller one as a prefix.")
+     a = ap.parse_args()
+-    global MODEL, RUN_DIR
+-    MODEL, RUN_DIR = a.model, a.run_dir
++    global MODEL, RUN_DIR, RUNS
++    MODEL, RUN_DIR, RUNS = a.model, a.run_dir, a.runs
+ 
+-    log(f"=== ladder for {a.model} -> {a.run_dir}")
++    log(f"=== ladder for {a.model} -> {a.run_dir}  ({a.runs} runs/cell)")
+     log(f"=== base sweep {BASE_RUNGS} (with the no-kick control cell)")
+     sweep(0, ",".join(DIRS), BASE_RUNGS, "--skip-existing")
+     log(f"=== extension {EXT_RUNGS}")

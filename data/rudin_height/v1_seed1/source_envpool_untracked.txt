@@ -1,0 +1,4 @@
+data/height_make_run.log
+data/height_recipe_check.log
+data/rudin_height/v1_seed1/console.log
+data/run_height_chain.log

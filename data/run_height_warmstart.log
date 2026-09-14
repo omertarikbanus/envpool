@@ -1,0 +1,11 @@
+[2026-09-13T11:18:04+03:00] === height-ws seed 1: warm start from data/rudin_unitree/v1_seed1/model_1500.pt, 500 iters, scale -30 target 0.30 ===
+[2026-09-13T12:27:25+03:00] === height-ws seed 1 complete ===
+[2026-09-13T12:27:40+03:00] seed 1 measured: mean_z / mean_vx = 0.304 0.834   (exact arm: 0.131 / 0.781; target 0.30)
+[2026-09-13T12:27:40+03:00] gate passed; continuing with seeds 2 and 3
+[2026-09-13T12:27:40+03:00] === height-ws seed 2: warm start from data/rudin_unitree/v1_seed2/model_1500.pt, 500 iters, scale -30 target 0.30 ===
+[2026-09-13T13:38:06+03:00] === height-ws seed 2 complete ===
+[2026-09-13T13:38:21+03:00] seed 2 measured: mean_z / mean_vx = 0.300 0.786   (exact arm: 0.131 / 0.781; target 0.30)
+[2026-09-13T13:38:21+03:00] === height-ws seed 3: warm start from data/rudin_unitree/v1_seed3/model_1500.pt, 500 iters, scale -30 target 0.30 ===
+[2026-09-13T14:47:48+03:00] === height-ws seed 3 complete ===
+[2026-09-13T14:48:03+03:00] seed 3 measured: mean_z / mean_vx = 0.288 0.800   (exact arm: 0.131 / 0.781; target 0.30)
+[2026-09-13T14:48:03+03:00] === HEIGHT ARM (warm start) COMPLETE, 3 seeds ===

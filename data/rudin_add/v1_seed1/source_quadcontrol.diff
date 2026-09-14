@@ -1,0 +1,128 @@
+diff --git a/config/robots/sim/envpool_train_v1.toml b/config/robots/sim/envpool_train_v1.toml
+index db4d7df..d2c6856 100644
+--- a/config/robots/sim/envpool_train_v1.toml
++++ b/config/robots/sim/envpool_train_v1.toml
+@@ -11,5 +11,5 @@
+ 
+ [simulation]
+ external_force_type = "velocity"
+-external_push_semantics = "set"
++external_push_semantics = "add"
+ external_force_max = [1.0, 1.0, 0.0]
+diff --git a/include/hardware/SimHW.hh b/include/hardware/SimHW.hh
+index c6875a1..1ceff22 100644
+--- a/include/hardware/SimHW.hh
++++ b/include/hardware/SimHW.hh
+@@ -52,7 +52,7 @@ SimRobotState simHWGetRobotState(MdlSimDriver* driver);
+ // kinematics and refresh the driver's sensor caches.
+ void simHWSetRobotState(MdlSimDriver* driver, const SimRobotState& state);
+ // legged_gym's push: overwrite only the base's world-frame x/y velocity.
+-void simHWSetBaseLinearVelocityXY(MdlSimDriver* driver, double vx, double vy);
++void simHWAddBaseLinearVelocityXY(MdlSimDriver* driver, double vx, double vy);
+ // Sliding friction of every geom, floor included. MuJoCo combines a contact
+ // pair's friction with max(), so this sets every contact's coefficient.
+ void simHWSetFriction(MdlSimDriver* driver, double mu);
+diff --git a/include/supervisor/RLPipelineRuntime.hh b/include/supervisor/RLPipelineRuntime.hh
+index d2031eb..ca968af 100644
+--- a/include/supervisor/RLPipelineRuntime.hh
++++ b/include/supervisor/RLPipelineRuntime.hh
+@@ -125,7 +125,7 @@ class RLPipelineRuntime {
+   // Gym's root/DOF-state tensors do) rather than through the estimator.
+   SimRobotState robotState() const;
+   void setRobotState(const SimRobotState& state);
+-  void setBaseLinearVelocityXY(double vx, double vy);
++  void addBaseLinearVelocityXY(double vx, double vy);
+   void setFriction(double mu);
+   double groundFriction() const;
+   double baseContactForceNorm() const;
+diff --git a/src/core/RLPipelineRuntime.cc b/src/core/RLPipelineRuntime.cc
+index a3460d4..67f5314 100644
+--- a/src/core/RLPipelineRuntime.cc
++++ b/src/core/RLPipelineRuntime.cc
+@@ -586,8 +586,8 @@ void RLPipelineRuntime::setRobotState(const SimRobotState& state) {
+   simHWSetRobotState(sim_driver_, state);
+ }
+ 
+-void RLPipelineRuntime::setBaseLinearVelocityXY(double vx, double vy) {
+-  simHWSetBaseLinearVelocityXY(sim_driver_, vx, vy);
++void RLPipelineRuntime::addBaseLinearVelocityXY(double vx, double vy) {
++  simHWAddBaseLinearVelocityXY(sim_driver_, vx, vy);
+ }
+ 
+ void RLPipelineRuntime::setFriction(double mu) {
+diff --git a/src/hardware/mujocohw/MdlSimDriver.cc b/src/hardware/mujocohw/MdlSimDriver.cc
+index 9bf6713..4da8f49 100644
+--- a/src/hardware/mujocohw/MdlSimDriver.cc
++++ b/src/hardware/mujocohw/MdlSimDriver.cc
+@@ -783,8 +783,8 @@ void MdlSimDriver::_createSimulation() {
+     }
+     if (_external_push_semantics != "set" && _external_push_semantics != "add") {
+       std::cerr << "MdlSimDriver: unknown external_push_semantics '"
+-                << _external_push_semantics << "', falling back to 'set'\n";
+-      _external_push_semantics = "set";
++                << _external_push_semantics << "', falling back to 'add'\n";
++      _external_push_semantics = "add";
+     }
+     _external_force_body =
+         simConfig.getString("external_force_body", _external_force_body);
+@@ -2242,13 +2242,17 @@ void MdlSimDriver::setRobotState(const SimRobotState& state) {
+   _readJointStates();
+   _readIMUData();
+ }
+-// Training-time disturbance injection (legged_gym `_push_robots`). This
+-// perturbs base state during training only; `pd_push_robots` is off for
+-// evaluation, and it never reaches a policy observation.
+-void MdlSimDriver::setBaseLinearVelocityXY(double vx, double vy) {
++// Training-time disturbance injection. legged_gym's `_push_robots` OVERWRITES
++// base x/y velocity; this project adds a delta-v instead, so that the
++// disturbance is the quantity applied rather than a value that depends on the
++// robot's own speed. Deviation from unitree_rl_gym, deliberate and project-wide:
++// evaluation sweeps delta-v, and training must not use a different notion of a
++// push. Training only; `pd_push_robots` is off for evaluation, and it never
++// reaches a policy observation.
++void MdlSimDriver::addBaseLinearVelocityXY(double dvx, double dvy) {
+   if (!_model || !_data || _model->nv < 6) return;
+-  _data->qvel[0] = vx;
+-  _data->qvel[1] = vy;
++  _data->qvel[0] += dvx;
++  _data->qvel[1] += dvy;
+ }
+ 
+ // Surface override. Two sanctioned callers only: legged_gym's training-time
+diff --git a/src/hardware/mujocohw/MdlSimDriver.hh b/src/hardware/mujocohw/MdlSimDriver.hh
+index d859be8..be0cedd 100644
+--- a/src/hardware/mujocohw/MdlSimDriver.hh
++++ b/src/hardware/mujocohw/MdlSimDriver.hh
+@@ -93,7 +93,7 @@ public:
+   int penalizedCollisionCount() const;
+   SimRobotState robotState() const;
+   void setRobotState(const SimRobotState& state);
+-  void setBaseLinearVelocityXY(double vx, double vy);
++  void addBaseLinearVelocityXY(double dvx, double dvy);
+   void setFriction(double mu);
+   double groundFriction() const;
+   double baseContactForceNorm() const;
+@@ -308,7 +308,7 @@ private:
+   // "set" overwrites the base's world x/y velocity (legged_gym semantics);
+   // "add" superposes the kick on the current velocity, so the disturbance is
+   // measured on top of the commanded gait rather than replacing it.
+-  std::string _external_push_semantics = "set";
++  std::string _external_push_semantics = "add";
+   // Last ON window for which a velocity kick was delivered, so the kick fires
+   // once per window instead of every tick.
+   long _external_push_last_window = -1;
+diff --git a/src/hardware/mujocohw/SimHW.cc b/src/hardware/mujocohw/SimHW.cc
+index 17dbc4b..9a4bc0b 100644
+--- a/src/hardware/mujocohw/SimHW.cc
++++ b/src/hardware/mujocohw/SimHW.cc
+@@ -104,8 +104,8 @@ void simHWSetRobotState(MdlSimDriver* driver, const SimRobotState& state) {
+   if (driver) driver->setRobotState(state);
+ }
+ 
+-void simHWSetBaseLinearVelocityXY(MdlSimDriver* driver, double vx, double vy) {
+-  if (driver) driver->setBaseLinearVelocityXY(vx, vy);
++void simHWAddBaseLinearVelocityXY(MdlSimDriver* driver, double vx, double vy) {
++  if (driver) driver->addBaseLinearVelocityXY(vx, vy);
+ }
+ 
+ void simHWSetFriction(MdlSimDriver* driver, double mu) {

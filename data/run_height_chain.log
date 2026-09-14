@@ -1,0 +1,19 @@
+[2026-09-13T03:07:19+03:00] waiting for the rudin evaluation to finish
+[2026-09-13T07:47:25+03:00] evaluation done
+[2026-09-13T07:47:25+03:00] committing the seed sweep
+[2026-09-13T07:47:36+03:00] envpool artifacts pushed
+[2026-09-13T07:47:36+03:00] quadcontrol: nothing to commit
+[2026-09-13T07:47:36+03:00] so before: 73f18e2d5990ddbee7f1313d7832edb44212b861415d90747391790bbcf8212c
+[2026-09-13T07:47:36+03:00] applying the base-height term
+patched envpool/mujoco/gym/quadruped_pd.h
+patched examples/common/rsl_vec_env.py
+patched examples/train_unitree.py
+--- now rebuild inside the container: cd /app/envpool && make run ---
+[2026-09-13T07:47:36+03:00] rebuilding (make run; its env_step.py smoke aborts on a known WBC crash)
+[2026-09-13T07:48:33+03:00] so after: aa8f7f267756fec4d7911f8d975e968d49adc31d55a9bcf79b05cf9966797f0b
+[2026-09-13T07:48:33+03:00] recipe check against the new binary
+[2026-09-13T07:49:56+03:00] measuring the exact arm's height on the new binary (expect ~0.131 m)
+[2026-09-13T07:50:11+03:00] exact arm on the new binary: mean_z = 0.131 (baseline 0.131)
+[2026-09-13T07:50:14+03:00] height term pushed
+[2026-09-13T07:50:14+03:00] === height arm, seed 1 (scale -30, target 0.30) ===
+Terminated

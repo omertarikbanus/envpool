@@ -1,0 +1,19 @@
+[2026-09-14T10:31:36+03:00] simulator pinned at 81f6ffcd15e0e9793bf0793078520d42e2774765b269ef79a43a073975018b67
+[2026-09-14T10:31:36+03:00] === waiting for exact seed 3 training to finish ===
+[2026-09-14T12:10:48+03:00] === exact seed 3 process gone ===
+[2026-09-14T12:10:48+03:00] both exact seeds present; they are warm-start sources only and will NOT be laddered
+[2026-09-14T12:10:48+03:00] === HEIGHT WARM START seed 2 (500 iters, scale -30, target 0.30) ===
+[2026-09-14T13:21:32+03:00] === HEIGHT WARM START seed 2 complete ===
+[2026-09-14T13:21:32+03:00] === HEIGHT WARM START seed 3 (500 iters, scale -30, target 0.30) ===
+[2026-09-14T14:31:00+03:00] === HEIGHT WARM START seed 3 complete ===
+[2026-09-14T14:31:00+03:00] === BOTH HEIGHT SEEDS TRAINED -- launching the two ladders in parallel ===
+[2026-09-14T14:31:00+03:00] === EVAL height seed 2 -> 20260914_rudinaddheight_seed2_n100 (100 runs/cell) ===
+[2026-09-14T14:31:00+03:00] === EVAL height seed 3 -> 20260914_rudinaddheight_seed3_n100 (100 runs/cell) ===
+[2026-09-14T15:26:25+03:00] === EVAL height seed 2 complete ===
+[2026-09-14T15:26:25+03:00] === EVAL height seed 3 complete ===
+  height seed 2: base z = 0.298 m over 100 no-kick episodes (target 0.30)
+  height seed 3: base z = 0.286 m over 100 no-kick episodes (target 0.30)
+[2026-09-14T15:26:25+03:00] === HEIGHT SEEDS 2 AND 3 COMPLETE ===
+[2026-09-14T15:26:25+03:00] seed 1: data/rudin_add_height/v1_seed1 -> 20260913_rudinaddheight_seed1_n100
+[2026-09-14T15:26:25+03:00] seed 2: data/rudin_add_height/v1_seed2 -> 20260914_rudinaddheight_seed2_n100
+[2026-09-14T15:26:25+03:00] seed 3: data/rudin_add_height/v1_seed3 -> 20260914_rudinaddheight_seed3_n100
