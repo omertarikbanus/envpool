@@ -1,0 +1,6 @@
+[2026-09-14T22:53:14+03:00] simulator pinned at 431313637a168865c3577692a8aeb365d744dfa7a8d3c734910df403a2e3a71f
+[2026-09-14T22:53:14+03:00] === TRAIN epsilon seed 1: 85000000 steps @ 1e-5, ent_coef 0.05 ===
+[2026-09-15T01:54:09+03:00] === TRAIN epsilon seed 1 complete ===
+[2026-09-15T01:54:09+03:00] === TRAIN epsilon seed 2: 85000000 steps @ 1e-5, ent_coef 0.05 ===
+[2026-09-15T04:53:50+03:00] === TRAIN epsilon seed 2 complete ===
+[2026-09-15T04:53:50+03:00] === EPSILON SEEDS 1 AND 2 TRAINED (evaluation is separate) ===
