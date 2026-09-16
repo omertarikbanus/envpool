@@ -1,0 +1,118 @@
+[2026-09-16T02:57:21+03:00] simulator pinned at 431313637a168865c3577692a8aeb365d744dfa7a8d3c734910df403a2e3a71f
+[2026-09-16T02:57:21+03:00] === TRAIN rudin+card_f seed 1: 500 iters, 4096 envs, height -30 @ 0.30, from rudin_add_height seed 1 ===
+[2026-09-16T02:59:40+03:00] eval watcher up; simulator pinned at 431313637a168865c3577692a8aeb365d744dfa7a8d3c734910df403a2e3a71f
+[2026-09-16T04:06:47+03:00] training process gone
+[2026-09-16T04:06:47+03:00] model_500.pt present
+[2026-09-16T04:06:47+03:00] === LADDER -> 20260916_rudin_cardf_seed1_n30 (30 runs/cell, survival-only, 6 directions) ===
+[2026-09-16T04:06:47] === ladder for /app/envpool/data/rudin_cardf/v1_seed1/model_500.pt -> 20260916_rudin_cardf_seed1_n30  (30 runs/cell)
+[2026-09-16T04:06:47] === base sweep 0.5,1.0,1.5,2.0,2.5,3.0,3.5 (with the no-kick control cell)
+[2026-09-16T04:17:03] === extension 4.0,4.5,5.0
+[2026-09-16T04:21:21] fwd: survivors below, climbing to 5.5 m/s
+[2026-09-16T04:21:36] fwd: survivors below, climbing to 6.0 m/s
+[2026-09-16T04:21:50] fwd: survivors below, climbing to 6.5 m/s
+[2026-09-16T04:22:05] fwd: survivors below, climbing to 7.0 m/s
+[2026-09-16T04:22:19] fwd: survivors below, climbing to 7.5 m/s
+[2026-09-16T04:22:34] fwd: survivors below, climbing to 8.0 m/s
+[2026-09-16T04:22:48] fwd: survivors below, climbing to 8.5 m/s
+[2026-09-16T04:23:03] fwd: survivors below, climbing to 9.0 m/s
+[2026-09-16T04:23:17] fwd: survivors below, climbing to 9.5 m/s
+[2026-09-16T04:23:32] fwd: survivors below, climbing to 10.0 m/s
+[2026-09-16T04:23:46] fwd: CEILING -- 6/100 still survive at 10.0 m/s
+[2026-09-16T04:23:46] back: survivors below, climbing to 5.5 m/s
+[2026-09-16T04:24:01] back: survivors below, climbing to 6.0 m/s
+[2026-09-16T04:24:15] back: survivors below, climbing to 6.5 m/s
+[2026-09-16T04:24:30] back: survivors below, climbing to 7.0 m/s
+[2026-09-16T04:24:44] back: survivors below, climbing to 7.5 m/s
+[2026-09-16T04:24:58] back: survivors below, climbing to 8.0 m/s
+[2026-09-16T04:25:13] back: survivors below, climbing to 8.5 m/s
+[2026-09-16T04:25:27] back: survivors below, climbing to 9.0 m/s
+[2026-09-16T04:25:42] back: survivors below, climbing to 9.5 m/s
+[2026-09-16T04:25:56] back: survivors below, climbing to 10.0 m/s
+[2026-09-16T04:26:11] back: CEILING -- 9/100 still survive at 10.0 m/s
+[2026-09-16T04:26:11] left: survivors below, climbing to 5.5 m/s
+[2026-09-16T04:26:25] left: survivors below, climbing to 6.0 m/s
+[2026-09-16T04:26:39] left: survivors below, climbing to 6.5 m/s
+[2026-09-16T04:26:54] left: survivors below, climbing to 7.0 m/s
+[2026-09-16T04:27:08] left: survivors below, climbing to 7.5 m/s
+[2026-09-16T04:27:22] left: survivors below, climbing to 8.0 m/s
+[2026-09-16T04:27:37] left: survivors below, climbing to 8.5 m/s
+[2026-09-16T04:27:51] left: 0/100 survived at 8.5 m/s -- done
+[2026-09-16T04:27:51] right: survivors below, climbing to 5.5 m/s
+[2026-09-16T04:28:06] right: survivors below, climbing to 6.0 m/s
+[2026-09-16T04:28:20] right: survivors below, climbing to 6.5 m/s
+[2026-09-16T04:28:34] right: survivors below, climbing to 7.0 m/s
+[2026-09-16T04:28:49] right: survivors below, climbing to 7.5 m/s
+[2026-09-16T04:29:03] right: survivors below, climbing to 8.0 m/s
+[2026-09-16T04:29:18] right: survivors below, climbing to 8.5 m/s
+[2026-09-16T04:29:32] right: survivors below, climbing to 9.0 m/s
+[2026-09-16T04:29:47] right: survivors below, climbing to 9.5 m/s
+[2026-09-16T04:30:01] right: survivors below, climbing to 10.0 m/s
+[2026-09-16T04:30:16] right: 0/100 survived at 10.0 m/s -- done
+[2026-09-16T04:30:16] up: survivors below, climbing to 5.5 m/s
+[2026-09-16T04:30:30] up: survivors below, climbing to 6.0 m/s
+[2026-09-16T04:30:45] up: survivors below, climbing to 6.5 m/s
+[2026-09-16T04:30:59] up: survivors below, climbing to 7.0 m/s
+[2026-09-16T04:31:13] up: survivors below, climbing to 7.5 m/s
+[2026-09-16T04:31:28] up: survivors below, climbing to 8.0 m/s
+[2026-09-16T04:31:42] up: survivors below, climbing to 8.5 m/s
+[2026-09-16T04:31:56] up: survivors below, climbing to 9.0 m/s
+[2026-09-16T04:32:11] up: survivors below, climbing to 9.5 m/s
+[2026-09-16T04:32:25] up: survivors below, climbing to 10.0 m/s
+[2026-09-16T04:32:39] up: CEILING -- 4/100 still survive at 10.0 m/s
+[2026-09-16T04:32:39] down: 0/100 survived at 5.0 m/s -- done
+[2026-09-16T04:32:39] === LADDER COMPLETE: fwd=10.0 CEILING, 6/100 alive  back=10.0 CEILING, 9/100 alive  left=8.5 (0/100)  right=10.0 (0/100)  up=10.0 CEILING, 4/100 alive  down=5.0 (0/100)
+[2026-09-16T04:32:39+03:00] ladder exited rc=0
+[2026-09-16T04:32:39+03:00] === scoring ===
+run_dir 20260916_rudin_cardf_seed1_n30
+  fwd        0/0       0.0%
+  back       0/0       0.0%
+  left       0/0       0.0%
+  right      0/0       0.0%
+  up         0/0       0.0%
+  down       0/0       0.0%
+  noforce ?/?
+  MISSING 60 cells: fwd_0p5mps,fwd_1mps,fwd_1p5mps,fwd_2mps,fwd_2p5mps,fwd_3mps,fwd_3p5mps,fwd_4mps...
+SCORE 0/0 0.00
+wrote /home/tarik/quadruped_ws/envpool/data/rudin_cardf/RESULTS.md
+[2026-09-16T04:32:39+03:00] === RESULTS SAVED: data/rudin_cardf/RESULTS.md ===
+# rudin + our curriculum, seed 1 -- `20260916_rudin_cardf_seed1_n30`
+
+Rudin height-corrected seed 1 continued 500 iterations under the
+cardinal velocity-kick curriculum (six 3.0 m/s ceilings, add
+semantics), height term held at -30 / 0.30 m throughout.
+
+Parent: `data/rudin_add_height/v1_seed1/model_500.pt` (base z 0.304 m).
+
+| cell | n | survival % | mean base z (m) |
+|---|---|---|---|
+| back_0p5mps | 30 | 100 | 0.292 |
+| back_10mps | 30 | 30 | 0.276 |
+| back_1mps | 30 | 100 | 0.292 |
+| back_1p5mps | 30 | 100 | 0.292 |
+| back_2mps | 30 | 100 | 0.292 |
+| back_2p5mps | 30 | 100 | 0.292 |
+| back_3mps | 30 | 100 | 0.292 |
+| back_3p5mps | 30 | 100 | 0.291 |
+| back_4mps | 30 | 100 | 0.289 |
+| back_4p5mps | 30 | 100 | 0.287 |
+| back_5mps | 30 | 100 | 0.284 |
+| back_5p5mps | 30 | 73 | 0.284 |
+| back_6mps | 30 | 80 | 0.285 |
+| back_6p5mps | 30 | 67 | 0.286 |
+| back_7mps | 30 | 80 | 0.287 |
+| back_7p5mps | 30 | 70 | 0.287 |
+| back_8mps | 30 | 67 | 0.285 |
+| back_8p5mps | 30 | 60 | 0.281 |
+| back_9mps | 30 | 53 | 0.278 |
+| back_9p5mps | 30 | 57 | 0.277 |
+| down_0p5mps | 30 | 100 | 0.290 |
+| down_1mps | 30 | 100 | 0.289 |
+| down_1p5mps | 30 | 100 | 0.289 |
+| down_2mps | 30 | 100 | 0.288 |
+| down_2p5mps | 30 | 100 | 0.288 |
+| down_3mps | 30 | 100 | 0.287 |
+| down_3p5mps | 30 | 100 | 0.285 |
+| down_4mps | 30 | 57 | 0.285 |
+| down_4p5mps | 30 | 13 | 0.284 |
+| down_5mps | 30 | 0 | 0.284 |
+[2026-09-16T04:32:39+03:00] === COMPLETE ===
