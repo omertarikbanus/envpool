@@ -28,10 +28,12 @@ source-provenance files. The ten intermediate 50-iteration checkpoints
 Simulator .so: `431313637a168865c3577692a8aeb365d744dfa7a8d3c734910df403a2e3a71f`
 (pinned across training and both ladders below).
 
-Evaluation: `20260916_rudin_cardf_seed1_n30` (survival-only, 6 directions,
-per-direction extension to a zero-survival ceiling) and
-`20260916_rudin_cardf_seed1_n100` (in progress at commit time). Results
-summarised in `RESULTS.md`. Full per-episode data:
-`quadcontrol/evaluations/results/20260916_rudin_cardf_seed1_n30/`.
+Evaluation: `20260916_rudin_cardf_seed1_n30` and `20260916_rudin_cardf_seed1_n100`
+(survival-only, 6 directions, per-direction extension to a zero-survival
+ceiling; n=100 confirms n=30 within sampling noise everywhere, largest move
++-15pp in the noisiest high-kick extension cells). Results summarised in
+`RESULTS.md`. Full per-episode data:
+`quadcontrol/evaluations/results/20260916_rudin_cardf_seed1_n30/` and
+`.../20260916_rudin_cardf_seed1_n100/`.
 
 See project memory `rudin-cardf-curriculum-arm.md`.
