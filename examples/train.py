@@ -30,7 +30,9 @@ from common import (
     save_model_and_stats,
     setup_vecnormalize,
     warm_start_environment,
-    find_vecnormalize_wrapper
+    find_vecnormalize_wrapper,
+    ActionAblationWrapper,
+    TRAINING_ACTION_ABLATIONS,
 )
 
 # Force PyTorch to use one thread (for speed)
@@ -457,6 +459,13 @@ def parse_args():
                         help="Keep the loaded observation and reward statistics fixed during continuation.")
     parser.add_argument("--gae-lambda", type=float, default=None,
                         help="Override GAE lambda in PPO and its rollout buffer.")
+    parser.add_argument("--action-ablation", choices=TRAINING_ACTION_ABLATIONS,
+                        default="none",
+                        help="Force one QuadrupedWBC-v0 action channel group to "
+                             "its neutral value on every training step (not just "
+                             "at eval), so the policy never gets gradient signal "
+                             "to use it. Mirrors core/_rl_eval.py's eval-time "
+                             "apply_action_ablation index mapping.")
     # unitree_rl_gym pins rsl_rl v1.0.2, which consumes the environment's
     # explicitly scaled/clipped observations and raw rewards directly. Keep
     # VecNormalize as the established Gamma default only.
@@ -596,6 +605,15 @@ def main():
         if args.recovery_reward:
             from common.recovery_reward import RecoveryReward
             env = RecoveryReward(env, target_vx=args.recovery_target_vx)
+
+        if args.action_ablation != "none":
+            if not args.env_name.startswith("QuadrupedWBC"):
+                raise ValueError(
+                    "--action-ablation is defined for the 25-dim "
+                    f"QuadrupedWBC-v0/v1 action only, got {args.env_name}")
+            env = ActionAblationWrapper(env, args.action_ablation)
+            logging.info("Training-time action ablation: %s channel forced "
+                         "neutral on every step", args.action_ablation)
 
         # Monitor raw rewards before normalization; PPO still trains on normalized rewards.
         env = VecMonitor(env, info_keywords=MONITOR_INFO_KEYWORDS)

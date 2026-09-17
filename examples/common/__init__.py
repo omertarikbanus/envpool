@@ -4,6 +4,7 @@ Common utilities for quadruped training and evaluation with EnvPool and PPO.
 
 from .asymmetric_policy import DEFAULT_ACTOR_OBSERVATION_DIM, AsymmetricActorCriticPolicy
 from .vec_adapter import VecAdapter
+from .action_ablation import ActionAblationWrapper, TRAINING_ACTION_ABLATIONS
 from .utils import (
     setup_environment,
     create_policy_kwargs,
@@ -27,6 +28,8 @@ __all__ = [
     'DEFAULT_ACTOR_OBSERVATION_DIM',
     'AsymmetricActorCriticPolicy',
     'VecAdapter',
+    'ActionAblationWrapper',
+    'TRAINING_ACTION_ABLATIONS',
     'setup_environment',
     'create_policy_kwargs',
     'create_ppo_model',
